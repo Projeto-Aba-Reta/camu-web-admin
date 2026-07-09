@@ -1,0 +1,62 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+context: |
+  Produto: camu-web-admin — painel administrativo interno da Camu 3D,
+  usado pelos sócios/funcionários para gerenciar a empresa como um todo
+  (não é a loja/site voltado ao cliente final).
+
+  Negócio (ver detalhamento completo no repositório irmão camu-docs):
+  Camu 3D é uma sociedade de 3 sócios que produz e vende peças de
+  papelaria/colecionáveis impressas em 3D. Modelo evolui em fases:
+  1) marketplace (Mercado Livre, Shopee, TikTok Shop, Amazon, SHEIN) para
+  validar catálogo; 2) site + backend de assinatura construído em
+  paralelo; 3) pré-venda de lotes com item exclusivo; 4) assinatura
+  recorrente com carimbo/fidelidade, só aberta ao público quando o
+  catálogo autoral atingir 15-20 peças/categoria.
+
+  Domínios de gestão que o painel deve cobrir:
+  - Financeiro: vendas, fluxo de caixa da conta PJ, reserva de imposto
+    (DAS/Simples), fechamento mensal, divisão de lucro entre sócios,
+    alerta de faturamento acumulado x teto do MEI (R$81.000/ano em 2026),
+    e organização de documentos fiscais (NF, recibos, PIX, extratos).
+  - Produção/catálogo: peças por categoria (miniaturas/colecionáveis,
+    personalizados, utilitários, linha Leon) e porte (P/M/G); parque de
+    impressoras (Ender-3 V3 SE, Creality K1 Max, Bambu Lab A1 Combo);
+    fila de produção; custo/tempo estimado x real por peça.
+  - Vendas/canais: consolidação de vendas por marketplace, pré-venda por
+    lote com prazo e política de atraso/reembolso.
+  - Assinatura recorrente: planos, ciclo de cobrança, carimbo/fidelidade,
+    integração com gateway de pagamento (Asaas/Iugu/Pagar.me), fila de
+    produção mensal por assinante.
+  - Societário/governança: acordo entre sócios, enquadramento MEI x ME e
+    seus gatilhos de migração, log de decisões relevantes do negócio.
+
+  Fora de escopo deste repositório: a loja/site público (catálogo,
+  carrinho, checkout) e a automação de atendimento (WhatBot) — o
+  camu-web-admin é o painel interno de gestão, não a vitrine.
+
+  Convenções: commits seguem Conventional Commits com o pacote/área entre
+  parênteses e tipo capitalizado, ex.: `Feat(financeiro): ...`,
+  `Fix(producao): ...`, `Chore(openspec): ...`.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - Referenciar qual domínio de gestão (financeiro, produção, vendas,
+      assinatura, societário) a mudança afeta
+    - Indicar se a mudança tem dependência com o camu-docs (ex.: regras de
+      controle financeiro, gatilhos de migração MEI/ME)
+  tasks:
+    - Separar tarefas de backend/dados das de UI quando a mudança tocar
+      ambas
