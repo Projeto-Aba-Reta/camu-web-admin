@@ -122,25 +122,22 @@ O app fica disponível em `http://localhost:3000`. O Supabase Studio local
 
 Para parar os containers: `npm run supabase:stop`.
 
-### Promovendo o primeiro usuário a Owner
+### Usuário Owner padrão (seed local)
 
-Não há cadastro público nem UI de convite neste estágio — o primeiro
-usuário Owner é criado e promovido manualmente:
+Não há cadastro público nem UI de convite neste estágio. Para não depender
+de criação manual, `supabase/seed.sql` cria um usuário Owner padrão
+automaticamente toda vez que as migrations são reaplicadas do zero
+(`npm run supabase:reset`, `make dev` na 1a vez, ou `make db-reset`) —
+**apenas no ambiente local**, esse arquivo não roda em produção.
 
-1. Crie um usuário pelo Supabase Studio local (`Authentication` → `Add
-   user`) ou fazendo login uma vez pela UI com um e-mail/senha (isso só
-   cria a conta se você já tiver uma forma de definir a senha — via Studio
-   é mais direto).
-2. Promova esse usuário a Owner rodando no SQL Editor do Studio (ou via
-   `psql` na connection string local):
+```
+E-mail: owner@camu.local
+Senha:  owner123456
+```
 
-   ```sql
-   update public.profiles set user_type = 'owner' where email = '<email>';
-   ```
-
-3. Faça login com esse e-mail/senha em `http://localhost:3000/login` — o
-   Owner tem bypass total de RLS e pode gerenciar o restante a partir daqui
-   nas fases seguintes (convite de usuário, cadastro de roles etc.).
+Faça login com essas credenciais em `http://localhost:3000/login` — o
+Owner tem bypass total de RLS e pode gerenciar o restante a partir daqui
+nas fases seguintes (convite de usuário, cadastro de roles etc.).
 
 ## Fora de escopo (por enquanto)
 
