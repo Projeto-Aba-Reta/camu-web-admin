@@ -55,8 +55,8 @@ rules:
   proposal:
     - Referenciar qual domínio de gestão (financeiro, produção, vendas,
       assinatura, societário) a mudança afeta
-    - Indicar se a mudança tem dependência com o camu-docs (ex.: regras de
-      controle financeiro, gatilhos de migração MEI/ME)
+    - Indicar se a mudança tem dependência com o camu-docs — por exemplo,
+      regras de controle financeiro ou gatilhos de migração MEI/ME
   tasks:
     - Separar tarefas de backend/dados das de UI quando a mudança tocar
       ambas
