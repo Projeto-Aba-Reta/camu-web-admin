@@ -5,10 +5,11 @@ sócios/funcionários da empresa gerenciem a operação do negócio como um
 todo: produção, catálogo, vendas (marketplace e direta), assinatura
 recorrente e controle financeiro/societário.
 
-> Este repositório está em fase de fundação (sem código ainda). O conteúdo
-> abaixo descreve o **objetivo e o escopo** do produto para orientar as
-> propostas de mudança feitas via [OpenSpec](#openspec) antes da
-> implementação.
+> Este repositório está em fase de fundação: só existem login, sessão e o
+> modelo de controle de acesso (Owner/Sócio/Member + roles dinâmicas) — ainda
+> nenhuma tela de domínio de negócio. O conteúdo abaixo descreve o
+> **objetivo e o escopo** do produto para orientar as propostas de mudança
+> feitas via [OpenSpec](#openspec) antes da implementação.
 
 ## Contexto da empresa
 
@@ -82,6 +83,64 @@ falta de visibilidade sobre capacidade de produção.
 - Acompanhamento do enquadramento societário (MEI x ME) e dos gatilhos de
   migração.
 - Log de decisões relevantes do negócio (histórico estilo ADR).
+
+## Como rodar localmente
+
+### Pré-requisitos
+
+- [Node.js](https://nodejs.org/) 20+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (ou
+  outro daemon Docker) rodando — o Supabase local sobe Postgres, Auth e
+  Studio como containers
+- [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started)
+  (já incluída como devDependency; os scripts abaixo usam `npx`/`npm run`,
+  não é obrigatório instalar globalmente)
+
+### Passo a passo
+
+```bash
+npm install
+cp .env.example .env.local
+
+# Sobe Postgres + Auth + Studio locais via Docker.
+# Ao final, o comando imprime a API URL, anon key e service_role key locais.
+npm run supabase:start
+
+# Copie as 3 chaves impressas acima para .env.local:
+#   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
+#   SUPABASE_SERVICE_ROLE_KEY
+
+# Aplica todas as migrations em supabase/migrations/ do zero.
+npm run supabase:reset
+
+npm run dev
+```
+
+O app fica disponível em `http://localhost:3000`. O Supabase Studio local
+(gerenciar tabelas, ver usuários de Auth, etc.) fica em
+`http://127.0.0.1:54323` por padrão.
+
+Para parar os containers: `npm run supabase:stop`.
+
+### Promovendo o primeiro usuário a Owner
+
+Não há cadastro público nem UI de convite neste estágio — o primeiro
+usuário Owner é criado e promovido manualmente:
+
+1. Crie um usuário pelo Supabase Studio local (`Authentication` → `Add
+   user`) ou fazendo login uma vez pela UI com um e-mail/senha (isso só
+   cria a conta se você já tiver uma forma de definir a senha — via Studio
+   é mais direto).
+2. Promova esse usuário a Owner rodando no SQL Editor do Studio (ou via
+   `psql` na connection string local):
+
+   ```sql
+   update public.profiles set user_type = 'owner' where email = '<email>';
+   ```
+
+3. Faça login com esse e-mail/senha em `http://localhost:3000/login` — o
+   Owner tem bypass total de RLS e pode gerenciar o restante a partir daqui
+   nas fases seguintes (convite de usuário, cadastro de roles etc.).
 
 ## Fora de escopo (por enquanto)
 
