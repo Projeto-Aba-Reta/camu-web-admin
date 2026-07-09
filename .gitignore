@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# make dev setup marker
+.dev-setup-complete
+
 # claude code local settings
 .claude/
 
