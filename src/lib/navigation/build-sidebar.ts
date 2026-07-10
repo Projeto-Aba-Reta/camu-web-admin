@@ -21,12 +21,24 @@ const HOME_ITEM: SidebarItem = {
   icon: "home",
 };
 
-const ADMIN_ITEM: SidebarItem = {
-  slug: "administracao",
-  label: "Administração",
-  href: undefined,
-  icon: "settings",
-};
+const ADMIN_ITEMS: SidebarItem[] = [
+  { slug: "admin-painel", label: "Painel", href: "/admin", icon: "layout-dashboard" },
+  { slug: "admin-usuarios", label: "Usuários", href: "/admin/usuarios", icon: "users" },
+  { slug: "admin-roles", label: "Roles", href: "/admin/roles", icon: "shield" },
+  { slug: "admin-auditoria", label: "Auditoria", href: "/admin/auditoria", icon: "file-text" },
+  {
+    slug: "admin-configuracoes",
+    label: "Configurações",
+    href: "/admin/configuracoes",
+    icon: "settings",
+  },
+  {
+    slug: "admin-convites-sessoes",
+    label: "Convites & Sessões",
+    href: "/admin/convites-sessoes",
+    icon: "mail",
+  },
+];
 
 function roleToItem(role: Role): SidebarItem {
   const route = areaRoutes[role.slug];
@@ -66,7 +78,7 @@ export function buildSidebar(
     sections.push({
       id: "admin",
       title: "Administração",
-      items: [ADMIN_ITEM],
+      items: ADMIN_ITEMS,
     });
   }
 

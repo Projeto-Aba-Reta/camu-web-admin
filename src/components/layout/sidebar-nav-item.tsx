@@ -11,6 +11,9 @@ import {
   Users,
   BarChart2,
   FileText,
+  LayoutDashboard,
+  Shield,
+  Mail,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -24,6 +27,11 @@ const ICON_MAP: Record<string, LucideIcon> = {
   vendas: Users,
   assinatura: BarChart2,
   societario: FileText,
+  "layout-dashboard": LayoutDashboard,
+  users: Users,
+  shield: Shield,
+  "file-text": FileText,
+  mail: Mail,
 };
 
 function resolveIcon(item: SidebarItem): LucideIcon {
