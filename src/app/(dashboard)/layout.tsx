@@ -18,6 +18,15 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  // Rede de segurança: um usuário só deveria chegar aqui com status
+  // "invited" se pulasse o fluxo normal de /auth/confirm → /set-password
+  // (ex.: sessão de convite antiga reaproveitada). Sem senha definida, ele
+  // não conseguiria logar de novo caso saísse, então força a conclusão do
+  // cadastro antes de liberar o dashboard.
+  if (currentUser.status === "invited") {
+    redirect("/set-password");
+  }
+
   const cookieStore = await cookies();
   const rawScope = cookieStore.get("camu_sidebar_scope")?.value;
   const scope: "own" | "all" =

@@ -156,11 +156,16 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
+# IMPORTANT: precisa bater com a porta configurada em PORT no .env.local
+# (ver package.json "dev"/"start"). O e-mail de convite (supabase/templates/
+# invite.html) usa {{ .SiteURL }} para montar o link — se a porta do
+# frontend mudar, atualize aqui e rode `supabase stop && supabase start`
+# para o GoTrue local recarregar o config.toml.
 site_url = "http://127.0.0.1:3000"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+additional_redirect_urls = ["http://127.0.0.1:3000"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -243,10 +248,12 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Template customizado: aponta para /auth/confirm (token_hash), não para o
+# /auth/v1/verify padrão do GoTrue — o padrão redireciona com os tokens no
+# fragmento da URL (#access_token=...), que o servidor Next.js nunca vê.
+[auth.email.template.invite]
+subject = "Você foi convidado para o Camu Admin"
+content_path = "./supabase/templates/invite.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]

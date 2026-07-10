@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "./database.types";
 
-const PUBLIC_PATH_PREFIXES = ["/login", "/auth/callback", "/auth/sign-out"];
+const PUBLIC_PATH_PREFIXES = ["/login", "/auth/callback", "/auth/confirm", "/auth/sign-out"];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));

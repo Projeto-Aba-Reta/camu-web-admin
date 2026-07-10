@@ -34,6 +34,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -143,6 +181,35 @@ export type Database = {
           },
         ]
       }
+      system_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           granted_at: string
@@ -234,10 +301,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      change_user_type: {
+        Args: { p_new_type: string; p_user_id: string }
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          status: string
+          updated_at: string
+          user_type: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      count_owners: { Args: never; Returns: number }
       has_role: { Args: { role_slug: string }; Returns: boolean }
       has_sub_role: { Args: { sub_role_slug: string }; Returns: boolean }
       is_owner: { Args: never; Returns: boolean }
       is_socio_or_owner: { Args: never; Returns: boolean }
+      revoke_user_sessions: { Args: { p_user_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
