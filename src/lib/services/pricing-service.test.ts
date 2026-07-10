@@ -69,6 +69,9 @@ class FakePrinterRepository implements IPrinterRepository {
   async findActive() {
     return this.printers.filter((p) => p.isActive);
   }
+  async findAll() {
+    return this.printers;
+  }
   async findById(id: string) {
     return this.printers.find((p) => p.id === id) ?? null;
   }
@@ -91,6 +94,9 @@ class FakeChannelFeeRepository implements IChannelFeeRepository {
   async findHistoryForChannel() {
     return [];
   }
+  async findAllHistory() {
+    return this.fees;
+  }
   async create(): Promise<ChannelFee> {
     throw new Error("not implemented in fake");
   }
@@ -99,6 +105,9 @@ class FakeChannelFeeRepository implements IChannelFeeRepository {
 class FakeSizeTierRangeRepository implements ISizeTierRangeRepository {
   constructor(private readonly ranges: SizeTierRange[]) {}
   async findAllCurrent() {
+    return this.ranges;
+  }
+  async findAllHistory() {
     return this.ranges;
   }
   async create(): Promise<SizeTierRange> {
@@ -110,6 +119,9 @@ class FakePriceCalculationRepository implements IPriceCalculationRepository {
   public saved: PriceCalculation[] = [];
   async findById(id: string) {
     return this.saved.find((c) => c.id === id) ?? null;
+  }
+  async findRecent() {
+    return this.saved;
   }
   async create(input: CreatePriceCalculationInput): Promise<PriceCalculation> {
     const record: PriceCalculation = {

@@ -41,6 +41,16 @@ export class SupabaseSizeTierRangeRepository implements ISizeTierRangeRepository
     return Array.from(currentByTier.values()).map(toSizeTierRange);
   }
 
+  async findAllHistory(): Promise<SizeTierRange[]> {
+    const { data, error } = await this.supabase
+      .from("size_tier_ranges")
+      .select("*")
+      .order("tier", { ascending: true })
+      .order("valid_from", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(toSizeTierRange);
+  }
+
   async create(input: CreateSizeTierRangeInput): Promise<SizeTierRange> {
     const { data, error } = await this.supabase
       .from("size_tier_ranges")

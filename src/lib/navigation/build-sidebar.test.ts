@@ -31,6 +31,14 @@ const producao: Role = {
   icon: null,
 };
 
+const societario: Role = {
+  id: "r3",
+  name: "Societário",
+  slug: "societario",
+  description: null,
+  icon: null,
+};
+
 describe("buildSidebar", () => {
   it("Owner sem roles vê todas as roles do sistema + seção Administração", () => {
     const owner = makeUser({ userType: "owner", roles: [] });
@@ -58,14 +66,14 @@ describe("buildSidebar", () => {
   });
 
   it("Role sem rota implementada aparece sem href", () => {
-    const member = makeUser({ userType: "member", roles: [financeiro] });
-    const sections = buildSidebar(member, "own", [financeiro]);
+    const member = makeUser({ userType: "member", roles: [societario] });
+    const sections = buildSidebar(member, "own", [societario]);
 
     const item = sections
       .find((s) => s.id === "areas")!
-      .items.find((i) => i.slug === "financeiro")!;
+      .items.find((i) => i.slug === "societario")!;
 
-    // financeiro has no entry in areaRoutes yet → no href
+    // societario ainda não tem entrada em areaRoutes → sem href
     expect(item.href).toBeUndefined();
   });
 

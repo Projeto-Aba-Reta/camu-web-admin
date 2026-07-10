@@ -43,6 +43,16 @@ export class SupabasePrinterRepository implements IPrinterRepository {
       .map(toPrinter);
   }
 
+  async findAll(): Promise<Printer[]> {
+    const { data, error } = await this.supabase
+      .from("printers")
+      .select("*")
+      .order("name", { ascending: true })
+      .order("valid_from", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(toPrinter);
+  }
+
   async findById(id: string): Promise<Printer | null> {
     const { data, error } = await this.supabase
       .from("printers")

@@ -56,6 +56,16 @@ export class SupabasePriceCalculationRepository implements IPriceCalculationRepo
     return data ? toPriceCalculation(data) : null;
   }
 
+  async findRecent(limit = 200): Promise<PriceCalculation[]> {
+    const { data, error } = await this.supabase
+      .from("price_calculations")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return (data ?? []).map(toPriceCalculation);
+  }
+
   async create(input: CreatePriceCalculationInput): Promise<PriceCalculation> {
     const { data, error } = await this.supabase
       .from("price_calculations")

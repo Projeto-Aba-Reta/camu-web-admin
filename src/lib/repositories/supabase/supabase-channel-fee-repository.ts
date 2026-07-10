@@ -61,6 +61,16 @@ export class SupabaseChannelFeeRepository implements IChannelFeeRepository {
     return (data ?? []).map(toChannelFee);
   }
 
+  async findAllHistory(): Promise<ChannelFee[]> {
+    const { data, error } = await this.supabase
+      .from("channel_fees")
+      .select("*")
+      .order("channel", { ascending: true })
+      .order("valid_from", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(toChannelFee);
+  }
+
   async create(input: CreateChannelFeeInput): Promise<ChannelFee> {
     const { data, error } = await this.supabase
       .from("channel_fees")

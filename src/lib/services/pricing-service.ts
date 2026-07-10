@@ -145,8 +145,23 @@ export class PricingService {
     };
   }
 
-  async calculateAndSavePrice(input: PriceCalculationInput): Promise<PriceCalculation> {
+  // chosenTier resolve o caso de ambiguidade (ver Decision 3 do design.md de
+  // precificacao-telas): quando o motor sinaliza duas faixas candidatas, o
+  // registro salvo usa o porte escolhido manualmente pelo usuário em vez do
+  // estado ambíguo bruto.
+  async calculateAndSavePrice(
+    input: PriceCalculationInput,
+    chosenTier?: SizeTier,
+  ): Promise<PriceCalculation> {
     const result = await this.calculatePrice(input);
-    return this.repositories.priceCalculations.create({ ...result, createdBy: input.createdBy });
+    const suggestedTier: SuggestedTier =
+      result.suggestedTier.ambiguous && chosenTier
+        ? { ambiguous: false, tier: chosenTier }
+        : result.suggestedTier;
+    return this.repositories.priceCalculations.create({
+      ...result,
+      suggestedTier,
+      createdBy: input.createdBy,
+    });
   }
 }
