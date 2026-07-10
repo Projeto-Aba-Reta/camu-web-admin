@@ -6,12 +6,24 @@ import type { IUserRepository } from "./interfaces/user-repository.interface";
 import type { IAuditLogRepository } from "./interfaces/audit-log-repository.interface";
 import type { ISystemSettingsRepository } from "./interfaces/system-settings-repository.interface";
 import type { IInviteSessionRepository } from "./interfaces/invite-session-repository.interface";
+import type { IPartnershipAgreementRepository } from "./interfaces/partnership-agreement-repository.interface";
+import type { ICapitalContributionRepository } from "./interfaces/capital-contribution-repository.interface";
+import type { ILegalEntityStatusRepository } from "./interfaces/legal-entity-status-repository.interface";
+import type { ILegalMigrationTriggerRepository } from "./interfaces/legal-migration-trigger-repository.interface";
+import type { IRevenueSnapshotRepository } from "./interfaces/revenue-snapshot-repository.interface";
+import type { IDecisionLogEntryRepository } from "./interfaces/decision-log-entry-repository.interface";
 import { SupabaseRoleRepository } from "./supabase/supabase-role-repository";
 import { SupabaseSubRoleRepository } from "./supabase/supabase-sub-role-repository";
 import { SupabaseUserRepository } from "./supabase/supabase-user-repository";
 import { SupabaseAuditLogRepository } from "./supabase/supabase-audit-log-repository";
 import { SupabaseSystemSettingsRepository } from "./supabase/supabase-system-settings-repository";
 import { SupabaseInviteSessionRepository } from "./supabase/supabase-invite-session-repository";
+import { SupabasePartnershipAgreementRepository } from "./supabase/supabase-partnership-agreement-repository";
+import { SupabaseCapitalContributionRepository } from "./supabase/supabase-capital-contribution-repository";
+import { SupabaseLegalEntityStatusRepository } from "./supabase/supabase-legal-entity-status-repository";
+import { SupabaseLegalMigrationTriggerRepository } from "./supabase/supabase-legal-migration-trigger-repository";
+import { SupabaseRevenueSnapshotRepository } from "./supabase/supabase-revenue-snapshot-repository";
+import { SupabaseDecisionLogEntryRepository } from "./supabase/supabase-decision-log-entry-repository";
 
 export interface Repositories {
   roles: IRoleRepository;
@@ -20,6 +32,12 @@ export interface Repositories {
   auditLog: IAuditLogRepository;
   systemSettings: ISystemSettingsRepository;
   inviteSessions: IInviteSessionRepository;
+  partnershipAgreements: IPartnershipAgreementRepository;
+  capitalContributions: ICapitalContributionRepository;
+  legalEntityStatus: ILegalEntityStatusRepository;
+  legalMigrationTriggers: ILegalMigrationTriggerRepository;
+  revenueSnapshots: IRevenueSnapshotRepository;
+  decisionLogEntries: IDecisionLogEntryRepository;
 }
 
 // Composition root: único ponto que muda para trocar de provedor de dados.
@@ -31,5 +49,11 @@ export function createRepositories(supabaseClient: SupabaseClient<Database>): Re
     auditLog: new SupabaseAuditLogRepository(supabaseClient),
     systemSettings: new SupabaseSystemSettingsRepository(supabaseClient),
     inviteSessions: new SupabaseInviteSessionRepository(supabaseClient),
+    partnershipAgreements: new SupabasePartnershipAgreementRepository(supabaseClient),
+    capitalContributions: new SupabaseCapitalContributionRepository(supabaseClient),
+    legalEntityStatus: new SupabaseLegalEntityStatusRepository(supabaseClient),
+    legalMigrationTriggers: new SupabaseLegalMigrationTriggerRepository(supabaseClient),
+    revenueSnapshots: new SupabaseRevenueSnapshotRepository(supabaseClient),
+    decisionLogEntries: new SupabaseDecisionLogEntryRepository(supabaseClient),
   };
 }
