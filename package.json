@@ -3,15 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "set -a; [ -f .env.local ] && . ./.env.local; set +a; next dev -p \"${PORT:-3000}\"",
     "build": "next build",
-    "start": "next start",
+    "start": "set -a; [ -f .env.local ] && . ./.env.local; set +a; next start -p \"${PORT:-3000}\"",
     "lint": "eslint",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
     "db:migration:new": "supabase migration new",
+    "seed-roles": "tsx --conditions=react-server scripts/seed-roles.ts",
     "test": "vitest"
   },
   "dependencies": {

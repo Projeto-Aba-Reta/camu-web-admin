@@ -60,7 +60,8 @@ dev: install env docker-check supabase-up supabase-sync-env
 		echo ">> Ambiente ja inicializado, pulando reset do banco (use 'make db-reset' para reaplicar migrations)."; \
 	fi
 	@echo ""
-	@echo ">> Studio: http://127.0.0.1:54323  |  App: http://localhost:3000"
+	@port=$$(grep -m1 '^PORT=' .env.local | cut -d= -f2); \
+	echo ">> Studio: http://127.0.0.1:54323  |  App: http://localhost:$${port:-3000}"
 	@echo ""
 	npm run dev
 
