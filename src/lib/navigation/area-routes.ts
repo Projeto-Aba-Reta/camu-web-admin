@@ -8,4 +8,5 @@ export interface AreaRoute {
 export const areaRoutes: Record<string, AreaRoute> = {
   // example (uncomment when the financial domain page is built):
   // financeiro: { href: "/financeiro" },
+  societario: { href: "/societario/acordo" },
 };

@@ -14,3 +14,11 @@ export function slugify(input: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+export function formatCurrency(amount: number): string {
+  return amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+export function formatDate(date: string): string {
+  return new Date(date).toLocaleDateString("pt-BR", { timeZone: "UTC" });
+}
