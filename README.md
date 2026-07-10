@@ -161,6 +161,27 @@ local rodando (`npm run supabase:start`) e `.env.local` preenchido.
 pelo Owner via UI; e-mails `@camu.local` fictícios podem confundir se
 rodados sem atenção em um ambiente compartilhado.
 
+### Seed de parâmetros de precificação (opcional, ambiente local)
+
+`npm run seed-pricing` popula os valores de referência do motor de cálculo
+de preço, hoje documentados em `camu-docs/03-financeiro/custo-por-peca.md`,
+`camu-docs/03-financeiro/roadmap-impressoras.md` e
+`camu-docs/06-marketplace/estrategia-canais.md`: 1 registro de parâmetros de
+custo (filamento, energia, consumo, reserva de falha, embalagem), a
+impressora Ender-3 V3 SE, as faixas de porte P/M/G e as taxas dos 5 canais
+de marketplace (Mercado Livre com o percentual confirmado; os demais como
+placeholder explícito de 0% até validação no seller center de cada
+plataforma).
+
+É **idempotente** (cada tabela é versionada por vigência, mas o script só
+insere se ainda não houver um registro/faixa/canal vigente) e usa a mesma
+camada de services/repositórios da aplicação. Requer o Supabase local
+rodando (`npm run supabase:start`) e `.env.local` preenchido.
+
+**Uso recomendado apenas em ambiente local.** Os valores são as premissas
+citadas no `camu-docs` (explicitamente marcadas lá como "a validar") e devem
+ser revisados pelo Owner/Sócio antes de qualquer uso em produção.
+
 ## Fora de escopo (por enquanto)
 
 - A loja/site voltado ao cliente final (catálogo público, carrinho,

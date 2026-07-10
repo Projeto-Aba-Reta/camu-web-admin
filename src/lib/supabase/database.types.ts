@@ -72,6 +72,184 @@ export type Database = {
           },
         ]
       }
+      channel_fees: {
+        Row: {
+          channel: string
+          created_by: string | null
+          fixed_fee: number
+          id: string
+          percentage_fee: number
+          valid_from: string
+        }
+        Insert: {
+          channel: string
+          created_by?: string | null
+          fixed_fee?: number
+          id?: string
+          percentage_fee: number
+          valid_from?: string
+        }
+        Update: {
+          channel?: string
+          created_by?: string | null
+          fixed_fee?: number
+          id?: string
+          percentage_fee?: number
+          valid_from?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_fees_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cost_parameters: {
+        Row: {
+          average_power_watts: number
+          created_by: string | null
+          energy_cost_per_kwh: number
+          failure_reserve_pct: number
+          filament_cost_per_kg: number
+          id: string
+          packaging_cost: number
+          valid_from: string
+        }
+        Insert: {
+          average_power_watts: number
+          created_by?: string | null
+          energy_cost_per_kwh: number
+          failure_reserve_pct: number
+          filament_cost_per_kg: number
+          id?: string
+          packaging_cost: number
+          valid_from?: string
+        }
+        Update: {
+          average_power_watts?: number
+          created_by?: string | null
+          energy_cost_per_kwh?: number
+          failure_reserve_pct?: number
+          filament_cost_per_kg?: number
+          id?: string
+          packaging_cost?: number
+          valid_from?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_parameters_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_calculations: {
+        Row: {
+          channel_prices: Json
+          cost_breakdown: Json
+          cost_parameters_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          print_hours: number
+          printer_id: string
+          suggested_tier: string | null
+          total_cost: number
+          weight_grams: number
+        }
+        Insert: {
+          channel_prices: Json
+          cost_breakdown: Json
+          cost_parameters_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          print_hours: number
+          printer_id: string
+          suggested_tier?: string | null
+          total_cost: number
+          weight_grams: number
+        }
+        Update: {
+          channel_prices?: Json
+          cost_breakdown?: Json
+          cost_parameters_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          print_hours?: number
+          printer_id?: string
+          suggested_tier?: string | null
+          total_cost?: number
+          weight_grams?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_calculations_cost_parameters_id_fkey"
+            columns: ["cost_parameters_id"]
+            isOneToOne: false
+            referencedRelation: "cost_parameters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_calculations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_calculations_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      printers: {
+        Row: {
+          created_by: string | null
+          depreciation_per_hour: number
+          id: string
+          is_active: boolean
+          model: string
+          name: string
+          valid_from: string
+        }
+        Insert: {
+          created_by?: string | null
+          depreciation_per_hour: number
+          id?: string
+          is_active?: boolean
+          model: string
+          name: string
+          valid_from?: string
+        }
+        Update: {
+          created_by?: string | null
+          depreciation_per_hour?: number
+          id?: string
+          is_active?: boolean
+          model?: string
+          name?: string
+          valid_from?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "printers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -142,6 +320,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      size_tier_ranges: {
+        Row: {
+          id: string
+          max_print_hours: number
+          max_weight_grams: number
+          min_print_hours: number
+          min_weight_grams: number
+          tier: string
+          valid_from: string
+        }
+        Insert: {
+          id?: string
+          max_print_hours: number
+          max_weight_grams: number
+          min_print_hours: number
+          min_weight_grams: number
+          tier: string
+          valid_from?: string
+        }
+        Update: {
+          id?: string
+          max_print_hours?: number
+          max_weight_grams?: number
+          min_print_hours?: number
+          min_weight_grams?: number
+          tier?: string
+          valid_from?: string
+        }
+        Relationships: []
       }
       sub_roles: {
         Row: {
