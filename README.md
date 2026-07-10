@@ -136,8 +136,30 @@ Senha:  owner123456
 ```
 
 Faça login com essas credenciais em `http://localhost:3000/login` — o
-Owner tem bypass total de RLS e pode gerenciar o restante a partir daqui
-nas fases seguintes (convite de usuário, cadastro de roles etc.).
+Owner tem bypass total de RLS e pode gerenciar roles, sub-roles e usuários
+a partir das telas em `/admin/roles` e `/admin/usuarios`.
+
+### Seed de roles e usuários de exemplo (opcional, ambiente local)
+
+`npm run seed-roles` popula o banco com as 7 roles e a divisão sócio→área
+hoje documentadas em `camu-docs/01-visao-geral/sociedade-e-divisao.md`
+(Produção, Marketplace/Vendas, Site, Assinatura, Infra/Automação,
+Financeiro, Societário), além de 3 usuários de exemplo:
+
+```
+socio-a@camu.local / socio123456  → Produção, Marketplace/Vendas
+socio-b@camu.local / socio123456  → Site, Assinatura, Infra/Automação
+socio-c@camu.local / socio123456  → sem role própria (gap documentado)
+```
+
+É **idempotente** (roda de novo sem duplicar nada) e usa a mesma camada de
+services/repositórios da aplicação — não é SQL solto. Requer o Supabase
+local rodando (`npm run supabase:start`) e `.env.local` preenchido.
+
+**Uso recomendado apenas em ambiente local.** A divisão sócio→área aplicada
+é provisória (o próprio comando avisa isso ao final) e deve ser revisada
+pelo Owner via UI; e-mails `@camu.local` fictícios podem confundir se
+rodados sem atenção em um ambiente compartilhado.
 
 ## Fora de escopo (por enquanto)
 

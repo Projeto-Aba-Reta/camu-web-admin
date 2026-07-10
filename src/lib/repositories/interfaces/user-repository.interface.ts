@@ -15,6 +15,8 @@ export interface InviteUserInput {
 
 export interface IUserRepository {
   findById(id: string): Promise<Profile | null>;
+  findByEmail(email: string): Promise<Profile | null>;
   listAll(): Promise<Profile[]>;
   invite(input: InviteUserInput): Promise<Profile>;
+  changeUserType(userId: string, newType: UserType): Promise<Profile>;
 }
