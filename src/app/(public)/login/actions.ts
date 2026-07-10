@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 export interface LoginState {
@@ -17,6 +18,10 @@ export async function login(_prevState: LoginState, formData: FormData): Promise
   if (error) {
     return { error: "E-mail ou senha inválidos." };
   }
+
+  // Reset sidebar scope so each new session starts with the default (own areas).
+  const cookieStore = await cookies();
+  cookieStore.delete("camu_sidebar_scope");
 
   redirect("/");
 }
