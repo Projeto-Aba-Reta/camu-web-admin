@@ -13,6 +13,7 @@
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
     "db:migration:new": "supabase migration new",
     "seed-roles": "tsx --conditions=react-server scripts/seed-roles.ts",
+    "seed-pricing": "tsx --conditions=react-server scripts/seed-pricing.ts",
     "test": "vitest"
   },
   "dependencies": {
