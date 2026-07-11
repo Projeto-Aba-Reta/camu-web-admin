@@ -5,11 +5,12 @@ SUPABASE_ENV_KEYS := NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPA
 SUPABASE_ENV_GREP := ^(NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_ANON_KEY|SUPABASE_SERVICE_ROLE_KEY)=
 SETUP_STAMP := .dev-setup-complete
 
-.PHONY: help dev install env docker-check supabase-up supabase-sync-env db-reset stop status clean
+.PHONY: help dev install env docker-check supabase-up supabase-sync-env seed db-reset stop status clean
 
 help:
-	@echo "make dev       - setup completo (deps, Supabase local, migrations na 1a vez) e inicia o Next.js"
-	@echo "make db-reset  - reaplica todas as migrations do zero (apaga dados locais)"
+	@echo "make dev       - setup completo (deps, Supabase local, migrations na 1a vez, seed de dados de exemplo) e inicia o Next.js"
+	@echo "make db-reset  - reaplica todas as migrations do zero (apaga dados locais) e roda o seed de novo"
+	@echo "make seed      - roda so o seed de dados de exemplo: roles, socios, precificacao, estoque, catalogo e societario (idempotente, nao duplica)"
 	@echo "make stop      - para os containers do Supabase local"
 	@echo "make status    - mostra status/URLs do Supabase local"
 	@echo "make clean     - para containers e remove node_modules/.next"
@@ -59,15 +60,32 @@ dev: install env docker-check supabase-up supabase-sync-env
 	else \
 		echo ">> Ambiente ja inicializado, pulando reset do banco (use 'make db-reset' para reaplicar migrations)."; \
 	fi
+	$(MAKE) seed
 	@echo ""
 	@port=$$(grep -m1 '^PORT=' .env.local | cut -d= -f2); \
 	echo ">> Studio: http://127.0.0.1:54323  |  App: http://localhost:$${port:-3000}"
 	@echo ""
 	npm run dev
 
+# Idempotente: cada script upserta por chave natural propria (slug, nome,
+# e-mail, vigencia...), entao rodar de novo nunca duplica. Ordem importa:
+# pricing cadastra a impressora/taxas antes de inventory/catalog usarem,
+# catalog usa a impressora do pricing, e governance exige o socio-a criado
+# por roles. O Owner (criado pelo supabase/seed.sql) ja enxerga todas as
+# areas/telas automaticamente por user_type, sem precisar de role atribuida.
+seed: install env
+	@echo ""
+	@echo ">> Populando dados de exemplo (idempotente, para testar sem configurar nada)..."
+	npm run seed-roles
+	npm run seed-pricing
+	npm run seed-inventory
+	npm run seed-catalog
+	npm run seed-governance
+
 db-reset: docker-check supabase-up
 	npx supabase db reset
 	@touch $(SETUP_STAMP)
+	$(MAKE) seed
 
 ## --- housekeeping ---
 

@@ -1,6 +1,8 @@
 // Popula os valores de referência do motor de cálculo de preço, hoje
 // documentados em camu-docs/03-financeiro/{custo-por-peca,roadmap-impressoras}.md
-// e camu-docs/06-marketplace/estrategia-canais.md.
+// e camu-docs/06-marketplace/estrategia-canais.md, complementados com
+// pesquisa na internet (jul/2026, ver comentários por seção) para os itens
+// que lá ainda estavam como placeholder.
 // Uso recomendado apenas em ambiente local (`npm run seed-pricing`, com o
 // Supabase local rodando via `npm run supabase:start`). Ver README.md.
 //
@@ -47,15 +49,28 @@ const SIZE_TIER_DEFS: Array<{
 ];
 
 // Mercado Livre: percentual confirmado com o Owner/Sócio como a taxa bruta
-// real (task 1.2) — os demais canais entram com placeholder explícito (0%)
-// até validação real no seller center de cada plataforma (ver Open Questions
-// do design.md).
+// real (task 1.2). Os demais canais foram pesquisados na internet em
+// jul/2026 (fontes no README/PR, não em camu-docs) — cada plataforma cobra
+// por faixa de preço; como as peças do catálogo hoje ficam majoritariamente
+// abaixo de R$80-100 (miniaturas/personalizados pequenos), a faixa "ticket
+// baixo" de cada canal foi escolhida como representativa. Ainda assim,
+// SHALL ser validado no seller center de cada plataforma antes de uso real
+// (mesmo aviso do design.md, Open Questions):
+//   - Shopee: abaixo de R$80 paga 20% + R$4 fixo (a partir de R$80 cai para
+//     14%, mas com taxa fixa maior).
+//   - TikTok Shop: a partir de 15/jul/2026, itens abaixo de R$50 pagam 10%
+//     + R$4 fixo (o valor já engloba a comissão de plataforma + subsídio de
+//     frete, cobrados juntos por pedido).
+//   - Amazon: referral fee de 10-15% por categoria; usado 15% (faixa alta,
+//     mais próxima de brinquedos/colecionáveis) e sem taxa fixa por item.
+//   - Shein: comissão fixa de 16% sobre o valor da venda, sem taxa de
+//     anúncio nem taxa fixa por item.
 const CHANNEL_FEE_DEFS: Array<{ channel: MarketplaceChannel; percentageFee: number; fixedFee: number }> = [
   { channel: "mercado_livre", percentageFee: 0.14, fixedFee: 0 },
-  { channel: "shopee", percentageFee: 0, fixedFee: 0 },
-  { channel: "tiktok_shop", percentageFee: 0, fixedFee: 0 },
-  { channel: "amazon", percentageFee: 0, fixedFee: 0 },
-  { channel: "shein", percentageFee: 0, fixedFee: 0 },
+  { channel: "shopee", percentageFee: 0.2, fixedFee: 4 },
+  { channel: "tiktok_shop", percentageFee: 0.1, fixedFee: 4 },
+  { channel: "amazon", percentageFee: 0.15, fixedFee: 0 },
+  { channel: "shein", percentageFee: 0.16, fixedFee: 0 },
 ];
 
 async function seedCostParameters(
@@ -68,12 +83,22 @@ async function seedCostParameters(
     return;
   }
 
-  // Valores de referência de custo-por-peca.md: filamento ~R$90/kg, energia
-  // ~R$0,80/kWh, consumo médio ~150W, reserva de falha 12,5% (ponto médio de
-  // "10-15%" citado no doc). Embalagem confirmada com o Owner/Sócio (task 1.2).
+  // Filamento ~R$90/kg: dentro da faixa de mercado pesquisada para PLA
+  // genérico no Brasil em jul/2026 (~R$90-120/kg), mantido no piso da faixa
+  // por já refletir "genérico" (mesmo termo usado em seed-inventory.ts).
+  // Energia ~R$0,75/kWh: pesquisado para a tarifa residencial da Enel SP em
+  // jul/2026, que varia de ~R$0,67/kWh (faixa de consumo com 18% de ICMS,
+  // sem bandeira) a ~R$1,00/kWh (faixas de consumo maiores) — usado o ponto
+  // médio dessa faixa em vez do extremo, já que o ateliê é uma operação
+  // doméstica de baixo consumo mas não necessariamente na faixa mais barata.
+  // Consumo médio ~150W: dentro da faixa pesquisada para a Ender-3 V3 SE em
+  // operação (~120-160W; consumo máximo de pico da fonte é 350W, mas a
+  // impressão típica não usa a capacidade máxima). Reserva de falha 12,5%
+  // (ponto médio de "10-15%" citado em custo-por-peca.md). Embalagem
+  // confirmada com o Owner/Sócio (task 1.2).
   await repositories.costParameters.create({
     filamentCostPerKg: 90,
-    energyCostPerKwh: 0.8,
+    energyCostPerKwh: 0.75,
     averagePowerWatts: 150,
     failureReservePct: 0.125,
     packagingCost: 3,
@@ -92,6 +117,12 @@ async function seedPrinter(
     return;
   }
 
+  // Depreciação R$0,80/h: preço de mercado pesquisado para a Ender-3 V3 SE
+  // no Brasil em jul/2026 (~R$1.500-1.700 em marketplaces) dividido por uma
+  // vida útil assumida de ~2.000h de impressão (~2 anos de uso moderado de
+  // ateliê antes de expansão/substituição, mesmo horizonte usado no
+  // roadmap-impressoras.md) — resultado (~R$0,75-0,85/h) bate com o valor
+  // já documentado em camu-docs, então foi mantido.
   await repositories.printers.create({
     name: ENDER_3_V3_SE,
     model: ENDER_3_V3_SE,
@@ -154,8 +185,9 @@ async function main() {
 
   console.log("\nSeed concluído.");
   console.log(
-    "AVISO: taxas de canal além do Mercado Livre estão com placeholder 0% — confirmar valor " +
-      "real no seller center de cada plataforma antes de usar em produção (ver design.md, Open Questions).",
+    "AVISO: taxas de canal além do Mercado Livre e o custo de energia vêm de pesquisa na internet " +
+      "(jul/2026), não de confirmação real do Owner/Sócio — revisar no seller center de cada " +
+      "plataforma e na conta de luz real antes de usar em produção (ver design.md, Open Questions).",
   );
 }
 

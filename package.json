@@ -16,6 +16,8 @@
     "seed-pricing": "tsx --conditions=react-server scripts/seed-pricing.ts",
     "seed-governance": "tsx --conditions=react-server scripts/seed-governance.ts",
     "seed-inventory": "tsx --conditions=react-server scripts/seed-inventory.ts",
+    "seed-catalog": "tsx --conditions=react-server scripts/seed-catalog.ts",
+    "seed-all": "npm run seed-roles && npm run seed-pricing && npm run seed-inventory && npm run seed-catalog && npm run seed-governance",
     "test": "vitest"
   },
   "dependencies": {
