@@ -6,6 +6,7 @@ import { createRepositories } from "@/lib/repositories";
 import { buildSidebar } from "@/lib/navigation/build-sidebar";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { LowStockBadge } from "@/components/estoque/low-stock-badge";
 
 export default async function DashboardLayout({
   children,
@@ -47,7 +48,10 @@ export default async function DashboardLayout({
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar user={{ email: currentUser.email, fullName: currentUser.fullName }} />
+        <Topbar
+          user={{ email: currentUser.email, fullName: currentUser.fullName }}
+          lowStockBadge={<LowStockBadge />}
+        />
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>

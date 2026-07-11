@@ -3,6 +3,7 @@ import type { CreateMaterialStockMovementInput } from "@/lib/repositories/interf
 import type { CreateProductStockMovementInput } from "@/lib/repositories/interfaces/product-stock-movement-repository.interface";
 import type { UpsertMaterialStockThresholdInput } from "@/lib/repositories/interfaces/material-stock-threshold-repository.interface";
 import type {
+  Material,
   MaterialStockMovement,
   MaterialStockStatus,
   MaterialStockThreshold,
@@ -114,8 +115,37 @@ export class InventoryService {
     };
   }
 
+  // Usa os métodos em lote dos repositórios (findAllBalances/findAll) em vez
+  // de um getMaterialStockStatus por insumo — evita 1+2N consultas (essa
+  // lista roda a cada carregamento de página via o badge da topbar, ver
+  // low-stock-badge.tsx).
+  async listMaterialsWithStatus(): Promise<Array<{ material: Material; status: MaterialStockStatus }>> {
+    const [materials, balances, thresholds] = await Promise.all([
+      this.repositories.materials.findAll(),
+      this.repositories.materialStockMovements.findAllBalances(),
+      this.repositories.materialStockThresholds.findAll(),
+    ]);
+
+    const balanceByMaterialId = new Map(balances.map((entry) => [entry.materialId, entry.balance]));
+    const thresholdByMaterialId = new Map(thresholds.map((threshold) => [threshold.materialId, threshold]));
+
+    return materials.map((material) => {
+      const balance = balanceByMaterialId.get(material.id) ?? 0;
+      const threshold = thresholdByMaterialId.get(material.id) ?? null;
+      return {
+        material,
+        status: {
+          materialId: material.id,
+          balance,
+          minimumQuantity: threshold?.minimumQuantity ?? null,
+          isLowStock: threshold != null && balance < threshold.minimumQuantity,
+        },
+      };
+    });
+  }
+
   async listMaterialStockStatuses(): Promise<MaterialStockStatus[]> {
-    const materials = await this.repositories.materials.findAll();
-    return Promise.all(materials.map((material) => this.getMaterialStockStatus(material.id)));
+    const rows = await this.listMaterialsWithStatus();
+    return rows.map((row) => row.status);
   }
 }

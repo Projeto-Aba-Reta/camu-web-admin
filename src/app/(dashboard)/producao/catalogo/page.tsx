@@ -4,6 +4,7 @@ import { createRepositories } from "@/lib/repositories";
 import { getCurrentProfile } from "@/lib/auth/get-current-profile";
 import { canWriteCatalog } from "@/lib/auth/catalog-access";
 import { PageHeader } from "@/components/layout/page-header";
+import { ProducaoNav } from "@/components/producao/producao-nav";
 import { Button } from "@/components/ui/button";
 import { CatalogMaturityIndicator } from "@/components/catalogo/catalog-maturity-indicator";
 import { ProductList } from "@/components/catalogo/product-list";
@@ -37,6 +38,8 @@ export default async function CatalogoPage() {
           )
         }
       />
+
+      <ProducaoNav />
 
       <CatalogMaturityIndicator activeCountByCategory={activeCountByCategory} />
 

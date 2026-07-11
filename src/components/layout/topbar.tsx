@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
 import {
@@ -23,6 +23,7 @@ import type { CurrentUser } from "@/types/auth";
 
 interface TopbarProps {
   user: Pick<CurrentUser, "email" | "fullName">;
+  lowStockBadge?: ReactNode;
 }
 
 function getInitials(user: Pick<CurrentUser, "email" | "fullName">): string {
@@ -60,7 +61,7 @@ function useBreadcrumbs(): Array<{ label: string; href?: string }> {
   return crumbs;
 }
 
-export function Topbar({ user }: TopbarProps) {
+export function Topbar({ user, lowStockBadge }: TopbarProps) {
   const crumbs = useBreadcrumbs();
 
   return (
@@ -85,38 +86,42 @@ export function Topbar({ user }: TopbarProps) {
         </Breadcrumb>
       </div>
 
-      {/* User menu — right */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-2 rounded-md px-2 py-1 text-sm outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring">
-            <Avatar className="size-7">
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                {getInitials(user)}
-              </AvatarFallback>
-            </Avatar>
-            <span className="hidden max-w-[140px] truncate text-foreground/80 md:inline">
-              {user.fullName ?? user.email}
-            </span>
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-52">
-          <div className="px-2 py-1.5">
-            <p className="truncate text-sm font-medium">{user.fullName ?? user.email}</p>
-            {user.fullName && (
-              <p className="truncate text-xs text-muted-foreground">{user.email}</p>
-            )}
-          </div>
-          <DropdownMenuSeparator />
-          <form action="/auth/sign-out" method="post">
-            <DropdownMenuItem asChild>
-              <button type="submit" className="w-full cursor-pointer text-destructive focus:text-destructive">
-                <LogOut className="mr-2 size-4" />
-                Sair
-              </button>
-            </DropdownMenuItem>
-          </form>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {/* Indicador de estoque baixo + menu de usuário — direita */}
+      <div className="flex items-center gap-3">
+        {lowStockBadge}
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2 rounded-md px-2 py-1 text-sm outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring">
+              <Avatar className="size-7">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                  {getInitials(user)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden max-w-[140px] truncate text-foreground/80 md:inline">
+                {user.fullName ?? user.email}
+              </span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <div className="px-2 py-1.5">
+              <p className="truncate text-sm font-medium">{user.fullName ?? user.email}</p>
+              {user.fullName && (
+                <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+              )}
+            </div>
+            <DropdownMenuSeparator />
+            <form action="/auth/sign-out" method="post">
+              <DropdownMenuItem asChild>
+                <button type="submit" className="w-full cursor-pointer text-destructive focus:text-destructive">
+                  <LogOut className="mr-2 size-4" />
+                  Sair
+                </button>
+              </DropdownMenuItem>
+            </form>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </header>
   );
 }
