@@ -12,14 +12,18 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { calculoFormSchema, type CalculoFormValues } from "@/lib/validation/pricing-schemas";
 import { calculatePriceAction } from "@/app/(dashboard)/financeiro/precificacao/actions";
-import { ResultadoCalculo } from "@/components/precificacao/resultado-calculo";
+import { ResultadoCalculo } from "@/components/shared/resultado-calculo";
 import type { PriceCalculation, PriceCalculationResult, Printer, SizeTier } from "@/types/pricing";
 
 interface CalculoFormProps {
   printers: Printer[];
+  // Reaproveitado pelo formulário de peça do catálogo (ver catalogo-telas,
+  // design.md decisão 1) para capturar o cálculo recém-salvo e vinculá-lo
+  // à peça sem duplicar a lógica de cálculo.
+  onCalculated?: (calculation: PriceCalculation) => void;
 }
 
-export function CalculoForm({ printers }: CalculoFormProps) {
+export function CalculoForm({ printers, onCalculated }: CalculoFormProps) {
   const router = useRouter();
   const [result, setResult] = useState<PriceCalculationResult | PriceCalculation | null>(null);
   const [saved, setSaved] = useState(false);
@@ -47,6 +51,7 @@ export function CalculoForm({ printers }: CalculoFormProps) {
     if (response.saved) {
       toast.success("Cálculo salvo no histórico.");
       router.refresh();
+      if (response.result) onCalculated?.(response.result as PriceCalculation);
     }
   }
 
@@ -65,6 +70,7 @@ export function CalculoForm({ printers }: CalculoFormProps) {
     setSaved(Boolean(response.saved));
     toast.success("Cálculo salvo no histórico.");
     router.refresh();
+    if (response.result) onCalculated?.(response.result as PriceCalculation);
   }
 
   return (

@@ -9,10 +9,10 @@ export const areaRoutes: Record<string, AreaRoute> = {
   // Precificação (ver precificacao-telas): cálculo de preço é a página
   // padrão da área; configuração e histórico ficam em sub-rotas acessadas
   // por link dentro da própria área, não como itens de sidebar (design.md,
-  // decisão 4). Produção também usa a mesma entrada de sidebar para
-  // executar cálculos, mesmo sem acesso à configuração de parâmetros — até
-  // catalogo-telas assumir a rota própria de /producao.
+  // decisão 4).
   financeiro: { href: "/financeiro/precificacao/calcular" },
-  producao: { href: "/financeiro/precificacao/calcular" },
+  // Catálogo (ver catalogo-telas): listagem de peças é a página padrão da
+  // área de Produção.
+  producao: { href: "/producao/catalogo" },
   societario: { href: "/societario/acordo" },
 };
