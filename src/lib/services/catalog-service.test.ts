@@ -1,0 +1,294 @@
+import { describe, it, expect } from "vitest";
+import { CatalogService } from "./catalog-service";
+import type {
+  CreateProductInput,
+  IProductRepository,
+  UpdateProductInput,
+} from "@/lib/repositories/interfaces/product-repository.interface";
+import type {
+  CreateProductMediaInput,
+  IProductMediaRepository,
+} from "@/lib/repositories/interfaces/product-media-repository.interface";
+import type {
+  CreateProductChannelListingInput,
+  IProductChannelListingRepository,
+  UpdateProductChannelListingInput,
+} from "@/lib/repositories/interfaces/product-channel-listing-repository.interface";
+import type { IPriceCalculationRepository } from "@/lib/repositories/interfaces/price-calculation-repository.interface";
+import type { Product, ProductChannelListing, ProductMedia } from "@/types/catalog";
+import type { PriceCalculation } from "@/types/pricing";
+
+class FakeProductRepository implements IProductRepository {
+  public products: Product[] = [];
+
+  async findById(id: string) {
+    return this.products.find((p) => p.id === id) ?? null;
+  }
+  async findAll() {
+    return this.products;
+  }
+  async create(input: CreateProductInput): Promise<Product> {
+    const product: Product = {
+      id: `product-${this.products.length + 1}`,
+      name: input.name,
+      description: input.description,
+      category: input.category,
+      sizeTier: null,
+      status: "rascunho",
+      priceCalculationId: null,
+      createdBy: input.createdBy,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+    this.products.push(product);
+    return product;
+  }
+  async update(id: string, input: UpdateProductInput): Promise<Product> {
+    const product = this.products.find((p) => p.id === id);
+    if (!product) throw new Error("not found");
+    Object.assign(product, input);
+    return product;
+  }
+  async delete(id: string): Promise<void> {
+    this.products = this.products.filter((p) => p.id !== id);
+  }
+}
+
+class FakeProductMediaRepository implements IProductMediaRepository {
+  public media: ProductMedia[] = [];
+
+  async findById(id: string) {
+    return this.media.find((m) => m.id === id) ?? null;
+  }
+  async findByProductId(productId: string) {
+    return this.media.filter((m) => m.productId === productId).sort((a, b) => a.displayOrder - b.displayOrder);
+  }
+  async create(input: CreateProductMediaInput): Promise<ProductMedia> {
+    const item: ProductMedia = {
+      id: `media-${this.media.length + 1}`,
+      productId: input.productId,
+      storagePath: input.storagePath,
+      displayOrder: input.displayOrder,
+      isCover: false,
+      createdAt: "2026-01-01T00:00:00.000Z",
+    };
+    this.media.push(item);
+    return item;
+  }
+  async updateDisplayOrder(id: string, displayOrder: number): Promise<void> {
+    const item = this.media.find((m) => m.id === id);
+    if (item) item.displayOrder = displayOrder;
+  }
+  async setCover(id: string, productId: string): Promise<void> {
+    for (const item of this.media) {
+      if (item.productId === productId) item.isCover = false;
+    }
+    const target = this.media.find((m) => m.id === id);
+    if (target) target.isCover = true;
+  }
+  async delete(id: string): Promise<void> {
+    this.media = this.media.filter((m) => m.id !== id);
+  }
+}
+
+class FakeProductChannelListingRepository implements IProductChannelListingRepository {
+  public listings: ProductChannelListing[] = [];
+
+  async findByProductId(productId: string) {
+    return this.listings.filter((l) => l.productId === productId);
+  }
+  async create(input: CreateProductChannelListingInput): Promise<ProductChannelListing> {
+    const listing: ProductChannelListing = {
+      id: `listing-${this.listings.length + 1}`,
+      productId: input.productId,
+      channel: input.channel,
+      listedPrice: input.listedPrice,
+      isActive: true,
+      priceOverrideReason: input.priceOverrideReason ?? null,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+    this.listings.push(listing);
+    return listing;
+  }
+  async update(id: string, input: UpdateProductChannelListingInput): Promise<ProductChannelListing> {
+    const listing = this.listings.find((l) => l.id === id);
+    if (!listing) throw new Error("not found");
+    Object.assign(listing, input);
+    return listing;
+  }
+}
+
+class FakePriceCalculationRepository implements IPriceCalculationRepository {
+  constructor(public calculations: PriceCalculation[] = []) {}
+  async findById(id: string) {
+    return this.calculations.find((c) => c.id === id) ?? null;
+  }
+  async findRecent() {
+    return this.calculations;
+  }
+  async create(): Promise<PriceCalculation> {
+    throw new Error("not implemented in fake");
+  }
+}
+
+function makeCalculation(overrides: Partial<PriceCalculation> = {}): PriceCalculation {
+  return {
+    id: "calc-1",
+    weightGrams: 35,
+    printHours: 4.2,
+    printerId: "printer-1",
+    costParametersId: "cost-1",
+    suggestedTier: { ambiguous: false, tier: "M" },
+    totalCost: 12.5,
+    costBreakdown: {
+      filamentCost: 3,
+      energyCost: 1,
+      depreciationCost: 3,
+      failureReserveCost: 1,
+      packagingCost: 3,
+    },
+    channelPrices: [
+      { channel: "mercado_livre", suggestedPrice: 20, margin: 5 },
+      { channel: "shopee", suggestedPrice: 22, margin: 6 },
+    ],
+    createdBy: null,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  } as PriceCalculation;
+}
+
+function makeService() {
+  const products = new FakeProductRepository();
+  const productMedia = new FakeProductMediaRepository();
+  const productChannelListings = new FakeProductChannelListingRepository();
+  const priceCalculations = new FakePriceCalculationRepository([makeCalculation()]);
+
+  const service = new CatalogService({ products, productMedia, productChannelListings, priceCalculations });
+  return { service, products, productMedia, productChannelListings, priceCalculations };
+}
+
+describe("CatalogService.linkPriceCalculation", () => {
+  it("copia a sugestão inicial (porte e preço por canal) sem alterar o cálculo original", async () => {
+    const { service, products, productChannelListings, priceCalculations } = makeService();
+    const product = await products.create({
+      name: "Miniatura teste",
+      description: null,
+      category: "miniatura_colecionavel",
+      createdBy: null,
+    });
+
+    const originalCalculation = { ...priceCalculations.calculations[0] };
+
+    const updated = await service.linkPriceCalculation(product.id, "calc-1");
+
+    expect(updated.priceCalculationId).toBe("calc-1");
+    expect(updated.sizeTier).toBe("M");
+
+    const listings = await productChannelListings.findByProductId(product.id);
+    expect(listings).toHaveLength(2);
+    expect(listings.find((l) => l.channel === "mercado_livre")?.listedPrice).toBe(20);
+    expect(listings.find((l) => l.channel === "shopee")?.listedPrice).toBe(22);
+
+    expect(priceCalculations.calculations[0]).toEqual(originalCalculation);
+  });
+
+  it("não sobrescreve uma listagem de canal já existente", async () => {
+    const { service, products, productChannelListings } = makeService();
+    const product = await products.create({
+      name: "Miniatura teste",
+      description: null,
+      category: "miniatura_colecionavel",
+      createdBy: null,
+    });
+    await productChannelListings.create({ productId: product.id, channel: "mercado_livre", listedPrice: 30 });
+
+    await service.linkPriceCalculation(product.id, "calc-1");
+
+    const listings = await productChannelListings.findByProductId(product.id);
+    expect(listings.find((l) => l.channel === "mercado_livre")?.listedPrice).toBe(30);
+    expect(listings.find((l) => l.channel === "shopee")?.listedPrice).toBe(22);
+  });
+});
+
+describe("CatalogService.createChannelListing", () => {
+  it("rejeita preço divergente do sugerido sem motivo", async () => {
+    const { service, products } = makeService();
+    const product = await products.create({
+      name: "Miniatura teste",
+      description: null,
+      category: "miniatura_colecionavel",
+      createdBy: null,
+    });
+    // Vincula o cálculo sem copiar as listagens iniciais, para testar a
+    // criação de uma listagem nova nesse canal (sugestão: 20 para mercado_livre).
+    await products.update(product.id, { priceCalculationId: "calc-1" });
+
+    await expect(
+      service.createChannelListing({ productId: product.id, channel: "mercado_livre", listedPrice: 999 }),
+    ).rejects.toThrow(/price_override_reason/);
+  });
+
+  it("aceita preço divergente do sugerido quando o motivo é informado", async () => {
+    const { service, products } = makeService();
+    const product = await products.create({
+      name: "Miniatura teste",
+      description: null,
+      category: "miniatura_colecionavel",
+      createdBy: null,
+    });
+    await products.update(product.id, { priceCalculationId: "calc-1" });
+
+    const listing = await service.createChannelListing({
+      productId: product.id,
+      channel: "mercado_livre",
+      listedPrice: 999,
+      priceOverrideReason: "Promoção de lançamento",
+    });
+
+    expect(listing.listedPrice).toBe(999);
+    expect(listing.priceOverrideReason).toBe("Promoção de lançamento");
+  });
+
+  it("aceita qualquer preço quando a peça não tem cálculo vinculado", async () => {
+    const { service, products } = makeService();
+    const product = await products.create({
+      name: "Miniatura sem cálculo",
+      description: null,
+      category: "miniatura_colecionavel",
+      createdBy: null,
+    });
+
+    const listing = await service.createChannelListing({
+      productId: product.id,
+      channel: "amazon",
+      listedPrice: 50,
+    });
+
+    expect(listing.listedPrice).toBe(50);
+  });
+});
+
+describe("CatalogService.setCoverMedia", () => {
+  it("desmarca a capa anterior ao marcar uma nova", async () => {
+    const { service, products, productMedia } = makeService();
+    const product = await products.create({
+      name: "Miniatura teste",
+      description: null,
+      category: "miniatura_colecionavel",
+      createdBy: null,
+    });
+    const first = await service.addMedia({ productId: product.id, storagePath: "a.jpg", displayOrder: 0 });
+    const second = await service.addMedia({ productId: product.id, storagePath: "b.jpg", displayOrder: 1 });
+
+    await service.setCoverMedia(first.id, product.id);
+    let media = await productMedia.findByProductId(product.id);
+    expect(media.find((m) => m.id === first.id)?.isCover).toBe(true);
+
+    await service.setCoverMedia(second.id, product.id);
+    media = await productMedia.findByProductId(product.id);
+    expect(media.find((m) => m.id === first.id)?.isCover).toBe(false);
+    expect(media.find((m) => m.id === second.id)?.isCover).toBe(true);
+    expect(media.filter((m) => m.isCover)).toHaveLength(1);
+  });
+});

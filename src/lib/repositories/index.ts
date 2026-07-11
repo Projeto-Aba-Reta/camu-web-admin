@@ -17,6 +17,9 @@ import type { ILegalEntityStatusRepository } from "./interfaces/legal-entity-sta
 import type { ILegalMigrationTriggerRepository } from "./interfaces/legal-migration-trigger-repository.interface";
 import type { IRevenueSnapshotRepository } from "./interfaces/revenue-snapshot-repository.interface";
 import type { IDecisionLogEntryRepository } from "./interfaces/decision-log-entry-repository.interface";
+import type { IProductRepository } from "./interfaces/product-repository.interface";
+import type { IProductMediaRepository } from "./interfaces/product-media-repository.interface";
+import type { IProductChannelListingRepository } from "./interfaces/product-channel-listing-repository.interface";
 import { SupabaseRoleRepository } from "./supabase/supabase-role-repository";
 import { SupabaseSubRoleRepository } from "./supabase/supabase-sub-role-repository";
 import { SupabaseUserRepository } from "./supabase/supabase-user-repository";
@@ -34,6 +37,9 @@ import { SupabaseLegalEntityStatusRepository } from "./supabase/supabase-legal-e
 import { SupabaseLegalMigrationTriggerRepository } from "./supabase/supabase-legal-migration-trigger-repository";
 import { SupabaseRevenueSnapshotRepository } from "./supabase/supabase-revenue-snapshot-repository";
 import { SupabaseDecisionLogEntryRepository } from "./supabase/supabase-decision-log-entry-repository";
+import { SupabaseProductRepository } from "./supabase/supabase-product-repository";
+import { SupabaseProductMediaRepository } from "./supabase/supabase-product-media-repository";
+import { SupabaseProductChannelListingRepository } from "./supabase/supabase-product-channel-listing-repository";
 
 export interface Repositories {
   roles: IRoleRepository;
@@ -53,6 +59,9 @@ export interface Repositories {
   legalMigrationTriggers: ILegalMigrationTriggerRepository;
   revenueSnapshots: IRevenueSnapshotRepository;
   decisionLogEntries: IDecisionLogEntryRepository;
+  products: IProductRepository;
+  productMedia: IProductMediaRepository;
+  productChannelListings: IProductChannelListingRepository;
 }
 
 // Composition root: único ponto que muda para trocar de provedor de dados.
@@ -75,5 +84,8 @@ export function createRepositories(supabaseClient: SupabaseClient<Database>): Re
     legalMigrationTriggers: new SupabaseLegalMigrationTriggerRepository(supabaseClient),
     revenueSnapshots: new SupabaseRevenueSnapshotRepository(supabaseClient),
     decisionLogEntries: new SupabaseDecisionLogEntryRepository(supabaseClient),
+    products: new SupabaseProductRepository(supabaseClient),
+    productMedia: new SupabaseProductMediaRepository(supabaseClient),
+    productChannelListings: new SupabaseProductChannelListingRepository(supabaseClient),
   };
 }
