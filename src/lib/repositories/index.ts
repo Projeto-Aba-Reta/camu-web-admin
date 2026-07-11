@@ -20,6 +20,10 @@ import type { IDecisionLogEntryRepository } from "./interfaces/decision-log-entr
 import type { IProductRepository } from "./interfaces/product-repository.interface";
 import type { IProductMediaRepository } from "./interfaces/product-media-repository.interface";
 import type { IProductChannelListingRepository } from "./interfaces/product-channel-listing-repository.interface";
+import type { IMaterialRepository } from "./interfaces/material-repository.interface";
+import type { IMaterialStockMovementRepository } from "./interfaces/material-stock-movement-repository.interface";
+import type { IMaterialStockThresholdRepository } from "./interfaces/material-stock-threshold-repository.interface";
+import type { IProductStockMovementRepository } from "./interfaces/product-stock-movement-repository.interface";
 import { SupabaseRoleRepository } from "./supabase/supabase-role-repository";
 import { SupabaseSubRoleRepository } from "./supabase/supabase-sub-role-repository";
 import { SupabaseUserRepository } from "./supabase/supabase-user-repository";
@@ -40,6 +44,10 @@ import { SupabaseDecisionLogEntryRepository } from "./supabase/supabase-decision
 import { SupabaseProductRepository } from "./supabase/supabase-product-repository";
 import { SupabaseProductMediaRepository } from "./supabase/supabase-product-media-repository";
 import { SupabaseProductChannelListingRepository } from "./supabase/supabase-product-channel-listing-repository";
+import { SupabaseMaterialRepository } from "./supabase/supabase-material-repository";
+import { SupabaseMaterialStockMovementRepository } from "./supabase/supabase-material-stock-movement-repository";
+import { SupabaseMaterialStockThresholdRepository } from "./supabase/supabase-material-stock-threshold-repository";
+import { SupabaseProductStockMovementRepository } from "./supabase/supabase-product-stock-movement-repository";
 
 export interface Repositories {
   roles: IRoleRepository;
@@ -62,6 +70,10 @@ export interface Repositories {
   products: IProductRepository;
   productMedia: IProductMediaRepository;
   productChannelListings: IProductChannelListingRepository;
+  materials: IMaterialRepository;
+  materialStockMovements: IMaterialStockMovementRepository;
+  materialStockThresholds: IMaterialStockThresholdRepository;
+  productStockMovements: IProductStockMovementRepository;
 }
 
 // Composition root: único ponto que muda para trocar de provedor de dados.
@@ -87,5 +99,9 @@ export function createRepositories(supabaseClient: SupabaseClient<Database>): Re
     products: new SupabaseProductRepository(supabaseClient),
     productMedia: new SupabaseProductMediaRepository(supabaseClient),
     productChannelListings: new SupabaseProductChannelListingRepository(supabaseClient),
+    materials: new SupabaseMaterialRepository(supabaseClient),
+    materialStockMovements: new SupabaseMaterialStockMovementRepository(supabaseClient),
+    materialStockThresholds: new SupabaseMaterialStockThresholdRepository(supabaseClient),
+    productStockMovements: new SupabaseProductStockMovementRepository(supabaseClient),
   };
 }

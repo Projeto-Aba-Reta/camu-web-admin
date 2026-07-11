@@ -317,6 +317,172 @@ export type Database = {
           },
         ]
       }
+      material_stock_movements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          material_id: string
+          movement_type: string
+          notes: string | null
+          printer_id: string | null
+          product_id: string | null
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          material_id: string
+          movement_type: string
+          notes?: string | null
+          printer_id?: string | null
+          product_id?: string | null
+          quantity: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          material_id?: string
+          movement_type?: string
+          notes?: string | null
+          printer_id?: string | null
+          product_id?: string | null
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_stock_movements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_stock_movements_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "material_stock_balances"
+            referencedColumns: ["material_id"]
+          },
+          {
+            foreignKeyName: "material_stock_movements_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_stock_movements_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_balances"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "material_stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      material_stock_thresholds: {
+        Row: {
+          id: string
+          material_id: string
+          minimum_quantity: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          material_id: string
+          minimum_quantity: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          material_id?: string
+          minimum_quantity?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_stock_thresholds_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: true
+            referencedRelation: "material_stock_balances"
+            referencedColumns: ["material_id"]
+          },
+          {
+            foreignKeyName: "material_stock_thresholds_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: true
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_stock_thresholds_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materials: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          reference_cost: number
+          type: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          reference_cost: number
+          type: string
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          reference_cost?: number
+          type?: string
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materials_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mei_ceiling_parameters: {
         Row: {
           annual_ceiling: number
@@ -516,6 +682,13 @@ export type Database = {
             foreignKeyName: "product_channel_listings_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "product_stock_balances"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_channel_listings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -549,6 +722,75 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "product_media_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_balances"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_media_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_stock_movements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          material_stock_movement_id: string | null
+          movement_type: string
+          notes: string | null
+          product_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          material_stock_movement_id?: string | null
+          movement_type: string
+          notes?: string | null
+          product_id: string
+          quantity: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          material_stock_movement_id?: string | null
+          movement_type?: string
+          notes?: string | null
+          product_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_stock_movements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_stock_movements_material_stock_movement_id_fkey"
+            columns: ["material_stock_movement_id"]
+            isOneToOne: false
+            referencedRelation: "material_stock_movements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_balances"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_stock_movements_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
@@ -901,12 +1143,26 @@ export type Database = {
       }
     }
     Views: {
+      material_stock_balances: {
+        Row: {
+          balance: number | null
+          material_id: string | null
+        }
+        Relationships: []
+      }
       mei_ceiling_status: {
         Row: {
           annual_ceiling: number | null
           percentage_reached: number | null
           revenue_last_12_months: number | null
           year: number | null
+        }
+        Relationships: []
+      }
+      product_stock_balances: {
+        Row: {
+          balance: number | null
+          product_id: string | null
         }
         Relationships: []
       }
