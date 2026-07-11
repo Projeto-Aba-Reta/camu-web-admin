@@ -22,3 +22,24 @@ export class UserAlreadyExistsError extends Error {
     this.name = "UserAlreadyExistsError";
   }
 }
+
+export class TitularRequiredForMeiError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TitularRequiredForMeiError";
+  }
+}
+
+export class DuplicateRevenueSnapshotError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DuplicateRevenueSnapshotError";
+  }
+}
+
+export class MigrationTriggerRevertRequiresNoteError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "MigrationTriggerRevertRequiresNoteError";
+  }
+}

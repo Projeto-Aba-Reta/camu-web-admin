@@ -10,7 +10,9 @@ export const areaRoutes: Record<string, AreaRoute> = {
   // padrão da área; configuração e histórico ficam em sub-rotas acessadas
   // por link dentro da própria área, não como itens de sidebar (design.md,
   // decisão 4). Produção também usa a mesma entrada de sidebar para
-  // executar cálculos, mesmo sem acesso à configuração de parâmetros.
+  // executar cálculos, mesmo sem acesso à configuração de parâmetros — até
+  // catalogo-telas assumir a rota própria de /producao.
   financeiro: { href: "/financeiro/precificacao/calcular" },
   producao: { href: "/financeiro/precificacao/calcular" },
+  societario: { href: "/societario/acordo" },
 };

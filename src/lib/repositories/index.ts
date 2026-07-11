@@ -11,6 +11,12 @@ import type { IPrinterRepository } from "./interfaces/printer-repository.interfa
 import type { IChannelFeeRepository } from "./interfaces/channel-fee-repository.interface";
 import type { ISizeTierRangeRepository } from "./interfaces/size-tier-range-repository.interface";
 import type { IPriceCalculationRepository } from "./interfaces/price-calculation-repository.interface";
+import type { IPartnershipAgreementRepository } from "./interfaces/partnership-agreement-repository.interface";
+import type { ICapitalContributionRepository } from "./interfaces/capital-contribution-repository.interface";
+import type { ILegalEntityStatusRepository } from "./interfaces/legal-entity-status-repository.interface";
+import type { ILegalMigrationTriggerRepository } from "./interfaces/legal-migration-trigger-repository.interface";
+import type { IRevenueSnapshotRepository } from "./interfaces/revenue-snapshot-repository.interface";
+import type { IDecisionLogEntryRepository } from "./interfaces/decision-log-entry-repository.interface";
 import { SupabaseRoleRepository } from "./supabase/supabase-role-repository";
 import { SupabaseSubRoleRepository } from "./supabase/supabase-sub-role-repository";
 import { SupabaseUserRepository } from "./supabase/supabase-user-repository";
@@ -22,6 +28,12 @@ import { SupabasePrinterRepository } from "./supabase/supabase-printer-repositor
 import { SupabaseChannelFeeRepository } from "./supabase/supabase-channel-fee-repository";
 import { SupabaseSizeTierRangeRepository } from "./supabase/supabase-size-tier-range-repository";
 import { SupabasePriceCalculationRepository } from "./supabase/supabase-price-calculation-repository";
+import { SupabasePartnershipAgreementRepository } from "./supabase/supabase-partnership-agreement-repository";
+import { SupabaseCapitalContributionRepository } from "./supabase/supabase-capital-contribution-repository";
+import { SupabaseLegalEntityStatusRepository } from "./supabase/supabase-legal-entity-status-repository";
+import { SupabaseLegalMigrationTriggerRepository } from "./supabase/supabase-legal-migration-trigger-repository";
+import { SupabaseRevenueSnapshotRepository } from "./supabase/supabase-revenue-snapshot-repository";
+import { SupabaseDecisionLogEntryRepository } from "./supabase/supabase-decision-log-entry-repository";
 
 export interface Repositories {
   roles: IRoleRepository;
@@ -35,6 +47,12 @@ export interface Repositories {
   channelFees: IChannelFeeRepository;
   sizeTierRanges: ISizeTierRangeRepository;
   priceCalculations: IPriceCalculationRepository;
+  partnershipAgreements: IPartnershipAgreementRepository;
+  capitalContributions: ICapitalContributionRepository;
+  legalEntityStatus: ILegalEntityStatusRepository;
+  legalMigrationTriggers: ILegalMigrationTriggerRepository;
+  revenueSnapshots: IRevenueSnapshotRepository;
+  decisionLogEntries: IDecisionLogEntryRepository;
 }
 
 // Composition root: único ponto que muda para trocar de provedor de dados.
@@ -51,5 +69,11 @@ export function createRepositories(supabaseClient: SupabaseClient<Database>): Re
     channelFees: new SupabaseChannelFeeRepository(supabaseClient),
     sizeTierRanges: new SupabaseSizeTierRangeRepository(supabaseClient),
     priceCalculations: new SupabasePriceCalculationRepository(supabaseClient),
+    partnershipAgreements: new SupabasePartnershipAgreementRepository(supabaseClient),
+    capitalContributions: new SupabaseCapitalContributionRepository(supabaseClient),
+    legalEntityStatus: new SupabaseLegalEntityStatusRepository(supabaseClient),
+    legalMigrationTriggers: new SupabaseLegalMigrationTriggerRepository(supabaseClient),
+    revenueSnapshots: new SupabaseRevenueSnapshotRepository(supabaseClient),
+    decisionLogEntries: new SupabaseDecisionLogEntryRepository(supabaseClient),
   };
 }

@@ -14,6 +14,7 @@
     "db:migration:new": "supabase migration new",
     "seed-roles": "tsx --conditions=react-server scripts/seed-roles.ts",
     "seed-pricing": "tsx --conditions=react-server scripts/seed-pricing.ts",
+    "seed-governance": "tsx --conditions=react-server scripts/seed-governance.ts",
     "test": "vitest"
   },
   "dependencies": {

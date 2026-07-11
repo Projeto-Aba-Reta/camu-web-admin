@@ -19,6 +19,14 @@ export const AUDIT_ACTIONS = {
   INVITE_RESEND: "invite.resend",
   INVITE_CANCEL: "invite.cancel",
   SESSION_REVOKE: "session.revoke",
+  PARTNERSHIP_AGREEMENT_CREATE: "partnership_agreement.create",
+  CAPITAL_CONTRIBUTION_CREATE: "capital_contribution.create",
+  LEGAL_ENTITY_STATUS_CREATE: "legal_entity_status.create",
+  LEGAL_MIGRATION_TRIGGER_UPDATE: "legal_migration_trigger.update",
+  REVENUE_SNAPSHOT_CREATE: "revenue_snapshot.create",
+  REVENUE_SNAPSHOT_UPDATE: "revenue_snapshot.update",
+  MEI_CEILING_PARAMETER_UPSERT: "mei_ceiling_parameter.upsert",
+  DECISION_LOG_ENTRY_CREATE: "decision_log_entry.create",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
