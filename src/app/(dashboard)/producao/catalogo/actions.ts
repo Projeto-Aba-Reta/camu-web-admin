@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createRepositories, type Repositories } from "@/lib/repositories";
 import { CatalogService } from "@/lib/services/catalog-service";
+import { SlicingSheetService } from "@/lib/services/slicing-sheet-service";
 import { requireCatalogWrite, requireChannelListingWrite } from "@/lib/auth/catalog-access";
 import type { ProductCategory, ProductMedia, ProductStatus } from "@/types/catalog";
 import type { MarketplaceChannel } from "@/types/pricing";
@@ -261,5 +262,45 @@ export async function upsertChannelListingAction(
     return { ok: true };
   } catch (error) {
     return { ok: false, error: errorMessage(error, "Não foi possível atualizar a disponibilidade do canal.") };
+  }
+}
+
+// =============================================================================
+// Ficha de fatiamento
+// =============================================================================
+
+export interface SlicingSheetMaterialActionInput {
+  materialId: string;
+  pieceGrams: number;
+  supportGrams: number;
+}
+
+export interface SlicingSheetActionInput {
+  printerId: string;
+  printHours: number;
+  materials: SlicingSheetMaterialActionInput[];
+}
+
+export async function upsertSlicingSheetAction(
+  productId: string,
+  input: SlicingSheetActionInput,
+): Promise<ActionResult> {
+  try {
+    const user = await requireCatalogWrite();
+    const repositories = await getRepositories();
+    const slicingSheetService = new SlicingSheetService(repositories);
+
+    await slicingSheetService.upsertSheet({
+      productId,
+      printerId: input.printerId,
+      printHours: input.printHours,
+      materials: input.materials,
+      createdBy: user.id,
+    });
+
+    revalidatePath(productPath(productId));
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: errorMessage(error, "Não foi possível salvar a ficha de fatiamento.") };
   }
 }

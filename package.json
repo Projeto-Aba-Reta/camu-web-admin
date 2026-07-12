@@ -17,7 +17,9 @@
     "seed-governance": "tsx --conditions=react-server scripts/seed-governance.ts",
     "seed-inventory": "tsx --conditions=react-server scripts/seed-inventory.ts",
     "seed-catalog": "tsx --conditions=react-server scripts/seed-catalog.ts",
-    "seed-all": "npm run seed-roles && npm run seed-pricing && npm run seed-inventory && npm run seed-catalog && npm run seed-governance",
+    "seed-slicing-sheets": "tsx --conditions=react-server scripts/seed-slicing-sheets.ts",
+    "seed-all": "npm run seed-roles && npm run seed-pricing && npm run seed-inventory && npm run seed-catalog && npm run seed-slicing-sheets && npm run seed-governance",
+    "dev:cron": "tsx --conditions=react-server scripts/run-print-queue-cron.ts",
     "test": "vitest"
   },
   "dependencies": {

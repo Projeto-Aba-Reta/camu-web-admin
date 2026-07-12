@@ -608,6 +608,120 @@ export type Database = {
           },
         ]
       }
+      print_queue_item_materials: {
+        Row: {
+          id: string
+          material_id: string
+          piece_grams: number
+          print_queue_item_id: string
+          support_grams: number
+        }
+        Insert: {
+          id?: string
+          material_id: string
+          piece_grams?: number
+          print_queue_item_id: string
+          support_grams?: number
+        }
+        Update: {
+          id?: string
+          material_id?: string
+          piece_grams?: number
+          print_queue_item_id?: string
+          support_grams?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print_queue_item_materials_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "material_stock_balances"
+            referencedColumns: ["material_id"]
+          },
+          {
+            foreignKeyName: "print_queue_item_materials_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print_queue_item_materials_print_queue_item_id_fkey"
+            columns: ["print_queue_item_id"]
+            isOneToOne: false
+            referencedRelation: "print_queue_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      print_queue_items: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expected_finish_at: string | null
+          finished_at: string | null
+          id: string
+          printer_id: string | null
+          product_id: string
+          quantity: number
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expected_finish_at?: string | null
+          finished_at?: string | null
+          id?: string
+          printer_id?: string | null
+          product_id: string
+          quantity: number
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expected_finish_at?: string | null
+          finished_at?: string | null
+          id?: string
+          printer_id?: string | null
+          product_id?: string
+          quantity?: number
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print_queue_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print_queue_items_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "print_queue_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_balances"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "print_queue_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       printers: {
         Row: {
           created_by: string | null
@@ -729,6 +843,111 @@ export type Database = {
           },
           {
             foreignKeyName: "product_media_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_slicing_sheet_materials: {
+        Row: {
+          id: string
+          material_id: string
+          piece_grams: number
+          slicing_sheet_id: string
+          support_grams: number
+        }
+        Insert: {
+          id?: string
+          material_id: string
+          piece_grams?: number
+          slicing_sheet_id: string
+          support_grams?: number
+        }
+        Update: {
+          id?: string
+          material_id?: string
+          piece_grams?: number
+          slicing_sheet_id?: string
+          support_grams?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_slicing_sheet_materials_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "material_stock_balances"
+            referencedColumns: ["material_id"]
+          },
+          {
+            foreignKeyName: "product_slicing_sheet_materials_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_slicing_sheet_materials_slicing_sheet_id_fkey"
+            columns: ["slicing_sheet_id"]
+            isOneToOne: false
+            referencedRelation: "product_slicing_sheets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_slicing_sheets: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          print_hours: number
+          printer_id: string
+          product_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          print_hours: number
+          printer_id: string
+          product_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          print_hours?: number
+          printer_id?: string
+          product_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_slicing_sheets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_slicing_sheets_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_slicing_sheets_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_balances"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_slicing_sheets_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"

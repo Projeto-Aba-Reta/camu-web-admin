@@ -7,6 +7,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ProductForm } from "@/components/catalogo/product-form";
 import { MediaManager } from "@/components/catalogo/media-manager";
 import { ChannelListingForm } from "@/components/catalogo/channel-listing-form";
+import { SlicingSheetSection } from "@/components/catalogo/slicing-sheet-section";
+import { SlicingSheetService } from "@/lib/services/slicing-sheet-service";
 import type { HistoricoRow } from "@/components/precificacao/historico-tabela";
 
 interface ProductPageProps {
@@ -22,14 +24,20 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const product = await repositories.products.findById(productId);
   if (!product) notFound();
 
-  const [media, channelListings, linkedCalculation, printers, recentCalculations, allPrinters] = await Promise.all([
-    repositories.productMedia.findByProductId(productId),
-    repositories.productChannelListings.findByProductId(productId),
-    product.priceCalculationId ? repositories.priceCalculations.findById(product.priceCalculationId) : null,
-    repositories.printers.findActive(),
-    repositories.priceCalculations.findRecent(200),
-    repositories.printers.findAll(),
-  ]);
+  const [media, channelListings, linkedCalculation, printers, recentCalculations, allPrinters, materials] =
+    await Promise.all([
+      repositories.productMedia.findByProductId(productId),
+      repositories.productChannelListings.findByProductId(productId),
+      product.priceCalculationId ? repositories.priceCalculations.findById(product.priceCalculationId) : null,
+      repositories.printers.findActive(),
+      repositories.priceCalculations.findRecent(200),
+      repositories.printers.findAll(),
+      repositories.materials.findAll(),
+    ]);
+
+  const slicingSheetService = new SlicingSheetService(repositories);
+  const slicingSheetRows = await slicingSheetService.listByProduct(productId);
+  const filamentMaterials = materials.filter((material) => material.type === "filamento");
 
   const printerNameById = new Map(allPrinters.map((printer) => [printer.id, printer.name]));
   const recentCalculationRows: HistoricoRow[] = recentCalculations.map((calculation) => ({
@@ -53,6 +61,14 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       />
 
       <MediaManager productId={product.id} initialMedia={media} canWrite={canWrite} />
+
+      <SlicingSheetSection
+        productId={product.id}
+        rows={slicingSheetRows}
+        printers={printers}
+        materials={filamentMaterials}
+        canWrite={canWrite}
+      />
 
       <ChannelListingForm
         productId={product.id}

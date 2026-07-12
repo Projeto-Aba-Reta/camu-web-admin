@@ -8,9 +8,9 @@ SETUP_STAMP := .dev-setup-complete
 .PHONY: help dev install env docker-check supabase-up supabase-sync-env seed db-reset stop status clean
 
 help:
-	@echo "make dev       - setup completo (deps, Supabase local, migrations na 1a vez, seed de dados de exemplo) e inicia o Next.js"
+	@echo "make dev       - setup completo (deps, Supabase local, migrations na 1a vez, seed de dados de exemplo) e inicia o Next.js + a rotina de conclusao automatica da fila de impressao"
 	@echo "make db-reset  - reaplica todas as migrations do zero (apaga dados locais) e roda o seed de novo"
-	@echo "make seed      - roda so o seed de dados de exemplo: roles, socios, precificacao, estoque, catalogo e societario (idempotente, nao duplica)"
+	@echo "make seed      - roda so o seed de dados de exemplo: roles, socios, precificacao, estoque, catalogo, fichas de fatiamento e societario (idempotente, nao duplica)"
 	@echo "make stop      - para os containers do Supabase local"
 	@echo "make status    - mostra status/URLs do Supabase local"
 	@echo "make clean     - para containers e remove node_modules/.next"
@@ -64,7 +64,11 @@ dev: install env docker-check supabase-up supabase-sync-env
 	@echo ""
 	@port=$$(grep -m1 '^PORT=' .env.local | cut -d= -f2); \
 	echo ">> Studio: http://127.0.0.1:54323  |  App: http://localhost:$${port:-3000}"
+	@echo ">> Rotina de conclusao automatica da fila de impressao rodando em paralelo (npm run dev:cron)"
 	@echo ""
+	@npx tsx --conditions=react-server scripts/run-print-queue-cron.ts & \
+	cron_pid=$$!; \
+	trap 'kill $$cron_pid 2>/dev/null' EXIT INT TERM; \
 	npm run dev
 
 # Idempotente: cada script upserta por chave natural propria (slug, nome,
@@ -80,6 +84,7 @@ seed: install env
 	npm run seed-pricing
 	npm run seed-inventory
 	npm run seed-catalog
+	npm run seed-slicing-sheets
 	npm run seed-governance
 
 db-reset: docker-check supabase-up

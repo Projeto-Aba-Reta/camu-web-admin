@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/producao/catalogo", label: "Catálogo" },
   { href: "/producao/estoque/insumos", label: "Estoque de insumos" },
   { href: "/producao/estoque/pecas", label: "Estoque de peças" },
+  { href: "/producao/fila-de-impressao", label: "Fila de impressão" },
 ];
 
 export function ProducaoNav() {

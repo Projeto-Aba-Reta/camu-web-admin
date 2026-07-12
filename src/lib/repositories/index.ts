@@ -24,6 +24,8 @@ import type { IMaterialRepository } from "./interfaces/material-repository.inter
 import type { IMaterialStockMovementRepository } from "./interfaces/material-stock-movement-repository.interface";
 import type { IMaterialStockThresholdRepository } from "./interfaces/material-stock-threshold-repository.interface";
 import type { IProductStockMovementRepository } from "./interfaces/product-stock-movement-repository.interface";
+import type { IPrintQueueRepository } from "./interfaces/print-queue-repository.interface";
+import type { ISlicingSheetRepository } from "./interfaces/slicing-sheet-repository.interface";
 import { SupabaseRoleRepository } from "./supabase/supabase-role-repository";
 import { SupabaseSubRoleRepository } from "./supabase/supabase-sub-role-repository";
 import { SupabaseUserRepository } from "./supabase/supabase-user-repository";
@@ -48,6 +50,8 @@ import { SupabaseMaterialRepository } from "./supabase/supabase-material-reposit
 import { SupabaseMaterialStockMovementRepository } from "./supabase/supabase-material-stock-movement-repository";
 import { SupabaseMaterialStockThresholdRepository } from "./supabase/supabase-material-stock-threshold-repository";
 import { SupabaseProductStockMovementRepository } from "./supabase/supabase-product-stock-movement-repository";
+import { SupabasePrintQueueRepository } from "./supabase/supabase-print-queue-repository";
+import { SupabaseSlicingSheetRepository } from "./supabase/supabase-slicing-sheet-repository";
 
 export interface Repositories {
   roles: IRoleRepository;
@@ -74,6 +78,8 @@ export interface Repositories {
   materialStockMovements: IMaterialStockMovementRepository;
   materialStockThresholds: IMaterialStockThresholdRepository;
   productStockMovements: IProductStockMovementRepository;
+  printQueueItems: IPrintQueueRepository;
+  slicingSheets: ISlicingSheetRepository;
 }
 
 // Composition root: único ponto que muda para trocar de provedor de dados.
@@ -103,5 +109,7 @@ export function createRepositories(supabaseClient: SupabaseClient<Database>): Re
     materialStockMovements: new SupabaseMaterialStockMovementRepository(supabaseClient),
     materialStockThresholds: new SupabaseMaterialStockThresholdRepository(supabaseClient),
     productStockMovements: new SupabaseProductStockMovementRepository(supabaseClient),
+    printQueueItems: new SupabasePrintQueueRepository(supabaseClient),
+    slicingSheets: new SupabaseSlicingSheetRepository(supabaseClient),
   };
 }
