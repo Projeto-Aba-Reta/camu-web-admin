@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,6 +22,7 @@ interface ProductListProps {
 }
 
 export function ProductList({ products }: ProductListProps) {
+  const router = useRouter();
   const [categoryFilter, setCategoryFilter] = useState("");
   const [tierFilter, setTierFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -40,7 +42,11 @@ export function ProductList({ products }: ProductListProps) {
         accessorKey: "name",
         header: "Nome",
         cell: ({ row }) => (
-          <Link href={`/producao/catalogo/${row.original.id}`} className="font-medium hover:underline">
+          <Link
+            href={`/producao/catalogo/${row.original.id}`}
+            className="font-medium hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
             {row.original.name}
           </Link>
         ),
@@ -146,7 +152,11 @@ export function ProductList({ products }: ProductListProps) {
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer"
+                  onClick={() => router.push(`/producao/catalogo/${row.original.id}`)}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                   ))}
