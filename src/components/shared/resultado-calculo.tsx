@@ -44,29 +44,29 @@ export function ResultadoCalculo({
       <div className="rounded-md border p-4">
         <h3 className="mb-3 text-sm font-semibold text-foreground">Custo da peça</h3>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-3">
-          <div className="flex justify-between gap-2 sm:contents">
+          <div className="flex justify-between gap-2">
             <dt className="text-muted-foreground">Filamento</dt>
             <dd>{formatCurrency(costBreakdown.filamentCost)}</dd>
           </div>
-          <div className="flex justify-between gap-2 sm:contents">
+          <div className="flex justify-between gap-2">
             <dt className="text-muted-foreground">Energia</dt>
             <dd>{formatCurrency(costBreakdown.energyCost)}</dd>
           </div>
-          <div className="flex justify-between gap-2 sm:contents">
+          <div className="flex justify-between gap-2">
             <dt className="text-muted-foreground">Depreciação</dt>
             <dd>{formatCurrency(costBreakdown.depreciationCost)}</dd>
           </div>
-          <div className="flex justify-between gap-2 sm:contents">
+          <div className="flex justify-between gap-2">
             <dt className="text-muted-foreground">Reserva p/ falha</dt>
             <dd>{formatCurrency(costBreakdown.failureReserveCost)}</dd>
           </div>
-          <div className="flex justify-between gap-2 sm:contents">
+          <div className="flex justify-between gap-2">
             <dt className="text-muted-foreground">Embalagem</dt>
             <dd>{formatCurrency(costBreakdown.packagingCost)}</dd>
           </div>
-          <div className="flex justify-between gap-2 border-t pt-1 font-semibold sm:contents">
-            <dt className="border-t pt-1 sm:border-0 sm:pt-0">Total</dt>
-            <dd className="border-t pt-1 sm:border-0 sm:pt-0">{formatCurrency(totalCost)}</dd>
+          <div className="flex justify-between gap-2 border-t pt-1 font-semibold">
+            <dt>Total</dt>
+            <dd>{formatCurrency(totalCost)}</dd>
           </div>
         </dl>
       </div>

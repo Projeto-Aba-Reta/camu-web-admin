@@ -8,7 +8,7 @@ SETUP_STAMP := .dev-setup-complete
 .PHONY: help dev install env docker-check supabase-up supabase-sync-env seed db-reset stop status clean
 
 help:
-	@echo "make dev       - setup completo (deps, Supabase local, migrations na 1a vez, seed de dados de exemplo) e inicia o Next.js + a rotina de conclusao automatica da fila de impressao"
+	@echo "make dev       - setup completo (deps, Supabase local, migrations pendentes sempre aplicadas, seed de dados de exemplo) e inicia o Next.js + a rotina de conclusao automatica da fila de impressao"
 	@echo "make db-reset  - reaplica todas as migrations do zero (apaga dados locais) e roda o seed de novo"
 	@echo "make seed      - roda so o seed de dados de exemplo: roles, socios, precificacao, estoque, catalogo, fichas de fatiamento e societario (idempotente, nao duplica)"
 	@echo "make stop      - para os containers do Supabase local"
@@ -58,7 +58,8 @@ dev: install env docker-check supabase-up supabase-sync-env
 		npx supabase db reset; \
 		touch $(SETUP_STAMP); \
 	else \
-		echo ">> Ambiente ja inicializado, pulando reset do banco (use 'make db-reset' para reaplicar migrations)."; \
+		echo ">> Ambiente ja inicializado, aplicando migrations pendentes (se houver)..."; \
+		npx supabase migration up; \
 	fi
 	$(MAKE) seed
 	@echo ""

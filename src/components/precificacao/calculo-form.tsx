@@ -40,7 +40,7 @@ export function CalculoForm({ printers, products = [], onCalculated }: CalculoFo
 
   const form = useForm<z.input<typeof calculoFormSchema>, unknown, CalculoFormValues>({
     resolver: zodResolver(calculoFormSchema),
-    defaultValues: { weightGrams: undefined, printHours: undefined, printerId: "", productId: "" },
+    defaultValues: { weightGrams: "", printHours: "", printerId: "", productId: "" },
   });
 
   const usingSlicingSheet = Boolean(form.watch("productId"));
