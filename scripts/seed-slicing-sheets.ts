@@ -107,9 +107,12 @@ async function main() {
   );
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error("\nErro ao rodar o seed:", error);
-    process.exit(1);
-  });
+// Sem process.exit() forçado: o cliente Supabase (undici) drena o pool e o
+// Node encerra sozinho. Chamar process.exit() aqui dispara, de forma
+// intermitente no Windows, o assertion do libuv
+// (!(handle->flags & UV_HANDLE_CLOSING), src\win\async.c) por causa dos
+// handles async do loader do tsx, o que abortava o `make dev`.
+main().catch((error) => {
+  console.error("\nErro ao rodar o seed:", error);
+  process.exitCode = 1;
+});
