@@ -184,6 +184,47 @@ export type Database = {
           },
         ]
       }
+      commemorative_dates_marketing: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+          rule_type: string
+          rule_value: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          rule_type: string
+          rule_value: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          rule_type?: string
+          rule_value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commemorative_dates_marketing_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cost_parameters: {
         Row: {
           average_power_watts: number
@@ -906,6 +947,13 @@ export type Database = {
             foreignKeyName: "product_components_component_product_id_fkey"
             columns: ["component_product_id"]
             isOneToOne: false
+            referencedRelation: "product_stock_balances"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_components_component_product_id_fkey"
+            columns: ["component_product_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -915,6 +963,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_components_parent_product_id_fkey"
+            columns: ["parent_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_balances"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "product_components_parent_product_id_fkey"
@@ -1326,6 +1381,129 @@ export type Database = {
           valid_from?: string
         }
         Relationships: []
+      }
+      social_content_plan_item_channels: {
+        Row: {
+          channel: string
+          item_id: string
+        }
+        Insert: {
+          channel: string
+          item_id: string
+        }
+        Update: {
+          channel?: string
+          item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_content_plan_item_channels_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "social_content_plan_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_content_plan_items: {
+        Row: {
+          commemorative_date_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          responsible_id: string | null
+          status: string
+          target_date: string | null
+          title: string
+        }
+        Insert: {
+          commemorative_date_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          responsible_id?: string | null
+          status?: string
+          target_date?: string | null
+          title: string
+        }
+        Update: {
+          commemorative_date_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          responsible_id?: string | null
+          status?: string
+          target_date?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_content_plan_items_commemorative_date_id_fkey"
+            columns: ["commemorative_date_id"]
+            isOneToOne: false
+            referencedRelation: "commemorative_dates_marketing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_content_plan_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_content_plan_items_responsible_id_fkey"
+            columns: ["responsible_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_content_plan_status_events: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          from_status: string
+          id: string
+          item_id: string
+          to_status: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          from_status: string
+          id?: string
+          item_id: string
+          to_status: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          from_status?: string
+          id?: string
+          item_id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_content_plan_status_events_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_content_plan_status_events_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "social_content_plan_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sub_roles: {
         Row: {

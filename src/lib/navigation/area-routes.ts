@@ -15,4 +15,7 @@ export const areaRoutes: Record<string, AreaRoute> = {
   // área de Produção.
   producao: { href: "/producao/catalogo" },
   societario: { href: "/societario/acordo" },
+  // Marketplace/Vendas: o calendário de marketing é, por ora, a única tela
+  // da área e portanto sua página padrão.
+  "marketplace-vendas": { href: "/marketplace/calendario" },
 };
