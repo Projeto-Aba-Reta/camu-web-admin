@@ -1,4 +1,4 @@
-import type { ProductCategory, ProductStatus } from "@/types/catalog";
+import type { ProductCategory, ProductStatus, ProductType } from "@/types/catalog";
 import type { SizeTier } from "@/types/pricing";
 
 // Categorias seguem camu-docs/06-marketplace/estrategia-canais.md (ver
@@ -18,6 +18,11 @@ export const STATUS_LABEL: Record<ProductStatus, string> = {
 };
 
 export const SIZE_TIER_LABEL: Record<SizeTier, string> = { P: "Pequena (P)", M: "Média (M)", G: "Grande (G)" };
+
+export const PRODUCT_TYPE_LABEL: Record<ProductType, string> = {
+  simples: "Simples (peça única)",
+  composta: "Composta (kit de outras peças)",
+};
 
 // Referência de negócio fixa (ver design.md decisão 3 e
 // camu-docs/02-roadmap/fase-4-assinatura-recorrente.md): 15-20 peças ativas

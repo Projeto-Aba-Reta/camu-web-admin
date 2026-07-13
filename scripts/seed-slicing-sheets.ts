@@ -72,6 +72,10 @@ async function main() {
       console.log(`  - peça "${product.name}": cálculo vinculado não encontrado — ficha não gerada.`);
       continue;
     }
+    if (calculation.weightGrams === null || calculation.printHours === null || calculation.printerId === null) {
+      console.log(`  - peça "${product.name}": cálculo vinculado é de peça composta (sem peso/tempo/impressora) — ficha não gerada.`);
+      continue;
+    }
 
     const printer = printerById.get(calculation.printerId);
     if (!printer) {

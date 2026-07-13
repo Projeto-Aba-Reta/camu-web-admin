@@ -83,25 +83,26 @@ async function seedCostParameters(
     return;
   }
 
-  // Filamento ~R$90/kg: dentro da faixa de mercado pesquisada para PLA
-  // genérico no Brasil em jul/2026 (~R$90-120/kg), mantido no piso da faixa
-  // por já refletir "genérico" (mesmo termo usado em seed-inventory.ts).
-  // Energia ~R$0,75/kWh: pesquisado para a tarifa residencial da Enel SP em
-  // jul/2026, que varia de ~R$0,67/kWh (faixa de consumo com 18% de ICMS,
-  // sem bandeira) a ~R$1,00/kWh (faixas de consumo maiores) — usado o ponto
-  // médio dessa faixa em vez do extremo, já que o ateliê é uma operação
-  // doméstica de baixo consumo mas não necessariamente na faixa mais barata.
-  // Consumo médio ~150W: dentro da faixa pesquisada para a Ender-3 V3 SE em
-  // operação (~120-160W; consumo máximo de pico da fonte é 350W, mas a
-  // impressão típica não usa a capacidade máxima). Reserva de falha 12,5%
-  // (ponto médio de "10-15%" citado em custo-por-peca.md). Embalagem
-  // confirmada com o Owner/Sócio (task 1.2).
+  // Filamento R$130/kg e energia R$0,80/kWh: confirmados na sessão de
+  // alinhamento de precificação de 12/07/2026 (Caixa Mandala / Leon Judoca),
+  // substituindo os valores anteriores de pesquisa de mercado (R$90/kg e
+  // R$0,75/kWh) — ver openspec/changes/precificacao-produtos-compostos-e-
+  // ficha-de-fatiamento/proposal.md. Consumo médio ~150W: dentro da faixa
+  // pesquisada para a Ender-3 V3 SE em operação (~120-160W; consumo máximo
+  // de pico da fonte é 350W, mas a impressão típica não usa a capacidade
+  // máxima). Reserva de falha 12,5% (ponto médio de "10-15%" citado em
+  // custo-por-peca.md, mesma faixa reafirmada na sessão de 12/07/2026).
+  // Embalagem R$3 confirmada com o Owner/Sócio (task 1.2) — ainda pendente
+  // de reconfirmação formal (ver Open Questions do design.md desta mudança).
+  // Margem-alvo B2C inicial em 0%: preserva o preço de equilíbrio já em uso
+  // até o Financeiro definir um valor-alvo (ver design.md, Open Questions).
   await repositories.costParameters.create({
-    filamentCostPerKg: 90,
-    energyCostPerKwh: 0.75,
+    filamentCostPerKg: 130,
+    energyCostPerKwh: 0.8,
     averagePowerWatts: 150,
     failureReservePct: 0.125,
     packagingCost: 3,
+    targetMarginPct: 0,
     createdBy: ownerId,
   });
   console.log("  - cost_parameters criado.");

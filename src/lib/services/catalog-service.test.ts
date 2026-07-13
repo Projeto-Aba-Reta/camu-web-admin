@@ -15,8 +15,17 @@ import type {
   UpdateProductChannelListingInput,
 } from "@/lib/repositories/interfaces/product-channel-listing-repository.interface";
 import type { IPriceCalculationRepository } from "@/lib/repositories/interfaces/price-calculation-repository.interface";
-import type { Product, ProductChannelListing, ProductMedia } from "@/types/catalog";
+import type {
+  CreateProductComponentInput,
+  IProductComponentRepository,
+} from "@/lib/repositories/interfaces/product-component-repository.interface";
+import type {
+  ISlicingSheetRepository,
+  UpsertSlicingSheetInput,
+} from "@/lib/repositories/interfaces/slicing-sheet-repository.interface";
+import type { Product, ProductChannelListing, ProductComponent, ProductMedia } from "@/types/catalog";
 import type { PriceCalculation } from "@/types/pricing";
+import type { SlicingSheet } from "@/types/slicing-sheet";
 
 class FakeProductRepository implements IProductRepository {
   public products: Product[] = [];
@@ -35,6 +44,7 @@ class FakeProductRepository implements IProductRepository {
       category: input.category,
       sizeTier: null,
       status: "rascunho",
+      productType: input.productType ?? "simples",
       priceCalculationId: null,
       createdBy: input.createdBy,
       createdAt: "2026-01-01T00:00:00.000Z",
@@ -138,6 +148,8 @@ function makeCalculation(overrides: Partial<PriceCalculation> = {}): PriceCalcul
     weightGrams: 35,
     printHours: 4.2,
     printerId: "printer-1",
+    productId: null,
+    slicingSheetId: null,
     costParametersId: "cost-1",
     suggestedTier: { ambiguous: false, tier: "M" },
     totalCost: 12.5,
@@ -152,10 +164,55 @@ function makeCalculation(overrides: Partial<PriceCalculation> = {}): PriceCalcul
       { channel: "mercado_livre", suggestedPrice: 20, margin: 5 },
       { channel: "shopee", suggestedPrice: 22, margin: 6 },
     ],
+    b2bPrices: [],
+    componentBreakdown: null,
     createdBy: null,
     createdAt: "2026-01-01T00:00:00.000Z",
     ...overrides,
   } as PriceCalculation;
+}
+
+class FakeProductComponentRepository implements IProductComponentRepository {
+  public components: ProductComponent[] = [];
+
+  async findByParentId(parentProductId: string) {
+    return this.components.filter((c) => c.parentProductId === parentProductId);
+  }
+  async findAllByParentIds(parentProductIds: string[]) {
+    return this.components.filter((c) => parentProductIds.includes(c.parentProductId));
+  }
+  async create(input: CreateProductComponentInput): Promise<ProductComponent> {
+    const component: ProductComponent = {
+      id: `pc-${this.components.length + 1}`,
+      parentProductId: input.parentProductId,
+      componentProductId: input.componentProductId,
+      quantity: input.quantity,
+      createdBy: input.createdBy,
+      createdAt: "2026-01-01T00:00:00.000Z",
+    };
+    this.components.push(component);
+    return component;
+  }
+  async remove(id: string): Promise<void> {
+    this.components = this.components.filter((c) => c.id !== id);
+  }
+}
+
+class FakeSlicingSheetRepository implements ISlicingSheetRepository {
+  public sheets: SlicingSheet[] = [];
+
+  async findByProductId(productId: string) {
+    return this.sheets.filter((s) => s.productId === productId);
+  }
+  async findByProductAndPrinter(productId: string, printerId: string) {
+    return this.sheets.find((s) => s.productId === productId && s.printerId === printerId) ?? null;
+  }
+  async upsert(input: UpsertSlicingSheetInput): Promise<SlicingSheet> {
+    throw new Error("not implemented in fake" + JSON.stringify(input));
+  }
+  async delete(): Promise<void> {
+    throw new Error("not implemented in fake");
+  }
 }
 
 function makeService() {
@@ -163,9 +220,18 @@ function makeService() {
   const productMedia = new FakeProductMediaRepository();
   const productChannelListings = new FakeProductChannelListingRepository();
   const priceCalculations = new FakePriceCalculationRepository([makeCalculation()]);
+  const productComponents = new FakeProductComponentRepository();
+  const slicingSheets = new FakeSlicingSheetRepository();
 
-  const service = new CatalogService({ products, productMedia, productChannelListings, priceCalculations });
-  return { service, products, productMedia, productChannelListings, priceCalculations };
+  const service = new CatalogService({
+    products,
+    productMedia,
+    productChannelListings,
+    priceCalculations,
+    productComponents,
+    slicingSheets,
+  });
+  return { service, products, productMedia, productChannelListings, priceCalculations, productComponents, slicingSheets };
 }
 
 describe("CatalogService.linkPriceCalculation", () => {
@@ -266,6 +332,65 @@ describe("CatalogService.createChannelListing", () => {
     });
 
     expect(listing.listedPrice).toBe(50);
+  });
+});
+
+describe("CatalogService.addComponent", () => {
+  async function makeComposedFixture() {
+    const helpers = makeService();
+    const { products } = helpers;
+    const mandala = await products.create({ name: "Caixa Mandala", description: null, category: "linha_leon", productType: "composta", createdBy: null });
+    const decagono = await products.create({ name: "Decágono", description: null, category: "linha_leon", createdBy: null });
+    return { ...helpers, mandala, decagono };
+  }
+
+  it("rejeita componente sem ficha de fatiamento nem cálculo de preço salvo", async () => {
+    const { service, mandala, decagono } = await makeComposedFixture();
+    await expect(service.addComponent(mandala.id, decagono.id, 1, null)).rejects.toThrow(/ficha de fatiamento/);
+  });
+
+  it("aceita componente com cálculo de preço salvo", async () => {
+    const { service, products, mandala, decagono } = await makeComposedFixture();
+    await products.update(decagono.id, { priceCalculationId: "calc-1" });
+
+    const component = await service.addComponent(mandala.id, decagono.id, 1, null);
+    expect(component.componentProductId).toBe(decagono.id);
+    expect(component.quantity).toBe(1);
+  });
+
+  it("aceita componente com ficha de fatiamento cadastrada, mesmo sem cálculo salvo", async () => {
+    const { service, slicingSheets, mandala, decagono } = await makeComposedFixture();
+    slicingSheets.sheets.push({
+      id: "sheet-1",
+      productId: decagono.id,
+      printerId: "printer-1",
+      printHours: 2.25,
+      materials: [{ id: "m1", materialId: "mat", pieceGrams: 28.35, supportGrams: 0 }],
+      createdBy: null,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    const component = await service.addComponent(mandala.id, decagono.id, 1, null);
+    expect(component.componentProductId).toBe(decagono.id);
+  });
+
+  it("rejeita uma peça como componente dela mesma", async () => {
+    const { service, mandala } = await makeComposedFixture();
+    await expect(service.addComponent(mandala.id, mandala.id, 1, null)).rejects.toThrow();
+  });
+
+  it("rejeita um ciclo transitivo de composição", async () => {
+    const { service, products, mandala, decagono } = await makeComposedFixture();
+    await products.update(decagono.id, { priceCalculationId: "calc-1", productType: "composta" });
+    await products.update(mandala.id, { priceCalculationId: "calc-1" });
+
+    // decagono (composta) já contém mandala como componente.
+    await service.addComponent(decagono.id, mandala.id, 1, null);
+
+    // Adicionar decagono como componente de mandala fecharia o ciclo
+    // mandala → decagono → mandala.
+    await expect(service.addComponent(mandala.id, decagono.id, 1, null)).rejects.toThrow(/ciclo/);
   });
 });
 

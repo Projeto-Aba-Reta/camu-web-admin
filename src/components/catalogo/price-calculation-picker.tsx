@@ -13,6 +13,7 @@ import type { SizeTier } from "@/types/pricing";
 const TIER_LABEL: Record<SizeTier, string> = { P: "P", M: "M", G: "G" };
 
 function tierLabel(row: HistoricoRow): string {
+  if (!row.suggestedTier) return "—";
   return row.suggestedTier.ambiguous
     ? row.suggestedTier.candidates.map((tier) => TIER_LABEL[tier]).join("/")
     : TIER_LABEL[row.suggestedTier.tier];
@@ -20,6 +21,7 @@ function tierLabel(row: HistoricoRow): string {
 
 function matchesTierFilter(row: HistoricoRow, tierFilter: string): boolean {
   if (!tierFilter) return true;
+  if (!row.suggestedTier) return false;
   return row.suggestedTier.ambiguous
     ? row.suggestedTier.candidates.includes(tierFilter as SizeTier)
     : row.suggestedTier.tier === tierFilter;
@@ -106,7 +108,7 @@ export function PriceCalculationPicker({ calculations, onSelect }: PriceCalculat
                     </TableCell>
                     <TableCell>{row.printerName}</TableCell>
                     <TableCell>
-                      <Badge variant={row.suggestedTier.ambiguous ? "outline" : "secondary"}>{tierLabel(row)}</Badge>
+                      <Badge variant={row.suggestedTier?.ambiguous ? "outline" : "secondary"}>{tierLabel(row)}</Badge>
                     </TableCell>
                     <TableCell>R$ {row.totalCost.toFixed(2)}</TableCell>
                     <TableCell>

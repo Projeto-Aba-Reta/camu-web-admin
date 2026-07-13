@@ -72,6 +72,38 @@ export type Database = {
           },
         ]
       }
+      b2b_pricing_tiers: {
+        Row: {
+          created_by: string | null
+          id: string
+          min_quantity: number
+          target_margin_pct: number
+          valid_from: string
+        }
+        Insert: {
+          created_by?: string | null
+          id?: string
+          min_quantity: number
+          target_margin_pct: number
+          valid_from?: string
+        }
+        Update: {
+          created_by?: string | null
+          id?: string
+          min_quantity?: number
+          target_margin_pct?: number
+          valid_from?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_pricing_tiers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       capital_contributions: {
         Row: {
           amount: number
@@ -161,6 +193,7 @@ export type Database = {
           filament_cost_per_kg: number
           id: string
           packaging_cost: number
+          target_margin_pct: number
           valid_from: string
         }
         Insert: {
@@ -171,6 +204,7 @@ export type Database = {
           filament_cost_per_kg: number
           id?: string
           packaging_cost: number
+          target_margin_pct?: number
           valid_from?: string
         }
         Update: {
@@ -181,6 +215,7 @@ export type Database = {
           filament_cost_per_kg?: number
           id?: string
           packaging_cost?: number
+          target_margin_pct?: number
           valid_from?: string
         }
         Relationships: [
@@ -546,43 +581,55 @@ export type Database = {
       }
       price_calculations: {
         Row: {
+          b2b_prices: Json
           channel_prices: Json
+          component_breakdown: Json | null
           cost_breakdown: Json
           cost_parameters_id: string
           created_at: string
           created_by: string | null
           id: string
-          print_hours: number
-          printer_id: string
+          print_hours: number | null
+          printer_id: string | null
+          product_id: string | null
+          slicing_sheet_id: string | null
           suggested_tier: string | null
           total_cost: number
-          weight_grams: number
+          weight_grams: number | null
         }
         Insert: {
+          b2b_prices?: Json
           channel_prices: Json
+          component_breakdown?: Json | null
           cost_breakdown: Json
           cost_parameters_id: string
           created_at?: string
           created_by?: string | null
           id?: string
-          print_hours: number
-          printer_id: string
+          print_hours?: number | null
+          printer_id?: string | null
+          product_id?: string | null
+          slicing_sheet_id?: string | null
           suggested_tier?: string | null
           total_cost: number
-          weight_grams: number
+          weight_grams?: number | null
         }
         Update: {
+          b2b_prices?: Json
           channel_prices?: Json
+          component_breakdown?: Json | null
           cost_breakdown?: Json
           cost_parameters_id?: string
           created_at?: string
           created_by?: string | null
           id?: string
-          print_hours?: number
-          printer_id?: string
+          print_hours?: number | null
+          printer_id?: string | null
+          product_id?: string | null
+          slicing_sheet_id?: string | null
           suggested_tier?: string | null
           total_cost?: number
-          weight_grams?: number
+          weight_grams?: number | null
         }
         Relationships: [
           {
@@ -604,6 +651,27 @@ export type Database = {
             columns: ["printer_id"]
             isOneToOne: false
             referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_calculations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_balances"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "price_calculations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_calculations_slicing_sheet_id_fkey"
+            columns: ["slicing_sheet_id"]
+            isOneToOne: false
+            referencedRelation: "product_slicing_sheets"
             referencedColumns: ["id"]
           },
         ]
@@ -802,6 +870,55 @@ export type Database = {
           {
             foreignKeyName: "product_channel_listings_product_id_fkey"
             columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_components: {
+        Row: {
+          component_product_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          parent_product_id: string
+          quantity: number
+        }
+        Insert: {
+          component_product_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          parent_product_id: string
+          quantity: number
+        }
+        Update: {
+          component_product_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          parent_product_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_components_component_product_id_fkey"
+            columns: ["component_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_components_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_components_parent_product_id_fkey"
+            columns: ["parent_product_id"]
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
@@ -1026,6 +1143,7 @@ export type Database = {
           id: string
           name: string
           price_calculation_id: string | null
+          product_type: string
           size_tier: string | null
           status: string
           updated_at: string
@@ -1038,6 +1156,7 @@ export type Database = {
           id?: string
           name: string
           price_calculation_id?: string | null
+          product_type?: string
           size_tier?: string | null
           status?: string
           updated_at?: string
@@ -1050,6 +1169,7 @@ export type Database = {
           id?: string
           name?: string
           price_calculation_id?: string | null
+          product_type?: string
           size_tier?: string | null
           status?: string
           updated_at?: string

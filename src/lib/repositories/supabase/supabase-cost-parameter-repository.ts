@@ -16,6 +16,7 @@ function toCostParameters(
     averagePowerWatts: row.average_power_watts,
     failureReservePct: row.failure_reserve_pct,
     packagingCost: row.packaging_cost,
+    targetMarginPct: row.target_margin_pct,
     validFrom: row.valid_from,
     createdBy: row.created_by,
   };
@@ -64,6 +65,7 @@ export class SupabaseCostParameterRepository implements ICostParameterRepository
         average_power_watts: input.averagePowerWatts,
         failure_reserve_pct: input.failureReservePct,
         packaging_cost: input.packagingCost,
+        ...(input.targetMarginPct !== undefined && { target_margin_pct: input.targetMarginPct }),
         created_by: input.createdBy,
       })
       .select("*")

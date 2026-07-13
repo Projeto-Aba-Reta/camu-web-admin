@@ -26,6 +26,8 @@ import type { IMaterialStockThresholdRepository } from "./interfaces/material-st
 import type { IProductStockMovementRepository } from "./interfaces/product-stock-movement-repository.interface";
 import type { IPrintQueueRepository } from "./interfaces/print-queue-repository.interface";
 import type { ISlicingSheetRepository } from "./interfaces/slicing-sheet-repository.interface";
+import type { IB2bPricingTierRepository } from "./interfaces/b2b-pricing-tier-repository.interface";
+import type { IProductComponentRepository } from "./interfaces/product-component-repository.interface";
 import { SupabaseRoleRepository } from "./supabase/supabase-role-repository";
 import { SupabaseSubRoleRepository } from "./supabase/supabase-sub-role-repository";
 import { SupabaseUserRepository } from "./supabase/supabase-user-repository";
@@ -52,6 +54,8 @@ import { SupabaseMaterialStockThresholdRepository } from "./supabase/supabase-ma
 import { SupabaseProductStockMovementRepository } from "./supabase/supabase-product-stock-movement-repository";
 import { SupabasePrintQueueRepository } from "./supabase/supabase-print-queue-repository";
 import { SupabaseSlicingSheetRepository } from "./supabase/supabase-slicing-sheet-repository";
+import { SupabaseB2bPricingTierRepository } from "./supabase/supabase-b2b-pricing-tier-repository";
+import { SupabaseProductComponentRepository } from "./supabase/supabase-product-component-repository";
 
 export interface Repositories {
   roles: IRoleRepository;
@@ -80,6 +84,8 @@ export interface Repositories {
   productStockMovements: IProductStockMovementRepository;
   printQueueItems: IPrintQueueRepository;
   slicingSheets: ISlicingSheetRepository;
+  b2bPricingTiers: IB2bPricingTierRepository;
+  productComponents: IProductComponentRepository;
 }
 
 // Composition root: único ponto que muda para trocar de provedor de dados.
@@ -111,5 +117,7 @@ export function createRepositories(supabaseClient: SupabaseClient<Database>): Re
     productStockMovements: new SupabaseProductStockMovementRepository(supabaseClient),
     printQueueItems: new SupabasePrintQueueRepository(supabaseClient),
     slicingSheets: new SupabaseSlicingSheetRepository(supabaseClient),
+    b2bPricingTiers: new SupabaseB2bPricingTierRepository(supabaseClient),
+    productComponents: new SupabaseProductComponentRepository(supabaseClient),
   };
 }

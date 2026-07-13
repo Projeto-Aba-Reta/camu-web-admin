@@ -10,6 +10,7 @@ import { ParametrosForm, ParametrosHistoryTable } from "@/components/precificaca
 import { ImpressoraForm, ImpressoraHistoryTable } from "@/components/precificacao/impressora-form";
 import { CanalFeeForm, CanalFeeHistoryTable } from "@/components/precificacao/canal-fee-form";
 import { SizeTierForm, SizeTierHistoryTable } from "@/components/precificacao/size-tier-form";
+import { B2bTierForm, B2bTierHistoryTable } from "@/components/precificacao/b2b-tier-form";
 
 export default async function PrecificacaoConfiguracaoPage() {
   const currentUser = await getCurrentProfile();
@@ -26,6 +27,8 @@ export default async function PrecificacaoConfiguracaoPage() {
     channelFeesHistory,
     currentSizeTiers,
     sizeTiersHistory,
+    currentB2bTiers,
+    b2bTiersHistory,
   ] = await Promise.all([
     repositories.costParameters.findCurrent(),
     repositories.costParameters.findHistory(),
@@ -34,6 +37,8 @@ export default async function PrecificacaoConfiguracaoPage() {
     repositories.channelFees.findAllHistory(),
     repositories.sizeTierRanges.findAllCurrent(),
     repositories.sizeTierRanges.findAllHistory(),
+    repositories.b2bPricingTiers.findAllCurrent(),
+    repositories.b2bPricingTiers.findAllHistory(),
   ]);
 
   const canWriteFinanceiro = canWriteFinanceiroParams(currentUser);
@@ -75,6 +80,13 @@ export default async function PrecificacaoConfiguracaoPage() {
           description="Faixas de referência de peso e tempo de impressão usadas na classificação automática de porte."
           form={<SizeTierForm current={currentSizeTiers} canWrite={canWriteFinanceiro} />}
           history={<SizeTierHistoryTable history={sizeTiersHistory} />}
+        />
+
+        <ConfigSection
+          title="Faixas de precificação B2B"
+          description="Preço por volume (quantidade mínima + margem-alvo), sem taxa de canal — usado por canais de atacado (ex.: academias)."
+          form={<B2bTierForm current={currentB2bTiers} canWrite={canWriteFinanceiro} />}
+          history={<B2bTierHistoryTable history={b2bTiersHistory} />}
         />
       </div>
     </div>

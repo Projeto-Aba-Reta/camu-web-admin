@@ -292,6 +292,7 @@ const PRODUCT: Product = {
   category: "miniatura_colecionavel",
   sizeTier: "M",
   status: "ativo",
+  productType: "simples",
   priceCalculationId: null,
   createdBy: null,
   createdAt: "2026-01-01T00:00:00.000Z",

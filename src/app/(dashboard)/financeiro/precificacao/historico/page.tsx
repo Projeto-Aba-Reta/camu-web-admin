@@ -17,7 +17,7 @@ export default async function PrecificacaoHistoricoPage() {
 
   const rows: HistoricoRow[] = calculations.map((calculation) => ({
     ...calculation,
-    printerName: printerNameById.get(calculation.printerId) ?? "—",
+    printerName: (calculation.printerId && printerNameById.get(calculation.printerId)) || "—",
   }));
 
   return (

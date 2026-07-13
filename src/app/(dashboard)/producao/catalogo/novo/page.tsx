@@ -25,7 +25,7 @@ export default async function NovaPecaPage() {
   const printerNameById = new Map(allPrinters.map((printer) => [printer.id, printer.name]));
   const recentCalculations: HistoricoRow[] = calculations.map((calculation) => ({
     ...calculation,
-    printerName: printerNameById.get(calculation.printerId) ?? "—",
+    printerName: (calculation.printerId && printerNameById.get(calculation.printerId)) || "—",
   }));
 
   return (

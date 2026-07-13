@@ -13,6 +13,7 @@ export const costParametersFormSchema = z.object({
   averagePowerWatts: positiveNumber("Informe o consumo médio em watts."),
   failureReservePctPercent: nonNegativeNumber("Informe a reserva de falha (%)."),
   packagingCost: nonNegativeNumber("Informe o custo de embalagem."),
+  targetMarginPctPercent: nonNegativeNumber("Informe a margem-alvo B2C (%)."),
 });
 
 export type CostParametersFormValues = z.infer<typeof costParametersFormSchema>;
@@ -62,10 +63,28 @@ export const sizeTierRangeFormSchema = z
 
 export type SizeTierRangeFormValues = z.infer<typeof sizeTierRangeFormSchema>;
 
-export const calculoFormSchema = z.object({
-  weightGrams: positiveNumber("Informe o peso em gramas."),
-  printHours: positiveNumber("Informe o tempo de impressão em horas."),
-  printerId: z.string().min(1, "Selecione uma impressora."),
-});
+// weightGrams/printHours ficam opcionais quando productId é informado — o
+// motor deriva os dois valores da ficha de fatiamento cadastrada para a
+// peça + impressora (ver Requirement "Cálculo a partir de uma ficha de
+// fatiamento cadastrada"). O refine abaixo garante que ao menos uma das
+// duas formas de entrada foi preenchida.
+export const calculoFormSchema = z
+  .object({
+    weightGrams: z.coerce.number().positive("Informe o peso em gramas.").optional(),
+    printHours: z.coerce.number().positive("Informe o tempo de impressão em horas.").optional(),
+    printerId: z.string().min(1, "Selecione uma impressora."),
+    productId: z.string().optional(),
+  })
+  .refine((values) => Boolean(values.productId) || (values.weightGrams && values.printHours), {
+    message: "Informe peso e tempo, ou selecione uma peça com ficha de fatiamento cadastrada.",
+    path: ["weightGrams"],
+  });
 
 export type CalculoFormValues = z.infer<typeof calculoFormSchema>;
+
+export const b2bPricingTierFormSchema = z.object({
+  minQuantity: positiveNumber("Informe a quantidade mínima da faixa."),
+  targetMarginPctPercent: nonNegativeNumber("Informe a margem-alvo B2B (%)."),
+});
+
+export type B2bPricingTierFormValues = z.infer<typeof b2bPricingTierFormSchema>;

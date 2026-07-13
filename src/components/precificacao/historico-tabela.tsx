@@ -27,7 +27,10 @@ export interface HistoricoRow extends PriceCalculation {
   printerName: string;
 }
 
+// null: cálculo de peça composta, sem porte único a classificar (ver
+// Requirement "Cálculo de custo agregado para peça composta").
 function tierLabel(calculation: PriceCalculation): string {
+  if (!calculation.suggestedTier) return "—";
   return calculation.suggestedTier.ambiguous
     ? calculation.suggestedTier.candidates.map((tier) => TIER_LABEL[tier]).join("/")
     : TIER_LABEL[calculation.suggestedTier.tier];
@@ -35,6 +38,7 @@ function tierLabel(calculation: PriceCalculation): string {
 
 function matchesTierFilter(calculation: PriceCalculation, tierFilter: string): boolean {
   if (!tierFilter) return true;
+  if (!calculation.suggestedTier) return false;
   return calculation.suggestedTier.ambiguous
     ? calculation.suggestedTier.candidates.includes(tierFilter as SizeTier)
     : calculation.suggestedTier.tier === tierFilter;
@@ -73,7 +77,10 @@ export function HistoricoTabela({ rows }: HistoricoTabelaProps) {
       {
         id: "pesoTempo",
         header: "Peso / Tempo",
-        cell: ({ row }) => `${row.original.weightGrams}g / ${row.original.printHours}h`,
+        cell: ({ row }) =>
+          row.original.weightGrams !== null && row.original.printHours !== null
+            ? `${row.original.weightGrams}g / ${row.original.printHours}h`
+            : "Peça composta",
       },
       {
         accessorKey: "printerName",
@@ -83,7 +90,7 @@ export function HistoricoTabela({ rows }: HistoricoTabelaProps) {
         id: "porte",
         header: "Porte",
         cell: ({ row }) => (
-          <Badge variant={row.original.suggestedTier.ambiguous ? "outline" : "secondary"}>
+          <Badge variant={row.original.suggestedTier?.ambiguous ? "outline" : "secondary"}>
             {tierLabel(row.original)}
           </Badge>
         ),

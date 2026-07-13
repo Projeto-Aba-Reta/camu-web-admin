@@ -36,6 +36,7 @@ export function ParametrosForm({ current, canWrite }: ParametrosFormProps) {
       averagePowerWatts: current?.averagePowerWatts ?? 0,
       failureReservePctPercent: current ? current.failureReservePct * 100 : 0,
       packagingCost: current?.packagingCost ?? 0,
+      targetMarginPctPercent: current ? current.targetMarginPct * 100 : 0,
     },
   });
 
@@ -46,6 +47,7 @@ export function ParametrosForm({ current, canWrite }: ParametrosFormProps) {
       averagePowerWatts: values.averagePowerWatts,
       failureReservePct: values.failureReservePctPercent / 100,
       packagingCost: values.packagingCost,
+      targetMarginPct: values.targetMarginPctPercent / 100,
     });
 
     if (!result.ok) {
@@ -132,6 +134,20 @@ export function ParametrosForm({ current, canWrite }: ParametrosFormProps) {
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="targetMarginPctPercent"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Margem-alvo B2C (%)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.1" {...field} value={field.value as number | string} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <Button type="submit" disabled={form.formState.isSubmitting} size="sm">
               Atualizar (cria novo registro, o anterior fica no histórico)
             </Button>
@@ -159,6 +175,7 @@ export function ParametrosHistoryTable({ history }: { history: CostParameters[] 
             <TableHead>Consumo</TableHead>
             <TableHead>Reserva</TableHead>
             <TableHead>Embalagem</TableHead>
+            <TableHead>Margem-alvo B2C</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -173,11 +190,12 @@ export function ParametrosHistoryTable({ history }: { history: CostParameters[] 
                 <TableCell>{entry.averagePowerWatts}W</TableCell>
                 <TableCell>{(entry.failureReservePct * 100).toFixed(1)}%</TableCell>
                 <TableCell>R$ {entry.packagingCost.toFixed(2)}</TableCell>
+                <TableCell>{(entry.targetMarginPct * 100).toFixed(1)}%</TableCell>
               </TableRow>
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={6} className="h-20 text-center text-muted-foreground">
+              <TableCell colSpan={7} className="h-20 text-center text-muted-foreground">
                 Nenhum parâmetro cadastrado ainda.
               </TableCell>
             </TableRow>

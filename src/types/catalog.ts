@@ -4,6 +4,11 @@ export type ProductCategory = "miniatura_colecionavel" | "personalizado" | "util
 
 export type ProductStatus = "rascunho" | "ativo" | "inativo" | "descontinuado";
 
+// simples: peça impressa única. composta: kit formado por outras peças do
+// catálogo, referenciadas via ProductComponent (ver Requirement "Tipo de
+// peça simples ou composta").
+export type ProductType = "simples" | "composta";
+
 export interface Product {
   id: string;
   name: string;
@@ -11,10 +16,20 @@ export interface Product {
   category: ProductCategory;
   sizeTier: SizeTier | null;
   status: ProductStatus;
+  productType: ProductType;
   priceCalculationId: string | null;
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ProductComponent {
+  id: string;
+  parentProductId: string;
+  componentProductId: string;
+  quantity: number;
+  createdBy: string | null;
+  createdAt: string;
 }
 
 export interface ProductMedia {

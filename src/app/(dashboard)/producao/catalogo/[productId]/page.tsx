@@ -8,6 +8,7 @@ import { ProductForm } from "@/components/catalogo/product-form";
 import { MediaManager } from "@/components/catalogo/media-manager";
 import { ChannelListingForm } from "@/components/catalogo/channel-listing-form";
 import { SlicingSheetSection } from "@/components/catalogo/slicing-sheet-section";
+import { ProductComponentsManager } from "@/components/catalogo/product-components-manager";
 import { SlicingSheetService } from "@/lib/services/slicing-sheet-service";
 import type { HistoricoRow } from "@/components/precificacao/historico-tabela";
 
@@ -24,7 +25,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const product = await repositories.products.findById(productId);
   if (!product) notFound();
 
-  const [media, channelListings, linkedCalculation, printers, recentCalculations, allPrinters, materials] =
+  const [media, channelListings, linkedCalculation, printers, recentCalculations, allPrinters, materials, allProducts, components] =
     await Promise.all([
       repositories.productMedia.findByProductId(productId),
       repositories.productChannelListings.findByProductId(productId),
@@ -33,6 +34,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       repositories.priceCalculations.findRecent(200),
       repositories.printers.findAll(),
       repositories.materials.findAll(),
+      repositories.products.findAll(),
+      repositories.productComponents.findByParentId(productId),
     ]);
 
   const slicingSheetService = new SlicingSheetService(repositories);
@@ -42,11 +45,14 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const printerNameById = new Map(allPrinters.map((printer) => [printer.id, printer.name]));
   const recentCalculationRows: HistoricoRow[] = recentCalculations.map((calculation) => ({
     ...calculation,
-    printerName: printerNameById.get(calculation.printerId) ?? "—",
+    printerName: (calculation.printerId && printerNameById.get(calculation.printerId)) || "—",
   }));
 
   const canWrite = Boolean(currentUser && canWriteCatalog(currentUser));
   const canManageChannels = Boolean(currentUser && canManageChannelListings(currentUser));
+  const candidateComponents = allProducts
+    .filter((candidate) => candidate.productType === "simples" && candidate.id !== product.id)
+    .map((candidate) => ({ id: candidate.id, name: candidate.name, hasKnownCost: Boolean(candidate.priceCalculationId) }));
 
   return (
     <div className="space-y-6">
@@ -59,6 +65,15 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         initialLinkedCalculation={linkedCalculation}
         canWrite={canWrite}
       />
+
+      {product.productType === "composta" && (
+        <ProductComponentsManager
+          parentProductId={product.id}
+          initialComponents={components}
+          candidateProducts={candidateComponents}
+          canWrite={canWrite}
+        />
+      )}
 
       <MediaManager productId={product.id} initialMedia={media} canWrite={canWrite} />
 

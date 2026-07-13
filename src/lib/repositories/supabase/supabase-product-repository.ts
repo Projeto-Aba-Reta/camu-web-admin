@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import type { Product, ProductCategory, ProductStatus } from "@/types/catalog";
+import type { Product, ProductCategory, ProductStatus, ProductType } from "@/types/catalog";
 import type { SizeTier } from "@/types/pricing";
 import type {
   CreateProductInput,
@@ -16,6 +16,7 @@ function toProduct(row: Database["public"]["Tables"]["products"]["Row"]): Produc
     category: row.category as ProductCategory,
     sizeTier: row.size_tier as SizeTier | null,
     status: row.status as ProductStatus,
+    productType: row.product_type as ProductType,
     priceCalculationId: row.price_calculation_id,
     createdBy: row.created_by,
     createdAt: row.created_at,
@@ -48,6 +49,7 @@ export class SupabaseProductRepository implements IProductRepository {
         name: input.name,
         description: input.description,
         category: input.category,
+        ...(input.productType !== undefined && { product_type: input.productType }),
         created_by: input.createdBy,
       })
       .select("*")
@@ -65,6 +67,7 @@ export class SupabaseProductRepository implements IProductRepository {
         ...(input.category !== undefined && { category: input.category }),
         ...(input.sizeTier !== undefined && { size_tier: input.sizeTier }),
         ...(input.status !== undefined && { status: input.status }),
+        ...(input.productType !== undefined && { product_type: input.productType }),
         ...(input.priceCalculationId !== undefined && { price_calculation_id: input.priceCalculationId }),
         updated_at: new Date().toISOString(),
       })

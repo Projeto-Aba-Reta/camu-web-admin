@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CATEGORY_LABEL, STATUS_LABEL } from "@/components/catalogo/constants";
+import { CATEGORY_LABEL, PRODUCT_TYPE_LABEL, STATUS_LABEL } from "@/components/catalogo/constants";
 import { CalculoForm } from "@/components/precificacao/calculo-form";
 import { ResultadoCalculo } from "@/components/shared/resultado-calculo";
 import { PriceCalculationPicker } from "@/components/catalogo/price-calculation-picker";
@@ -47,6 +47,7 @@ export function ProductForm({
       description: product?.description ?? "",
       category: product?.category ?? "utilitario",
       status: product?.status ?? "rascunho",
+      productType: product?.productType ?? "simples",
     },
   });
 
@@ -56,6 +57,7 @@ export function ProductForm({
       description: values.description?.trim() || null,
       category: values.category,
       status: values.status,
+      productType: values.productType,
     };
     const priceCalculationId = selectedCalculation?.id ?? null;
 
@@ -162,6 +164,31 @@ export function ProductForm({
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="productType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de peça</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange} disabled={!canWrite}>
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.entries(PRODUCT_TYPE_LABEL).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
           <div className="space-y-3 rounded-md border p-4">
@@ -188,6 +215,7 @@ export function ProductForm({
                 {showInlineCalc && (
                   <CalculoForm
                     printers={printers}
+                    products={product ? [product] : []}
                     onCalculated={(calculation) => {
                       setSelectedCalculation(calculation);
                       setShowInlineCalc(false);

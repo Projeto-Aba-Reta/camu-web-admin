@@ -13,17 +13,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { calculoFormSchema, type CalculoFormValues } from "@/lib/validation/pricing-schemas";
 import { calculatePriceAction } from "@/app/(dashboard)/financeiro/precificacao/actions";
 import { ResultadoCalculo } from "@/components/shared/resultado-calculo";
+import type { Product } from "@/types/catalog";
 import type { PriceCalculation, PriceCalculationResult, Printer, SizeTier } from "@/types/pricing";
 
 interface CalculoFormProps {
   printers: Printer[];
+  // Peças simples com ficha de fatiamento potencialmente cadastrada — ao
+  // selecionar uma, peso/tempo deixam de ser exigidos e o motor deriva os
+  // dois valores da ficha da combinação peça+impressora (ver Requirement
+  // "Formulário de cálculo a partir de peso e tempo do fatiador"). Omitir
+  // esta prop desativa a opção (ex.: cadastro de peça nova, que ainda não
+  // existe para ter uma ficha vinculada).
+  products?: Product[];
   // Reaproveitado pelo formulário de peça do catálogo (ver catalogo-telas,
   // design.md decisão 1) para capturar o cálculo recém-salvo e vinculá-lo
   // à peça sem duplicar a lógica de cálculo.
   onCalculated?: (calculation: PriceCalculation) => void;
 }
 
-export function CalculoForm({ printers, onCalculated }: CalculoFormProps) {
+export function CalculoForm({ printers, products = [], onCalculated }: CalculoFormProps) {
   const router = useRouter();
   const [result, setResult] = useState<PriceCalculationResult | PriceCalculation | null>(null);
   const [saved, setSaved] = useState(false);
@@ -32,15 +40,22 @@ export function CalculoForm({ printers, onCalculated }: CalculoFormProps) {
 
   const form = useForm<z.input<typeof calculoFormSchema>, unknown, CalculoFormValues>({
     resolver: zodResolver(calculoFormSchema),
-    defaultValues: { weightGrams: 0, printHours: 0, printerId: "" },
+    defaultValues: { weightGrams: undefined, printHours: undefined, printerId: "", productId: "" },
   });
+
+  const usingSlicingSheet = Boolean(form.watch("productId"));
 
   async function onSubmit(values: CalculoFormValues) {
     setResult(null);
     setSaved(false);
     setLastInput(values);
 
-    const response = await calculatePriceAction(values);
+    const response = await calculatePriceAction({
+      ...values,
+      productId: values.productId || undefined,
+      weightGrams: values.productId ? undefined : values.weightGrams,
+      printHours: values.productId ? undefined : values.printHours,
+    });
     if (!response.ok) {
       toast.error(response.error ?? "Não foi possível calcular o preço.");
       return;
@@ -77,6 +92,34 @@ export function CalculoForm({ printers, onCalculated }: CalculoFormProps) {
     <div className="space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 sm:grid-cols-4 sm:items-end">
+          {products.length > 0 && (
+            <FormField
+              control={form.control}
+              name="productId"
+              render={({ field }) => (
+                <FormItem className="sm:col-span-4">
+                  <FormLabel>Peça (opcional — usa a ficha de fatiamento cadastrada)</FormLabel>
+                  <Select value={field.value || "none"} onValueChange={(value) => field.onChange(value === "none" ? "" : value)}>
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Nenhuma — digitar peso e tempo" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhuma — digitar peso e tempo</SelectItem>
+                      {products.map((product) => (
+                        <SelectItem key={product.id} value={product.id}>
+                          {product.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
           <FormField
             control={form.control}
             name="weightGrams"
@@ -84,7 +127,14 @@ export function CalculoForm({ printers, onCalculated }: CalculoFormProps) {
               <FormItem>
                 <FormLabel>Peso (g)</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.1" {...field} value={field.value as number | string} />
+                  <Input
+                    type="number"
+                    step="0.1"
+                    disabled={usingSlicingSheet}
+                    placeholder={usingSlicingSheet ? "Lido da ficha de fatiamento" : undefined}
+                    {...field}
+                    value={field.value as number | string}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -98,7 +148,14 @@ export function CalculoForm({ printers, onCalculated }: CalculoFormProps) {
               <FormItem>
                 <FormLabel>Tempo de impressão (h)</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.1" {...field} value={field.value as number | string} />
+                  <Input
+                    type="number"
+                    step="0.1"
+                    disabled={usingSlicingSheet}
+                    placeholder={usingSlicingSheet ? "Lido da ficha de fatiamento" : undefined}
+                    {...field}
+                    value={field.value as number | string}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

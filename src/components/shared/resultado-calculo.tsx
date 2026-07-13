@@ -24,10 +24,20 @@ interface ResultadoCalculoProps {
   saved: boolean;
   isResolvingTier?: boolean;
   onChooseTier?: (tier: SizeTier) => void;
+  // Nomes das peças componentes, para exibir o breakdown por componente de
+  // uma peça composta (ver Requirement "Breakdown de custo por componente
+  // para peça composta"). Sem isso, cai no id do componente.
+  componentNames?: Record<string, string>;
 }
 
-export function ResultadoCalculo({ result, saved, isResolvingTier, onChooseTier }: ResultadoCalculoProps) {
-  const { costBreakdown, totalCost, suggestedTier, channelPrices } = result;
+export function ResultadoCalculo({
+  result,
+  saved,
+  isResolvingTier,
+  onChooseTier,
+  componentNames,
+}: ResultadoCalculoProps) {
+  const { costBreakdown, totalCost, suggestedTier, channelPrices, b2bPrices, componentBreakdown } = result;
 
   return (
     <div className="space-y-4">
@@ -61,38 +71,70 @@ export function ResultadoCalculo({ result, saved, isResolvingTier, onChooseTier 
         </dl>
       </div>
 
-      <div className="rounded-md border p-4">
-        <h3 className="mb-3 text-sm font-semibold text-foreground">Porte sugerido</h3>
-        {suggestedTier.ambiguous ? (
-          <div className="space-y-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-3">
-            <p className="text-sm text-foreground">
-              Peso e tempo indicam portes diferentes ({suggestedTier.candidates.map((tier) => TIER_LABEL[tier]).join(" ou ")}).
-              Escolha manualmente o porte para salvar o cálculo.
-            </p>
-            <div className="flex gap-2">
-              {suggestedTier.candidates.map((tier) => (
-                <Button
-                  key={tier}
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={isResolvingTier || !onChooseTier}
-                  onClick={() => onChooseTier?.(tier)}
-                >
-                  Usar {TIER_LABEL[tier]}
-                </Button>
-              ))}
+      {suggestedTier && (
+        <div className="rounded-md border p-4">
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Porte sugerido</h3>
+          {suggestedTier.ambiguous ? (
+            <div className="space-y-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-3">
+              <p className="text-sm text-foreground">
+                Peso e tempo indicam portes diferentes ({suggestedTier.candidates.map((tier) => TIER_LABEL[tier]).join(" ou ")}).
+                Escolha manualmente o porte para salvar o cálculo.
+              </p>
+              <div className="flex gap-2">
+                {suggestedTier.candidates.map((tier) => (
+                  <Button
+                    key={tier}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={isResolvingTier || !onChooseTier}
+                    onClick={() => onChooseTier?.(tier)}
+                  >
+                    Usar {TIER_LABEL[tier]}
+                  </Button>
+                ))}
+              </div>
             </div>
+          ) : (
+            <Badge variant="secondary">{TIER_LABEL[suggestedTier.tier]}</Badge>
+          )}
+        </div>
+      )}
+
+      {componentBreakdown && (
+        <div className="rounded-md border">
+          <div className="p-4 pb-0">
+            <h3 className="text-sm font-semibold text-foreground">Custo por componente</h3>
           </div>
-        ) : (
-          <Badge variant="secondary">{TIER_LABEL[suggestedTier.tier]}</Badge>
-        )}
-      </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Componente</TableHead>
+                <TableHead>Quantidade</TableHead>
+                <TableHead>Custo unitário</TableHead>
+                <TableHead>Custo total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {componentBreakdown.map((component) => (
+                <TableRow key={component.componentProductId}>
+                  <TableCell className="font-medium">
+                    {componentNames?.[component.componentProductId] ?? component.componentProductId}
+                  </TableCell>
+                  <TableCell>{component.quantity}</TableCell>
+                  <TableCell>{formatCurrency(component.unitCost)}</TableCell>
+                  <TableCell>{formatCurrency(component.totalCost)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <div className="rounded-md border">
         <div className="flex items-center justify-between p-4 pb-0">
-          <h3 className="text-sm font-semibold text-foreground">Preço sugerido por canal</h3>
-          {!suggestedTier.ambiguous && (
+          <h3 className="text-sm font-semibold text-foreground">Preço sugerido por canal (B2C)</h3>
+          {!suggestedTier?.ambiguous && (
             <span className="text-xs text-muted-foreground">
               {saved ? "Salvo no histórico" : "Calculando..."}
             </span>
@@ -119,6 +161,38 @@ export function ResultadoCalculo({ result, saved, isResolvingTier, onChooseTier 
               <TableRow>
                 <TableCell colSpan={3} className="h-20 text-center text-muted-foreground">
                   Nenhuma taxa de canal vigente cadastrada.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="rounded-md border">
+        <div className="p-4 pb-0">
+          <h3 className="text-sm font-semibold text-foreground">Preço por faixa de volume (B2B)</h3>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Quantidade mínima</TableHead>
+              <TableHead>Preço sugerido</TableHead>
+              <TableHead>Margem</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {b2bPrices.length ? (
+              b2bPrices.map((price) => (
+                <TableRow key={price.minQuantity}>
+                  <TableCell className="font-medium">{price.minQuantity}+ un.</TableCell>
+                  <TableCell>{formatCurrency(price.suggestedPrice)}</TableCell>
+                  <TableCell>{formatCurrency(price.margin)}</TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={3} className="h-20 text-center text-muted-foreground">
+                  Nenhuma faixa B2B vigente cadastrada.
                 </TableCell>
               </TableRow>
             )}

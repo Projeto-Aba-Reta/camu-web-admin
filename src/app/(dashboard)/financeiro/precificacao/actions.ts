@@ -31,6 +31,7 @@ export interface CostParametersFormInput {
   averagePowerWatts: number;
   failureReservePct: number;
   packagingCost: number;
+  targetMarginPct: number;
 }
 
 export async function createCostParametersAction(
@@ -121,9 +122,13 @@ export async function createSizeTierRangeAction(input: SizeTierRangeFormInput): 
 }
 
 export interface CalculatePriceFormInput {
-  weightGrams: number;
-  printHours: number;
+  // Omitir weightGrams/printHours quando productId tiver ficha de
+  // fatiamento cadastrada para printerId (ver Requirement "Cálculo a
+  // partir de uma ficha de fatiamento cadastrada").
+  weightGrams?: number;
+  printHours?: number;
   printerId: string;
+  productId?: string;
   chosenTier?: SizeTier;
 }
 
@@ -150,12 +155,13 @@ export async function calculatePriceAction(
       weightGrams: input.weightGrams,
       printHours: input.printHours,
       printerId: input.printerId,
+      productId: input.productId,
       createdBy: user.id,
     };
 
     if (!input.chosenTier) {
       const preview = await pricingService.calculatePrice(calcInput);
-      if (preview.suggestedTier.ambiguous) {
+      if (preview.suggestedTier?.ambiguous) {
         return { ok: true, saved: false, result: preview };
       }
     }
@@ -165,5 +171,46 @@ export async function calculatePriceAction(
     return { ok: true, saved: true, result: saved };
   } catch (error) {
     return { ok: false, error: errorMessage(error, "Não foi possível calcular o preço.") };
+  }
+}
+
+export interface B2bPricingTierFormInput {
+  minQuantity: number;
+  targetMarginPct: number;
+}
+
+export async function createB2bPricingTierAction(input: B2bPricingTierFormInput): Promise<ActionResult> {
+  try {
+    const user = await requireFinanceiroWrite();
+    const repositories = await getRepositories();
+    await repositories.b2bPricingTiers.create({ ...input, createdBy: user.id });
+    revalidatePath(CONFIGURACAO_PATH);
+    revalidatePath(CALCULAR_PATH);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: errorMessage(error, "Não foi possível atualizar a faixa de precificação B2B.") };
+  }
+}
+
+export interface CalculateCompositePriceFormInput {
+  productId: string;
+}
+
+export async function calculateCompositePriceAction(
+  input: CalculateCompositePriceFormInput,
+): Promise<CalculatePriceActionResult> {
+  try {
+    const user = await requirePrecificacaoAccess();
+    const repositories = await getRepositories();
+    const pricingService = new PricingService(repositories);
+
+    const saved = await pricingService.calculateAndSaveCompositePrice({
+      productId: input.productId,
+      createdBy: user.id,
+    });
+    revalidatePath(HISTORICO_PATH);
+    return { ok: true, saved: true, result: saved };
+  } catch (error) {
+    return { ok: false, error: errorMessage(error, "Não foi possível calcular o preço da peça composta.") };
   }
 }

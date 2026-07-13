@@ -7,7 +7,7 @@ import { createRepositories, type Repositories } from "@/lib/repositories";
 import { CatalogService } from "@/lib/services/catalog-service";
 import { SlicingSheetService } from "@/lib/services/slicing-sheet-service";
 import { requireCatalogWrite, requireChannelListingWrite } from "@/lib/auth/catalog-access";
-import type { ProductCategory, ProductMedia, ProductStatus } from "@/types/catalog";
+import type { ProductCategory, ProductComponent, ProductMedia, ProductStatus, ProductType } from "@/types/catalog";
 import type { MarketplaceChannel } from "@/types/pricing";
 
 export interface ActionResult {
@@ -40,6 +40,7 @@ export interface ProductFormInput {
   description: string | null;
   category: ProductCategory;
   status: ProductStatus;
+  productType: ProductType;
 }
 
 export interface SaveProductActionResult extends ActionResult {
@@ -62,6 +63,7 @@ export async function createProductAction(
       name: input.name,
       description: input.description,
       category: input.category,
+      productType: input.productType,
       createdBy: user.id,
     });
 
@@ -95,6 +97,7 @@ export async function updateProductAction(
       description: input.description,
       category: input.category,
       status: input.status,
+      productType: input.productType,
     });
 
     if (priceCalculationId) {
@@ -302,5 +305,43 @@ export async function upsertSlicingSheetAction(
     return { ok: true };
   } catch (error) {
     return { ok: false, error: errorMessage(error, "Não foi possível salvar a ficha de fatiamento.") };
+  }
+}
+
+// =============================================================================
+// Composição de produto (peça composta)
+// =============================================================================
+
+export interface AddComponentActionResult extends ActionResult {
+  component?: ProductComponent;
+}
+
+export async function addComponentAction(
+  parentProductId: string,
+  componentProductId: string,
+  quantity: number,
+): Promise<AddComponentActionResult> {
+  try {
+    const user = await requireCatalogWrite();
+    const repositories = await getRepositories();
+    const catalogService = new CatalogService(repositories);
+    const component = await catalogService.addComponent(parentProductId, componentProductId, quantity, user.id);
+    revalidatePath(productPath(parentProductId));
+    return { ok: true, component };
+  } catch (error) {
+    return { ok: false, error: errorMessage(error, "Não foi possível adicionar o componente.") };
+  }
+}
+
+export async function removeComponentAction(parentProductId: string, componentId: string): Promise<ActionResult> {
+  try {
+    await requireCatalogWrite();
+    const repositories = await getRepositories();
+    const catalogService = new CatalogService(repositories);
+    await catalogService.removeComponent(componentId);
+    revalidatePath(productPath(parentProductId));
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: errorMessage(error, "Não foi possível remover o componente.") };
   }
 }

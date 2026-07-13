@@ -6,6 +6,7 @@ export interface CreateCostParametersInput {
   averagePowerWatts: number;
   failureReservePct: number;
   packagingCost: number;
+  targetMarginPct?: number;
   createdBy: string | null;
 }
 
