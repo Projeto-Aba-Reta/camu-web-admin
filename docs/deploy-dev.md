@@ -172,7 +172,7 @@ Production e Preview):
 | `NEXT_PUBLIC_SUPABASE_URL`      | Project URL do`camu-dev`                  | sim              |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon key do`camu-dev`                     | sim              |
 | `SUPABASE_SERVICE_ROLE_KEY`     | service_role key do`camu-dev`             | sim              |
-| `CRON_SECRET`                   | valor aleatório —`openssl rand -hex 32` | sim, para o cron |
+| `CRON_SECRET`                   | valor aleatório —`openssl rand -hex 32` | não (ver Parte 3) |
 | `SLACK_WEBHOOK_URL`             | webhook de Incoming Webhook do Slack        | não             |
 
 Duas variáveis do `.env.example` que **não** vão para a Vercel:
@@ -180,8 +180,10 @@ Duas variáveis do `.env.example` que **não** vão para a Vercel:
 - **`PORT`** — a Vercel gerencia a porta. Defini-la pode quebrar o runtime.
 - Qualquer chave do Supabase local (`http://127.0.0.1:54321`, `demo` keys).
 
-Sem `SLACK_WEBHOOK_URL` o app não quebra: a notificação de impressão concluída
-vira um no-op com log de aviso (`src/lib/services/slack-notification-service.ts`).
+As duas opcionais não quebram nada quando ficam em branco: sem
+`SLACK_WEBHOOK_URL` a notificação de impressão concluída vira um no-op com log
+de aviso (`src/lib/services/slack-notification-service.ts`), e sem `CRON_SECRET`
+a conclusão automática de impressões não roda — só a manual, pela UI (Parte 3).
 
 ### 2.4 Deploy
 
@@ -190,32 +192,63 @@ como Site URL no Supabase, se ainda não fez.
 
 ---
 
-## Parte 3 — O cron da fila de impressão
+## Parte 3 — O cron da fila de impressão (opcional, desligado por padrão)
 
-O `vercel.json` agenda a rota que conclui automaticamente as impressões cujo
-tempo estimado esgotou:
+A fila de impressão conclui um item de duas formas: **manualmente**, pelo botão
+na UI, e **automaticamente**, quando o tempo estimado da impressão esgota. A
+conclusão automática mora numa rota HTTP (`/api/cron/complete-print-queue`) que
+precisa de alguém a chamando de tempos em tempos — e **esse agendador não vem
+configurado**.
+
+O motivo é o plano: no Hobby (free) a Vercel só aceita cron **uma vez por dia**,
+e um cron diário para concluir impressões de poucas horas não serve para nada.
+Por isso o repositório **não tem `vercel.json`** — sem cron declarado, o deploy
+no Hobby passa limpo.
+
+**Nada quebra com isso.** Sem agendador, a rota simplesmente nunca é chamada
+(e, sem `CRON_SECRET`, responde 401 a quem tentar). O item fica em `imprimindo`
+mostrando "tempo estimado esgotado" até alguém concluir pela UI — que é o fluxo
+normal em dev. A env `CRON_SECRET` é **opcional**: só faz sentido preenchê-la se
+você for ligar um dos agendadores abaixo.
+
+### Opção A — GitHub Actions (funciona no plano free)
+
+Um workflow agendado chamando a rota de fora. Configure `CRON_SECRET` na Vercel
+(qualquer valor aleatório, `openssl rand -hex 32`) e o **mesmo valor** como
+secret do repositório, e crie `.github/workflows/print-queue-cron.yml`:
+
+```yaml
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+jobs:
+  complete-print-queue:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://<sua-url>.vercel.app/api/cron/complete-print-queue
+```
+
+A rota aceita GET e POST justamente para não depender do agendador. Na prática o
+GitHub atrasa schedules curtos em horário de pico — para dev, tudo bem.
+
+### Opção B — Vercel Cron (exige plano Pro)
+
+Se um dia o projeto subir para o Pro, basta recriar o `vercel.json` na raiz:
 
 ```json
 { "crons": [{ "path": "/api/cron/complete-print-queue", "schedule": "*/5 * * * *" }] }
 ```
 
-A rota exige `Authorization: Bearer <CRON_SECRET>`. A Vercel injeta esse header
-automaticamente nas invocações de cron quando a env `CRON_SECRET` existe — não
-há nada a configurar além da variável. Sem ela, a rota responde 401 e a
-conclusão automática simplesmente não roda (a conclusão manual pela UI continua
-funcionando).
+e definir `CRON_SECRET` nas env vars — a Vercel injeta o header
+`Authorization: Bearer <CRON_SECRET>` sozinha nas invocações de cron, não há
+mais nada a configurar.
 
-⚠️ **Cheque o plano antes de confiar nisso.** O plano Hobby da Vercel limita
-cron jobs a **uma execução por dia**; um schedule de 5 em 5 minutos ou é
-recusado no deploy ou é rebaixado silenciosamente para diário. Se o projeto de
-dev estiver no Hobby, escolha uma saída:
-
-- **Aceitar o rebaixamento** e concluir as impressões manualmente pela UI em
-  dev (o mais simples — em dev isso raramente importa).
-- **Chamar a rota de fora**: um workflow agendado no GitHub Actions fazendo
-  `curl -X POST -H "Authorization: Bearer $CRON_SECRET" https://<url>/api/cron/complete-print-queue`.
-  A rota aceita GET e POST justamente para isso.
-- **Subir para o plano Pro**, se o time já for pagar por outros motivos.
+> No ambiente **local** nada disso é necessário: o `make dev` já sobe, em
+> paralelo, o `npm run dev:cron` (`scripts/run-print-queue-cron.ts`), que roda a
+> mesma rotina a cada 15s chamando o service direto.
 
 ---
 
@@ -277,5 +310,6 @@ passo 1.4).
 | Convite chega mas o link cai em`/login`              | Template de convite não foi colado no dashboard (ainda é o`{{ .ConfirmationURL }}` padrão). Ver 1.5.                             |
 | Convite chega apontando para`localhost`              | Site URL do Supabase não foi trocada. Ver 1.5.                                                                                       |
 | Convite não chega                                     | Limite de e-mail do SMTP embutido. Configure SMTP próprio.                                                                           |
-| Cron nunca roda / responde 401                         | `CRON_SECRET` ausente na Vercel, ou limite de cron do plano Hobby. Ver Parte 3.                                                     |
+| Impressão fica em "tempo esgotado" e não conclui sozinha | Esperado: não há cron configurado. Conclua pela UI, ou ligue um agendador (Parte 3).                                              |
+| Cron configurado responde 401                          | `CRON_SECRET` ausente na Vercel, ou diferente do valor usado pelo agendador. Ver Parte 3.                                          |
 | `db push` reclama de migration já aplicada          | Histórico remoto divergiu; inspecione com`npx supabase migration list`.                                                            |

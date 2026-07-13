@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/complete-print-queue",
-      "schedule": "*/5 * * * *"
-    }
-  ]
-}
