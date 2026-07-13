@@ -40,6 +40,7 @@ falta de visibilidade sobre capacidade de produção.
 ## Funcionalidades previstas
 
 ### Financeiro
+
 - Registro de vendas (manual ou importado de marketplace), com custo
   estimado x real por peça e margem.
 - Fluxo de caixa da conta PJ (entradas/saídas) e conciliação de saldo.
@@ -54,6 +55,7 @@ falta de visibilidade sobre capacidade de produção.
   imposto).
 
 ### Produção e catálogo
+
 - Cadastro do catálogo autoral por categoria (miniaturas/colecionáveis,
   personalizados, utilitários, linha Leon) e porte (P/M/G).
 - Acompanhamento do parque de impressoras (Ender-3 V3 SE, Creality K1 Max,
@@ -64,6 +66,7 @@ falta de visibilidade sobre capacidade de produção.
   (>15%) para reprecificação.
 
 ### Vendas e canais
+
 - Consolidação de vendas por canal (Mercado Livre, Shopee, TikTok Shop,
   Amazon, SHEIN, etc.) e por categoria de produto.
 - Suporte à pré-venda por lote (inscrições, prazo, política de
@@ -71,6 +74,7 @@ falta de visibilidade sobre capacidade de produção.
 - Base para o catálogo/carrinho de venda direta do site público.
 
 ### Assinatura recorrente
+
 - Modelo de planos (básico/plus), ciclo de cobrança e mecânica de
   carimbo/fidelidade.
 - Integração com gateway de pagamento recorrente (Asaas, Iugu ou
@@ -78,6 +82,7 @@ falta de visibilidade sobre capacidade de produção.
 - Geração da fila de produção mensal por assinante/categoria.
 
 ### Societário e governança
+
 - Registro do acordo entre sócios (divisão de responsabilidades, divisão
   de lucro, regras de saída de sócio).
 - Acompanhamento do enquadramento societário (MEI x ME) e dos gatilhos de
