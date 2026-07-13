@@ -8,6 +8,8 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -19,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CHANNEL_LABEL } from "@/components/precificacao/canal-fee-form";
+import { ResultadoCalculo } from "@/components/shared/resultado-calculo";
 import type { PriceCalculation, SizeTier } from "@/types/pricing";
 
 const TIER_LABEL: Record<SizeTier, string> = { P: "P", M: "M", G: "G" };
@@ -44,14 +47,26 @@ function matchesTierFilter(calculation: PriceCalculation, tierFilter: string): b
     : calculation.suggestedTier.tier === tierFilter;
 }
 
-interface HistoricoTabelaProps {
-  rows: HistoricoRow[];
+function productLabel(calculation: PriceCalculation, productNames: Record<string, string>): string {
+  if (calculation.componentBreakdown) return productNames[calculation.productId ?? ""] ?? "Peça composta";
+  if (!calculation.productId) return "Avulso";
+  return productNames[calculation.productId] ?? "—";
 }
 
-export function HistoricoTabela({ rows }: HistoricoTabelaProps) {
+interface HistoricoTabelaProps {
+  rows: HistoricoRow[];
+  // id da peça -> nome, para exibir de qual peça é o cálculo (ex.: um boneco)
+  // e nomear os componentes ao reabrir o resultado de uma peça composta.
+  productNames: Record<string, string>;
+}
+
+export function HistoricoTabela({ rows, productNames }: HistoricoTabelaProps) {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [tierFilter, setTierFilter] = useState<string>("");
+  // Cálculo aberto no diálogo de detalhe: reexibe o resultado salvo, sem
+  // recalcular com os parâmetros vigentes atuais.
+  const [selected, setSelected] = useState<HistoricoRow | null>(null);
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
@@ -73,6 +88,11 @@ export function HistoricoTabela({ rows }: HistoricoTabelaProps) {
             {new Date(row.original.createdAt).toLocaleString("pt-BR")}
           </span>
         ),
+      },
+      {
+        id: "peca",
+        header: "Peça",
+        cell: ({ row }) => productLabel(row.original, productNames),
       },
       {
         id: "pesoTempo",
@@ -111,8 +131,17 @@ export function HistoricoTabela({ rows }: HistoricoTabelaProps) {
           </span>
         ),
       },
+      {
+        id: "acoes",
+        header: "",
+        cell: ({ row }) => (
+          <Button type="button" size="sm" variant="outline" onClick={() => setSelected(row.original)}>
+            Ver cálculo
+          </Button>
+        ),
+      },
     ],
-    [],
+    [productNames],
   );
 
   const table = useReactTable({
@@ -180,6 +209,31 @@ export function HistoricoTabela({ rows }: HistoricoTabelaProps) {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {selected ? `Cálculo de ${productLabel(selected, productNames)}` : "Cálculo"}
+            </DialogTitle>
+          </DialogHeader>
+          {selected && (
+            <>
+              <p className="text-sm text-muted-foreground">
+                {new Date(selected.createdAt).toLocaleString("pt-BR")} · {selected.printerName}
+                {selected.weightGrams !== null && selected.printHours !== null
+                  ? ` · ${selected.weightGrams}g / ${selected.printHours}h`
+                  : " · Peça composta"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Resultado exatamente como registrado no momento do cálculo — não recalculado com os
+                parâmetros vigentes atuais.
+              </p>
+              <ResultadoCalculo result={selected} saved componentNames={productNames} />
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

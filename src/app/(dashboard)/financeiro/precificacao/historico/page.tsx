@@ -8,12 +8,20 @@ export default async function PrecificacaoHistoricoPage() {
   const supabase = await createClient();
   const repositories = createRepositories(supabase);
 
-  const [calculations, printers] = await Promise.all([
+  const [calculations, printers, products] = await Promise.all([
     repositories.priceCalculations.findRecent(200),
     repositories.printers.findAll(),
+    repositories.products.findAll(),
   ]);
 
   const printerNameById = new Map(printers.map((printer) => [printer.id, printer.name]));
+
+  // Nome da peça por id, para exibir de qual peça (ex.: um boneco) é cada
+  // cálculo e permitir reabrir o resultado salvo. Também alimenta o breakdown
+  // por componente de peças compostas em ResultadoCalculo.
+  const productNames: Record<string, string> = Object.fromEntries(
+    products.map((product) => [product.id, product.name]),
+  );
 
   const rows: HistoricoRow[] = calculations.map((calculation) => ({
     ...calculation,
@@ -29,7 +37,7 @@ export default async function PrecificacaoHistoricoPage() {
 
       <PrecificacaoNav />
 
-      <HistoricoTabela rows={rows} />
+      <HistoricoTabela rows={rows} productNames={productNames} />
     </div>
   );
 }
