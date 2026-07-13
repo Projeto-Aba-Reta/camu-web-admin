@@ -187,6 +187,11 @@ rodando (`npm run supabase:start`) e `.env.local` preenchido.
 citadas no `camu-docs` (explicitamente marcadas lá como "a validar") e devem
 ser revisados pelo Owner/Sócio antes de qualquer uso em produção.
 
+## Deploy do ambiente de dev
+
+Para subir o painel em uma URL acessível pelo time (Supabase hospedado +
+Vercel, branch `develop`), ver [`docs/deploy-dev.md`](docs/deploy-dev.md).
+
 ## Fora de escopo (por enquanto)
 
 - A loja/site voltado ao cliente final (catálogo público, carrinho,
