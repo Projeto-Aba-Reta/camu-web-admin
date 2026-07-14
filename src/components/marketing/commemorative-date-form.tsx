@@ -20,7 +20,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { commemorativeDateFormSchema, type CommemorativeDateFormValues } from "@/lib/validation/marketing-schemas";
-import { createCommemorativeDateAction } from "@/app/(dashboard)/marketplace/calendario/actions";
+import { createCommemorativeDateAction } from "@/app/(dashboard)/marketing/calendario/actions";
 
 const DEFAULT_VALUES: CommemorativeDateFormValues = {
   name: "",

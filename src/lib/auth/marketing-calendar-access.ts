@@ -9,14 +9,14 @@ function isSocioOrOwner(user: CurrentUser): boolean {
   return user.userType === "owner" || user.userType === "socio";
 }
 
-// Leitura e escrita têm a mesma regra — Owner/Sócio ou role
-// marketplace-vendas — espelhando as policies de
-// commemorative_dates_marketing e social_content_plan_items (ver migration
-// calendario_marketing_redes_sociais e Requirement "Acesso ao calendário de
-// marketing"). Duas funções mesmo assim, para que a tela possa distinguir
-// leitura de escrita se a regra divergir depois.
+// Leitura e escrita têm a mesma regra — Owner/Sócio ou role marketing —
+// espelhando as policies de commemorative_dates_marketing e
+// social_content_plan_items (ver migration calendario_marketing_redes_sociais
+// e Requirement "Acesso ao calendário de marketing"). Duas funções mesmo
+// assim, para que a tela possa distinguir leitura de escrita se a regra
+// divergir depois.
 export function canAccessMarketingCalendar(user: CurrentUser): boolean {
-  return isSocioOrOwner(user) || hasRole(user, "marketplace-vendas");
+  return isSocioOrOwner(user) || hasRole(user, "marketing");
 }
 
 export function canWriteMarketingCalendar(user: CurrentUser): boolean {
@@ -36,7 +36,7 @@ export async function requireMarketingCalendarAccess(): Promise<CurrentUser> {
 export async function requireMarketingCalendarWrite(): Promise<CurrentUser> {
   const currentUser = await getCurrentProfile();
   if (!currentUser || !canWriteMarketingCalendar(currentUser)) {
-    throw new Error("Apenas Owner, Sócio ou Vendas/Marketplace podem alterar o calendário de marketing.");
+    throw new Error("Apenas Owner, Sócio ou Marketing podem alterar o calendário de marketing.");
   }
   return currentUser;
 }

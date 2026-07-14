@@ -23,7 +23,7 @@ export function MarketingViewTabs({ activeView, year, month }: MarketingViewTabs
       {tabs.map((tab) => (
         <Link
           key={tab.view}
-          href={`/marketplace/calendario?mes=${mes}&view=${tab.view}`}
+          href={`/marketing/calendario?mes=${mes}&view=${tab.view}`}
           className={cn(
             "border-b-2 border-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
             activeView === tab.view && "border-primary text-foreground",

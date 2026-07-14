@@ -27,7 +27,7 @@ import {
   createPlanItemAction,
   updatePlanItemAction,
   type PlanItemActionInput,
-} from "@/app/(dashboard)/marketplace/calendario/actions";
+} from "@/app/(dashboard)/marketing/calendario/actions";
 import { SOCIAL_CHANNELS, type CommemorativeDate, type SocialContentPlanItem } from "@/types/marketing";
 import type { Profile } from "@/lib/repositories/interfaces/user-repository.interface";
 

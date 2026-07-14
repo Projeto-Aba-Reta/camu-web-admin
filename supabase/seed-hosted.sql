@@ -15,7 +15,7 @@
 --   1. Um único usuário (Owner). Os sócios A/B/C do seed-roles não são
 --      criados, e nenhuma role é atribuída a ninguém — o Owner enxerga todas
 --      as áreas por user_type, sem precisar de role (ver Makefile, alvo seed).
---      As 7 roles são criadas mesmo assim, porque as telas de /admin/roles e
+--      As 8 roles são criadas mesmo assim, porque as telas de /admin/roles e
 --      as policies (has_role) dependem do catálogo existir.
 --   2. O titular do MEI é o próprio Owner (localmente é o socio-a@camu.local,
 --      que aqui não existe).
@@ -126,7 +126,10 @@ on conflict (id) do update
 insert into public.roles (name, slug, created_by)
 values
   ('Produção',           'producao',        v_owner_id),
-  ('Marketplace/Vendas', 'marketplace-vendas', v_owner_id),
+  ('Marketing',          'marketing',       v_owner_id),
+  -- Reserva de nome: o domínio de vendas por canal ainda não tem tela.
+  -- Sem policy e sem rota, a sidebar a renderiza como item não-clicável.
+  ('Vendas/Marketplace', 'vendas',          v_owner_id),
   ('Site',               'site',            v_owner_id),
   ('Assinatura',         'assinatura',      v_owner_id),
   ('Infra/Automação',    'infra-automacao', v_owner_id),

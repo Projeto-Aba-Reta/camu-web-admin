@@ -11,8 +11,8 @@ function isSocioOrOwner(user: CurrentUser): boolean {
 
 // Leitura de saldo/listagens de estoque: Owner/Sócio ou role producao/
 // financeiro (ver migration estoque_insumos_e_pecas_prontas, policies de
-// select). Não inclui marketplace-vendas — mais restrito que
-// canAccessCatalog, por isso um guard próprio em vez de reaproveitar aquele.
+// select). Não inclui marketing — mais restrito que canAccessCatalog, por
+// isso um guard próprio em vez de reaproveitar aquele.
 export function canAccessInventory(user: CurrentUser): boolean {
   return isSocioOrOwner(user) || hasRole(user, "producao") || hasRole(user, "financeiro");
 }

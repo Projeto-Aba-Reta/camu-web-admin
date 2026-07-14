@@ -12,7 +12,7 @@ export interface ActionResult {
   error?: string;
 }
 
-const CALENDARIO_PATH = "/marketplace/calendario";
+const CALENDARIO_PATH = "/marketing/calendario";
 
 async function getSocialContentPlanService(): Promise<SocialContentPlanService> {
   const supabase = await createClient();

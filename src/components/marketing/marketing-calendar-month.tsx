@@ -81,7 +81,7 @@ export function MarketingCalendarMonth({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Link
-          href={`/marketplace/calendario?mes=${monthParam(previous.year, previous.month)}&view=calendario`}
+          href={`/marketing/calendario?mes=${monthParam(previous.year, previous.month)}&view=calendario`}
           className={navClass}
         >
           <ChevronLeft className="size-4" />
@@ -93,7 +93,7 @@ export function MarketingCalendarMonth({
         </h2>
 
         <Link
-          href={`/marketplace/calendario?mes=${monthParam(next.year, next.month)}&view=calendario`}
+          href={`/marketing/calendario?mes=${monthParam(next.year, next.month)}&view=calendario`}
           className={navClass}
         >
           {MONTH_NAMES[next.month - 1]}
