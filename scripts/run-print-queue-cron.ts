@@ -1,16 +1,15 @@
 // Roda localmente, em loop, a mesma rotina que /api/cron/complete-print-queue
-// chama em produção — conclui automaticamente itens `imprimindo` cujo tempo
-// estimado já esgotou (ver Requirement "Conclusão automática por tempo
-// esgotado"). Em desenvolvimento local não existe nenhum agendador externo
-// chamando aquela rota (Vercel Cron só dispara em produção), então sem este
-// script o cronômetro da fila nunca sai de "tempo estimado esgotado"
-// sozinho — só via conclusão manual.
+// executa quando chamada por um agendador — conclui automaticamente itens
+// `imprimindo` cujo tempo estimado já esgotou (ver Requirement "Conclusão
+// automática por tempo esgotado"). Sem este script, no local o cronômetro da
+// fila nunca sai de "tempo estimado esgotado" sozinho — só via conclusão
+// manual.
 //
 // Uso: `npm run dev:cron`, rodando em paralelo a `npm run dev` (Supabase
-// local ativo). Ctrl+C para parar. Não é o mecanismo de produção: lá, o
-// agendador escolhido chama a rota HTTP protegida por CRON_SECRET — este
-// script chama o service diretamente, sem passar pela rota nem exigir
-// segredo, só para desenvolvimento local.
+// local ativo). Ctrl+C para parar. Este script chama o service diretamente,
+// sem passar pela rota nem exigir segredo — é conveniência de desenvolvimento.
+// No ambiente hospedado o agendador é opcional e hoje não existe (o cron da
+// Vercel exige plano Pro); ver docs/deploy-dev.md, Parte 3.
 
 import { config } from "dotenv";
 config({ path: ".env.local" });
