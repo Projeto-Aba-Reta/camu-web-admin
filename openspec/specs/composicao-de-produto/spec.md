@@ -46,13 +46,14 @@ O sistema SHALL calcular o custo de uma peça composta como a soma, para cada co
 - **WHEN** um componente tem ficha de fatiamento cadastrada mas nunca teve um cálculo de preço executado, e a peça composta que o contém é calculada
 - **THEN** o sistema calcula e salva um novo cálculo de preço para esse componente antes de agregá-lo ao custo da peça composta
 
-### Requirement: Leitura ampla por Produção, Financeiro e Vendas; escrita restrita a Produção
-O sistema SHALL permitir leitura da composição de uma peça a usuários `owner`/`socio` ou com role `producao`, `financeiro` ou `marketplace-vendas`, e permitir criar, editar ou remover vínculos de componente apenas a usuários `owner`/`socio` ou com a role `producao` — mesma regra de acesso já usada no cadastro do catálogo.
+### Requirement: Leitura ampla por Produção, Financeiro e Marketing; escrita restrita a Produção
+O sistema SHALL permitir leitura da composição de uma peça a usuários `owner`/`socio` ou com role `producao`, `financeiro` ou `marketing`, e permitir criar, editar ou remover vínculos de componente apenas a usuários `owner`/`socio` ou com a role `producao` — mesma regra de acesso já usada no cadastro do catálogo.
 
-#### Scenario: Usuário de Vendas consulta a composição de uma peça
-- **WHEN** um usuário com apenas a role `marketplace-vendas` consulta os componentes de uma peça composta
+#### Scenario: Usuário de Marketing consulta a composição de uma peça
+- **WHEN** um usuário com apenas a role `marketing` consulta os componentes de uma peça composta
 - **THEN** o sistema exibe a lista de componentes e quantidades normalmente
 
-#### Scenario: Usuário de Vendas tenta editar a composição
-- **WHEN** um usuário com apenas a role `marketplace-vendas` tenta adicionar ou remover um componente
+#### Scenario: Usuário de Marketing tenta editar a composição
+- **WHEN** um usuário com apenas a role `marketing` tenta adicionar ou remover um componente
 - **THEN** o sistema rejeita a escrita por Row Level Security
+

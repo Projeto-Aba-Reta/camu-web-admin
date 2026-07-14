@@ -42,16 +42,17 @@ Uma peça SHALL poder ser vinculada a um registro existente de `price_calculatio
 - **WHEN** uma peça é vinculada a um `price_calculations` existente
 - **THEN** o sistema associa o vínculo sem alterar o registro de cálculo original
 
-### Requirement: Leitura ampla por Produção, Financeiro e Vendas
-O sistema SHALL permitir leitura do catálogo a usuários `owner`/`socio` ou com role `producao`, `financeiro` ou `marketplace-vendas`.
+### Requirement: Leitura ampla por Produção, Financeiro e Marketing
+O sistema SHALL permitir leitura do catálogo a usuários `owner`/`socio` ou com role `producao`, `financeiro` ou `marketing`.
 
-#### Scenario: Usuário de Vendas consulta o catálogo
-- **WHEN** um usuário com apenas a role `marketplace-vendas` consulta a lista de peças
+#### Scenario: Usuário de Marketing consulta o catálogo
+- **WHEN** um usuário com apenas a role `marketing` consulta a lista de peças
 - **THEN** o sistema retorna as peças, pois a leitura é liberada para essa role
 
 ### Requirement: Escrita restrita a Produção
 O sistema SHALL permitir criar, editar e remover peças apenas a usuários `owner`/`socio` ou com a role `producao`.
 
-#### Scenario: Usuário de Vendas tenta cadastrar peça
-- **WHEN** um usuário com apenas a role `marketplace-vendas` tenta cadastrar uma nova peça
+#### Scenario: Usuário de Marketing tenta cadastrar peça
+- **WHEN** um usuário com apenas a role `marketing` tenta cadastrar uma nova peça
 - **THEN** o sistema rejeita a escrita por Row Level Security
+
