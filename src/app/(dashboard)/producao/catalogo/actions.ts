@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createRepositories, type Repositories } from "@/lib/repositories";
-import { CatalogService } from "@/lib/services/catalog-service";
+import { CatalogService, type ProductDeletionCheck } from "@/lib/services/catalog-service";
 import { SlicingSheetService } from "@/lib/services/slicing-sheet-service";
 import { requireCatalogWrite, requireChannelListingWrite } from "@/lib/auth/catalog-access";
 import type { ProductCategory, ProductComponent, ProductMedia, ProductStatus, ProductType } from "@/types/catalog";
@@ -29,6 +29,12 @@ async function getRepositories(): Promise<Repositories> {
 
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
+}
+
+// PostgresError 23503 = foreign_key_violation. O erro do Supabase não é uma
+// instância de Error, é um objeto com `code`.
+function isForeignKeyViolation(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "23503";
 }
 
 // =============================================================================
@@ -109,6 +115,69 @@ export async function updateProductAction(
     return { ok: true };
   } catch (error) {
     return { ok: false, error: errorMessage(error, "Não foi possível atualizar a peça.") };
+  }
+}
+
+export interface DeletionCheckActionResult extends ActionResult {
+  check?: ProductDeletionCheck;
+}
+
+// Chamada pelo diálogo ao abrir, e não na renderização da listagem: as
+// guardas custam 4 consultas por peça, o que numa listagem inteira viraria
+// centenas de round-trips (ver design.md decisão 4).
+export async function getProductDeletionCheckAction(productId: string): Promise<DeletionCheckActionResult> {
+  try {
+    await requireCatalogWrite();
+    const repositories = await getRepositories();
+    const catalogService = new CatalogService(repositories);
+    const check = await catalogService.getDeletionCheck(productId);
+    return { ok: true, check };
+  } catch (error) {
+    return { ok: false, error: errorMessage(error, "Não foi possível verificar os vínculos da peça.") };
+  }
+}
+
+export async function deleteProductAction(productId: string): Promise<ActionResult> {
+  try {
+    await requireCatalogWrite();
+    const supabase = await createClient();
+    const repositories = createRepositories(supabase);
+    const catalogService = new CatalogService(repositories);
+
+    await catalogService.deleteProduct(productId, async (storagePaths) => {
+      const { error } = await supabase.storage.from(PRODUCT_MEDIA_BUCKET).remove(storagePaths);
+      if (error) throw error;
+    });
+
+    revalidatePath(CATALOGO_PATH);
+    return { ok: true };
+  } catch (error) {
+    // Além do bloqueio explícito do service, a FK do banco continua sendo a
+    // rede de segurança para a janela entre a checagem e o delete (ver
+    // design.md, Riscos): a peça pode entrar na fila nesse intervalo.
+    if (isForeignKeyViolation(error)) {
+      return {
+        ok: false,
+        error: "Esta peça passou a ter histórico (fila ou estoque) e não pode mais ser excluída. Atualize a página.",
+      };
+    }
+    return { ok: false, error: errorMessage(error, "Não foi possível excluir a peça.") };
+  }
+}
+
+export async function discontinueProductAction(productId: string): Promise<ActionResult> {
+  try {
+    await requireCatalogWrite();
+    const repositories = await getRepositories();
+    const catalogService = new CatalogService(repositories);
+
+    await catalogService.discontinueProduct(productId);
+
+    revalidatePath(CATALOGO_PATH);
+    revalidatePath(productPath(productId));
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: errorMessage(error, "Não foi possível descontinuar a peça.") };
   }
 }
 

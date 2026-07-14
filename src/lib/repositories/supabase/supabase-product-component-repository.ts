@@ -60,4 +60,13 @@ export class SupabaseProductComponentRepository implements IProductComponentRepo
     const { error } = await this.supabase.from("product_components").delete().eq("id", id);
     if (error) throw error;
   }
+
+  async findByComponentProductId(componentProductId: string): Promise<ProductComponent[]> {
+    const { data, error } = await this.supabase
+      .from("product_components")
+      .select("*")
+      .eq("component_product_id", componentProductId);
+    if (error) throw error;
+    return (data ?? []).map(toProductComponent);
+  }
 }

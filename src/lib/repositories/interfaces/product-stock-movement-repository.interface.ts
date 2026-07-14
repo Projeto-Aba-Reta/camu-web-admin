@@ -19,4 +19,7 @@ export interface IProductStockMovementRepository {
   create(input: CreateProductStockMovementInput): Promise<ProductStockMovement>;
   findBalanceByProductId(productId: string): Promise<number>;
   findAllBalances(): Promise<ProductStockBalance[]>;
+  // Guarda de exclusão de peça (ver design.md decisão 2): histórico de
+  // estoque é imutável e a FK bloqueia a remoção da peça.
+  countByProductId(productId: string): Promise<number>;
 }

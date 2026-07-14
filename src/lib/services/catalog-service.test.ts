@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { CatalogService } from "./catalog-service";
+import { CatalogService, ProductDeletionBlockedError } from "./catalog-service";
+import type { IPrintQueueRepository } from "@/lib/repositories/interfaces/print-queue-repository.interface";
+import type { IProductStockMovementRepository } from "@/lib/repositories/interfaces/product-stock-movement-repository.interface";
+import type { IMaterialStockMovementRepository } from "@/lib/repositories/interfaces/material-stock-movement-repository.interface";
 import type {
   CreateProductInput,
   IProductRepository,
@@ -196,6 +199,77 @@ class FakeProductComponentRepository implements IProductComponentRepository {
   async remove(id: string): Promise<void> {
     this.components = this.components.filter((c) => c.id !== id);
   }
+  async findByComponentProductId(componentProductId: string) {
+    return this.components.filter((c) => c.componentProductId === componentProductId);
+  }
+}
+
+// As três guardas de exclusão que vêm de fora do catálogo. Só o
+// countByProductId é exercitado aqui; o resto da interface não participa.
+class FakePrintQueueRepository implements IPrintQueueRepository {
+  public countByProduct = new Map<string, number>();
+
+  async countByProductId(productId: string) {
+    return this.countByProduct.get(productId) ?? 0;
+  }
+  async findById(): Promise<never> {
+    throw new Error("not implemented in fake");
+  }
+  async listByStatus(): Promise<never> {
+    throw new Error("not implemented in fake");
+  }
+  async create(): Promise<never> {
+    throw new Error("not implemented in fake");
+  }
+  async update(): Promise<never> {
+    throw new Error("not implemented in fake");
+  }
+  async setItemMaterials(): Promise<never> {
+    throw new Error("not implemented in fake");
+  }
+  async findMaterialsByItemId(): Promise<never> {
+    throw new Error("not implemented in fake");
+  }
+}
+
+class FakeProductStockMovementRepository implements IProductStockMovementRepository {
+  public countByProduct = new Map<string, number>();
+
+  async countByProductId(productId: string) {
+    return this.countByProduct.get(productId) ?? 0;
+  }
+  async findByProductId(): Promise<never> {
+    throw new Error("not implemented in fake");
+  }
+  async create(): Promise<never> {
+    throw new Error("not implemented in fake");
+  }
+  async findBalanceByProductId(): Promise<never> {
+    throw new Error("not implemented in fake");
+  }
+  async findAllBalances(): Promise<never> {
+    throw new Error("not implemented in fake");
+  }
+}
+
+class FakeMaterialStockMovementRepository implements IMaterialStockMovementRepository {
+  public countByProduct = new Map<string, number>();
+
+  async countByProductId(productId: string) {
+    return this.countByProduct.get(productId) ?? 0;
+  }
+  async findByMaterialId(): Promise<never> {
+    throw new Error("not implemented in fake");
+  }
+  async create(): Promise<never> {
+    throw new Error("not implemented in fake");
+  }
+  async findBalanceByMaterialId(): Promise<never> {
+    throw new Error("not implemented in fake");
+  }
+  async findAllBalances(): Promise<never> {
+    throw new Error("not implemented in fake");
+  }
 }
 
 class FakeSlicingSheetRepository implements ISlicingSheetRepository {
@@ -222,6 +296,9 @@ function makeService() {
   const priceCalculations = new FakePriceCalculationRepository([makeCalculation()]);
   const productComponents = new FakeProductComponentRepository();
   const slicingSheets = new FakeSlicingSheetRepository();
+  const printQueueItems = new FakePrintQueueRepository();
+  const productStockMovements = new FakeProductStockMovementRepository();
+  const materialStockMovements = new FakeMaterialStockMovementRepository();
 
   const service = new CatalogService({
     products,
@@ -230,8 +307,22 @@ function makeService() {
     priceCalculations,
     productComponents,
     slicingSheets,
+    printQueueItems,
+    productStockMovements,
+    materialStockMovements,
   });
-  return { service, products, productMedia, productChannelListings, priceCalculations, productComponents, slicingSheets };
+  return {
+    service,
+    products,
+    productMedia,
+    productChannelListings,
+    priceCalculations,
+    productComponents,
+    slicingSheets,
+    printQueueItems,
+    productStockMovements,
+    materialStockMovements,
+  };
 }
 
 describe("CatalogService.linkPriceCalculation", () => {
@@ -415,5 +506,121 @@ describe("CatalogService.setCoverMedia", () => {
     expect(media.find((m) => m.id === first.id)?.isCover).toBe(false);
     expect(media.find((m) => m.id === second.id)?.isCover).toBe(true);
     expect(media.filter((m) => m.isCover)).toHaveLength(1);
+  });
+});
+
+describe("CatalogService.deleteProduct", () => {
+  async function makeDeletableProduct(helpers: ReturnType<typeof makeService>) {
+    return helpers.products.create({
+      name: "Rascunho teste",
+      description: null,
+      category: "utilitario",
+      createdBy: null,
+    });
+  }
+
+  it("exclui peça sem histórico e limpa os arquivos no Storage", async () => {
+    const helpers = makeService();
+    const { service, products, productMedia } = helpers;
+    const product = await makeDeletableProduct(helpers);
+    await service.addMedia({ productId: product.id, storagePath: "a.jpg", displayOrder: 0 });
+    await service.addMedia({ productId: product.id, storagePath: "b.jpg", displayOrder: 1 });
+
+    const removed: string[][] = [];
+    await service.deleteProduct(product.id, async (paths) => {
+      removed.push(paths);
+    });
+
+    expect(removed).toEqual([["a.jpg", "b.jpg"]]);
+    expect(await products.findById(product.id)).toBeNull();
+    // As linhas de product_media saem por cascade no banco real; o fake não
+    // simula cascade, então o que importa aqui é o Storage ter sido limpo.
+    expect(await productMedia.findByProductId(product.id)).toHaveLength(2);
+  });
+
+  it("bloqueia exclusão de peça com item na fila de impressão", async () => {
+    const helpers = makeService();
+    const { service, products, printQueueItems } = helpers;
+    const product = await makeDeletableProduct(helpers);
+    printQueueItems.countByProduct.set(product.id, 2);
+
+    await expect(service.deleteProduct(product.id, async () => {})).rejects.toThrow(ProductDeletionBlockedError);
+    expect(await products.findById(product.id)).not.toBeNull();
+  });
+
+  it("bloqueia exclusão de peça com movimentação de estoque de peças prontas", async () => {
+    const helpers = makeService();
+    const { service, products, productStockMovements } = helpers;
+    const product = await makeDeletableProduct(helpers);
+    productStockMovements.countByProduct.set(product.id, 1);
+
+    await expect(service.deleteProduct(product.id, async () => {})).rejects.toThrow(/estoque de peças prontas/);
+    expect(await products.findById(product.id)).not.toBeNull();
+  });
+
+  it("bloqueia exclusão de peça usada como componente e nomeia a peça composta", async () => {
+    const helpers = makeService();
+    const { service, products, productComponents } = helpers;
+    const component = await makeDeletableProduct(helpers);
+    const parent = await products.create({
+      name: "Kit Leon",
+      description: null,
+      category: "linha_leon",
+      productType: "composta",
+      createdBy: null,
+    });
+    await productComponents.create({
+      parentProductId: parent.id,
+      componentProductId: component.id,
+      quantity: 2,
+      createdBy: null,
+    });
+
+    await expect(service.deleteProduct(component.id, async () => {})).rejects.toThrow(/"Kit Leon"/);
+    expect(await products.findById(component.id)).not.toBeNull();
+  });
+
+  it("não remove a peça se a limpeza do Storage falhar", async () => {
+    const helpers = makeService();
+    const { service, products } = helpers;
+    const product = await makeDeletableProduct(helpers);
+    await service.addMedia({ productId: product.id, storagePath: "a.jpg", displayOrder: 0 });
+
+    const storageFailure = service.deleteProduct(product.id, async () => {
+      throw new Error("storage indisponível");
+    });
+
+    await expect(storageFailure).rejects.toThrow(/storage indisponível/);
+    expect(await products.findById(product.id)).not.toBeNull();
+  });
+});
+
+describe("CatalogService.discontinueProduct", () => {
+  it("marca a peça como descontinuada preservando os vínculos", async () => {
+    const { service, products, productComponents } = makeService();
+    const component = await products.create({
+      name: "Base",
+      description: null,
+      category: "utilitario",
+      createdBy: null,
+    });
+    const parent = await products.create({
+      name: "Kit",
+      description: null,
+      category: "utilitario",
+      productType: "composta",
+      createdBy: null,
+    });
+    await productComponents.create({
+      parentProductId: parent.id,
+      componentProductId: component.id,
+      quantity: 1,
+      createdBy: null,
+    });
+
+    const updated = await service.discontinueProduct(component.id);
+
+    expect(updated.status).toBe("descontinuado");
+    expect(await productComponents.findByComponentProductId(component.id)).toHaveLength(1);
   });
 });

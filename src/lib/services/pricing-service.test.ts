@@ -220,6 +220,9 @@ class FakeProductComponentRepository implements IProductComponentRepository {
   async remove(): Promise<void> {
     throw new Error("not implemented in fake");
   }
+  async findByComponentProductId(componentProductId: string) {
+    return this.components.filter((c) => c.componentProductId === componentProductId);
+  }
 }
 
 interface MakeServiceOptions {

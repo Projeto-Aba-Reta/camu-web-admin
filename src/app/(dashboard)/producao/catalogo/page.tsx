@@ -43,7 +43,7 @@ export default async function CatalogoPage() {
 
       <CatalogMaturityIndicator activeCountByCategory={activeCountByCategory} />
 
-      <ProductList products={products} />
+      <ProductList products={products} canWrite={canWrite} />
     </div>
   );
 }
