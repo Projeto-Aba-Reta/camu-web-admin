@@ -15,7 +15,11 @@ export const areaRoutes: Record<string, AreaRoute> = {
   // área de Produção.
   producao: { href: "/producao/catalogo" },
   societario: { href: "/societario/acordo" },
-  // Marketplace/Vendas: o calendário de marketing é, por ora, a única tela
-  // da área e portanto sua página padrão.
-  "marketplace-vendas": { href: "/marketplace/calendario" },
+  // Marketing: o calendário de redes sociais é, por ora, a única tela da
+  // área e portanto sua página padrão.
+  //
+  // A role `vendas` (Vendas/Marketplace) não tem entrada aqui de propósito:
+  // é reserva de nome, sem tela construída ainda, e a ausência de rota é o
+  // que faz a sidebar renderizá-la como item não-clicável.
+  marketing: { href: "/marketing/calendario" },
 };

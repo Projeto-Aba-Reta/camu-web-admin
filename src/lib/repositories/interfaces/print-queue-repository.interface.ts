@@ -34,4 +34,8 @@ export interface IPrintQueueRepository {
   // ficha para o item".
   setItemMaterials(itemId: string, materials: CreatePrintQueueItemMaterialInput[]): Promise<PrintQueueItemMaterial[]>;
   findMaterialsByItemId(itemId: string): Promise<PrintQueueItemMaterial[]>;
+  // Guarda de exclusão de peça: print_queue_items.product_id referencia
+  // products sem `on delete`, então a FK bloqueia a remoção. Contamos para
+  // explicar o bloqueio antes de tentar (ver design.md decisão 2).
+  countByProductId(productId: string): Promise<number>;
 }

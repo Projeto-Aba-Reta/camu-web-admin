@@ -69,4 +69,13 @@ export class SupabaseProductStockMovementRepository implements IProductStockMove
       .filter((row): row is { product_id: string; balance: number | null } => row.product_id !== null)
       .map((row) => ({ productId: row.product_id, balance: row.balance ?? 0 }));
   }
+
+  async countByProductId(productId: string): Promise<number> {
+    const { count, error } = await this.supabase
+      .from("product_stock_movements")
+      .select("*", { count: "exact", head: true })
+      .eq("product_id", productId);
+    if (error) throw error;
+    return count ?? 0;
+  }
 }

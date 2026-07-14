@@ -39,6 +39,17 @@ const societario: Role = {
   icon: null,
 };
 
+// Reserva de nome: o domínio de vendas por canal ainda não tem tela, então
+// `vendas` não tem entrada em areaRoutes. É hoje a única role nessa situação
+// — e por isso o caso de teste do item não-clicável.
+const vendas: Role = {
+  id: "r4",
+  name: "Vendas/Marketplace",
+  slug: "vendas",
+  description: null,
+  icon: null,
+};
+
 describe("buildSidebar", () => {
   it("Owner sem roles vê todas as roles do sistema + seção Administração", () => {
     const owner = makeUser({ userType: "owner", roles: [] });
@@ -66,14 +77,14 @@ describe("buildSidebar", () => {
   });
 
   it("Role sem rota implementada aparece sem href", () => {
-    const member = makeUser({ userType: "member", roles: [societario] });
-    const sections = buildSidebar(member, "own", [societario]);
+    const member = makeUser({ userType: "member", roles: [vendas] });
+    const sections = buildSidebar(member, "own", [vendas]);
 
     const item = sections
       .find((s) => s.id === "areas")!
-      .items.find((i) => i.slug === "societario")!;
+      .items.find((i) => i.slug === "vendas")!;
 
-    // societario ainda não tem entrada em areaRoutes → sem href
+    // vendas não tem entrada em areaRoutes → sem href
     expect(item.href).toBeUndefined();
   });
 

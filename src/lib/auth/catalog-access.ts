@@ -10,14 +10,14 @@ function isSocioOrOwner(user: CurrentUser): boolean {
 }
 
 // Leitura da listagem/detalhe de peça: Owner/Sócio ou role producao/
-// financeiro/marketplace-vendas (ver Requirement "Acesso conforme regra de
-// domínio do catálogo").
+// financeiro/marketing (ver Requirement "Acesso conforme regra de domínio
+// do catálogo").
 export function canAccessCatalog(user: CurrentUser): boolean {
   return (
     isSocioOrOwner(user) ||
     hasRole(user, "producao") ||
     hasRole(user, "financeiro") ||
-    hasRole(user, "marketplace-vendas")
+    hasRole(user, "marketing")
   );
 }
 
@@ -28,10 +28,10 @@ export function canWriteCatalog(user: CurrentUser): boolean {
 }
 
 // Ativação/desativação e ajuste de preço por canal: Owner/Sócio ou role
-// producao/marketplace-vendas (ver Requirement "Acesso de gestão de
-// disponibilidade por Produção e Vendas").
+// producao/marketing (ver Requirement "Acesso de gestão de disponibilidade
+// por Produção e Marketing").
 export function canManageChannelListings(user: CurrentUser): boolean {
-  return isSocioOrOwner(user) || hasRole(user, "producao") || hasRole(user, "marketplace-vendas");
+  return isSocioOrOwner(user) || hasRole(user, "producao") || hasRole(user, "marketing");
 }
 
 // Server Actions são endpoints independentes da página — o guard do layout
@@ -55,7 +55,7 @@ export async function requireCatalogWrite(): Promise<CurrentUser> {
 export async function requireChannelListingWrite(): Promise<CurrentUser> {
   const currentUser = await getCurrentProfile();
   if (!currentUser || !canManageChannelListings(currentUser)) {
-    throw new Error("Apenas Owner, Sócio, Produção ou Vendas/Marketplace podem alterar disponibilidade por canal.");
+    throw new Error("Apenas Owner, Sócio, Produção ou Marketing podem alterar disponibilidade por canal.");
   }
   return currentUser;
 }

@@ -16,4 +16,9 @@ export interface IProductComponentRepository {
   findAllByParentIds(parentProductIds: string[]): Promise<ProductComponent[]>;
   create(input: CreateProductComponentInput): Promise<ProductComponent>;
   remove(id: string): Promise<void>;
+  // Guarda de exclusão de peça: quem usa esta peça como componente. A FK
+  // component_product_id é `on delete restrict`. Devolve as linhas, não uma
+  // contagem, porque o diálogo nomeia as peças compostas que bloqueiam —
+  // um número seco não seria acionável (ver design.md decisão 2).
+  findByComponentProductId(componentProductId: string): Promise<ProductComponent[]>;
 }

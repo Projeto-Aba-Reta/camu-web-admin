@@ -71,4 +71,13 @@ export class SupabaseMaterialStockMovementRepository implements IMaterialStockMo
       .filter((row): row is { material_id: string; balance: number | null } => row.material_id !== null)
       .map((row) => ({ materialId: row.material_id, balance: row.balance ?? 0 }));
   }
+
+  async countByProductId(productId: string): Promise<number> {
+    const { count, error } = await this.supabase
+      .from("material_stock_movements")
+      .select("*", { count: "exact", head: true })
+      .eq("product_id", productId);
+    if (error) throw error;
+    return count ?? 0;
+  }
 }

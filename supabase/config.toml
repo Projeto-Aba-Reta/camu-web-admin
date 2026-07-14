@@ -419,3 +419,32 @@ enabled = true
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# =============================================================================
+# Ambiente de dev hospedado (admin.camu3d.com.br)
+# =============================================================================
+# O bloco [auth] lá em cima vale para o stack LOCAL e deve continuar apontando
+# para 127.0.0.1. O dev hospedado já está com o site_url correto — este bloco
+# NÃO conserta nada hoje, ele PROTEGE: sem ele, um `supabase config push`
+# sobrescreveria o site_url do dev de volta para http://127.0.0.1:3000 e passaria
+# a mandar o convidado para o localhost dele.
+#
+# Cuidado: `config push` empurra o bloco [auth] inteiro (não só o que está aqui).
+# Enquanto o projeto estiver no free tier com o provedor de e-mail padrão, o push
+# falha com 400 no template customizado de convite ("Email template modification
+# is not available for free tier projects using the default email provider") — e,
+# por ser all-or-nothing, nada é aplicado.
+#
+# É essa mesma limitação que quebra o convite em dev: sem template customizado, o
+# e-mail sai com o padrão do Supabase, que usa {{ .ConfirmationURL }} em vez de
+# {{ .SiteURL }}/auth/confirm?...&next=/set-password (ver templates/invite.html).
+# O convidado é redirecionado para a raiz do site e nunca chega ao /set-password.
+# Corrigir de verdade exige SMTP próprio no projeto de dev (aí o template passa a
+# ser aceito e este push funciona), ou passar `redirectTo` no inviteUserByEmail e
+# tratar o retorno do fluxo padrão.
+[remotes.dev]
+project_id = "vlhgzumisthqoxpctsky"
+
+[remotes.dev.auth]
+site_url = "https://admin.camu3d.com.br"
+additional_redirect_urls = ["https://admin.camu3d.com.br"]

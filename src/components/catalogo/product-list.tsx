@@ -3,11 +3,21 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { MoreHorizontal } from "lucide-react";
 import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CATEGORY_LABEL, SIZE_TIER_LABEL, STATUS_LABEL } from "@/components/catalogo/constants";
+import { DeleteProductDialog } from "@/components/catalogo/delete-product-dialog";
 import type { Product } from "@/types/catalog";
 
 const STATUS_VARIANT: Record<Product["status"], "secondary" | "outline" | "default"> = {
@@ -19,13 +29,15 @@ const STATUS_VARIANT: Record<Product["status"], "secondary" | "outline" | "defau
 
 interface ProductListProps {
   products: Product[];
+  canWrite: boolean;
 }
 
-export function ProductList({ products }: ProductListProps) {
+export function ProductList({ products, canWrite }: ProductListProps) {
   const router = useRouter();
   const [categoryFilter, setCategoryFilter] = useState("");
   const [tierFilter, setTierFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -71,8 +83,48 @@ export function ProductList({ products }: ProductListProps) {
         header: "Status",
         cell: ({ row }) => <Badge variant={STATUS_VARIANT[row.original.status]}>{STATUS_LABEL[row.original.status]}</Badge>,
       },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => {
+          const product = row.original;
+          return (
+            // O clique na linha navega para o detalhe; o menu precisa deter o
+            // evento para não disparar a navegação junto.
+            <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="size-8">
+                    <MoreHorizontal className="size-4" />
+                    <span className="sr-only">Ações da peça {product.name}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => router.push(`/producao/catalogo/${product.id}`)}>
+                    Ver detalhes
+                  </DropdownMenuItem>
+                  {canWrite && (
+                    <>
+                      <DropdownMenuItem onSelect={() => router.push(`/producao/catalogo/${product.id}`)}>
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onSelect={() => setProductToDelete(product)}
+                      >
+                        Excluir
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        },
+      },
     ],
-    [],
+    [canWrite, router],
   );
 
   const table = useReactTable({
@@ -172,6 +224,22 @@ export function ProductList({ products }: ProductListProps) {
           </TableBody>
         </Table>
       </div>
+
+      {/* Fora da tabela: um AlertDialog dentro do DropdownMenu seria
+          desmontado junto com o menu ao fechar. */}
+      {productToDelete && (
+        <DeleteProductDialog
+          key={productToDelete.id}
+          product={productToDelete}
+          onOpenChange={(open) => {
+            if (!open) setProductToDelete(null);
+          }}
+          onCompleted={() => {
+            setProductToDelete(null);
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }

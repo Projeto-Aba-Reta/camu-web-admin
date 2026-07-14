@@ -107,6 +107,10 @@ class FakePrintQueueRepository implements IPrintQueueRepository {
   async findMaterialsByItemId(itemId: string): Promise<PrintQueueItemMaterial[]> {
     return this.materialsByItemId.get(itemId) ?? [];
   }
+
+  async countByProductId(productId: string): Promise<number> {
+    return this.items.filter((item) => item.productId === productId).length;
+  }
 }
 
 class FakePrinterRepository implements IPrinterRepository {
@@ -195,6 +199,9 @@ class FakeMaterialStockMovementRepository implements IMaterialStockMovementRepos
   async findAllBalances(): Promise<MaterialStockBalance[]> {
     return [];
   }
+  async countByProductId(productId: string): Promise<number> {
+    return this.movements.filter((m) => m.productId === productId).length;
+  }
 }
 
 class FakeMaterialStockThresholdRepository implements IMaterialStockThresholdRepository {
@@ -234,6 +241,9 @@ class FakeProductStockMovementRepository implements IProductStockMovementReposit
   }
   async findAllBalances(): Promise<ProductStockBalance[]> {
     return [];
+  }
+  async countByProductId(productId: string): Promise<number> {
+    return this.movements.filter((m) => m.productId === productId).length;
   }
 }
 

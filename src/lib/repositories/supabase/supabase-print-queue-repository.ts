@@ -117,4 +117,13 @@ export class SupabasePrintQueueRepository implements IPrintQueueRepository {
     if (error) throw error;
     return (data ?? []).map(toPrintQueueItemMaterial);
   }
+
+  async countByProductId(productId: string): Promise<number> {
+    const { count, error } = await this.supabase
+      .from("print_queue_items")
+      .select("*", { count: "exact", head: true })
+      .eq("product_id", productId);
+    if (error) throw error;
+    return count ?? 0;
+  }
 }

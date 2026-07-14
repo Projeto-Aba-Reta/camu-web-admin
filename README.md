@@ -146,13 +146,15 @@ a partir das telas em `/admin/roles` e `/admin/usuarios`.
 
 ### Seed de roles e usuários de exemplo (opcional, ambiente local)
 
-`npm run seed-roles` popula o banco com as 7 roles e a divisão sócio→área
+`npm run seed-roles` popula o banco com as 8 roles e a divisão sócio→área
 hoje documentadas em `camu-docs/01-visao-geral/sociedade-e-divisao.md`
-(Produção, Marketplace/Vendas, Site, Assinatura, Infra/Automação,
-Financeiro, Societário), além de 3 usuários de exemplo:
+(Produção, Marketing, Vendas/Marketplace, Site, Assinatura, Infra/Automação,
+Financeiro, Societário), além de 3 usuários de exemplo. Vendas/Marketplace é
+reserva de nome: o domínio ainda não tem tela, e por isso aparece na sidebar
+como item não-clicável.
 
 ```
-socio-a@camu.local / socio123456  → Produção, Marketplace/Vendas
+socio-a@camu.local / socio123456  → Produção, Marketing
 socio-b@camu.local / socio123456  → Site, Assinatura, Infra/Automação
 socio-c@camu.local / socio123456  → sem role própria (gap documentado)
 ```

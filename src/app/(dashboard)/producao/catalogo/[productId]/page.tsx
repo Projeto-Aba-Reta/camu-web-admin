@@ -9,6 +9,7 @@ import { MediaManager } from "@/components/catalogo/media-manager";
 import { ChannelListingForm } from "@/components/catalogo/channel-listing-form";
 import { SlicingSheetSection } from "@/components/catalogo/slicing-sheet-section";
 import { ProductComponentsManager } from "@/components/catalogo/product-components-manager";
+import { ProductDetailActions } from "@/components/catalogo/product-detail-actions";
 import { SlicingSheetService } from "@/lib/services/slicing-sheet-service";
 import type { HistoricoRow } from "@/components/precificacao/historico-tabela";
 
@@ -56,7 +57,11 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={product.name} description="Cadastro, precificação, fotos e disponibilidade por canal desta peça." />
+      <PageHeader
+        title={product.name}
+        description="Cadastro, precificação, fotos e disponibilidade por canal desta peça."
+        action={canWrite && <ProductDetailActions product={product} />}
+      />
 
       <ProductForm
         product={product}

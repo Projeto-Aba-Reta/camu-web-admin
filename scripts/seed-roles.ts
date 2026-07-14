@@ -32,7 +32,11 @@ const SEED_PASSWORD = "socio123456";
 
 const ROLE_DEFS = [
   { name: "Produção", slug: "producao" },
-  { name: "Marketplace/Vendas", slug: "marketplace-vendas" },
+  { name: "Marketing", slug: "marketing" },
+  // Reserva de nome: o domínio de vendas por canal ainda não tem tela. Sem
+  // policy e sem rota em areaRoutes, a sidebar a renderiza como item
+  // não-clicável (ver navegacao-por-area).
+  { name: "Vendas/Marketplace", slug: "vendas" },
   { name: "Site", slug: "site" },
   { name: "Assinatura", slug: "assinatura" },
   { name: "Infra/Automação", slug: "infra-automacao" },
@@ -44,7 +48,7 @@ const SOCIO_DEFS = [
   {
     email: "socio-a@camu.local",
     fullName: "Sócio A",
-    roleSlugs: ["producao", "marketplace-vendas"],
+    roleSlugs: ["producao", "marketing"],
   },
   {
     email: "socio-b@camu.local",

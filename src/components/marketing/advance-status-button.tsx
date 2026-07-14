@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SOCIAL_STATUS_LABEL } from "@/components/marketing/labels";
-import { advancePlanItemStatusAction } from "@/app/(dashboard)/marketplace/calendario/actions";
+import { advancePlanItemStatusAction } from "@/app/(dashboard)/marketing/calendario/actions";
 import { SOCIAL_CONTENT_STATUS_SEQUENCE, type SocialContentStatus } from "@/types/marketing";
 
 interface AdvanceStatusButtonProps {

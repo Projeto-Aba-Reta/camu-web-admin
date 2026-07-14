@@ -61,6 +61,10 @@ class FakeMaterialStockMovementRepository implements IMaterialStockMovementRepos
       })),
     );
   }
+
+  async countByProductId(productId: string): Promise<number> {
+    return this.movements.filter((m) => m.productId === productId).length;
+  }
 }
 
 class FakeMaterialStockThresholdRepository implements IMaterialStockThresholdRepository {
@@ -127,6 +131,10 @@ class FakeProductStockMovementRepository implements IProductStockMovementReposit
         balance: await this.findBalanceByProductId(productId),
       })),
     );
+  }
+
+  async countByProductId(productId: string): Promise<number> {
+    return this.movements.filter((m) => m.productId === productId).length;
   }
 }
 

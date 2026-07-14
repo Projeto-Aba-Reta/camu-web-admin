@@ -18,8 +18,65 @@ function pricesDiverge(listedPrice: number, suggestedPrice: number): boolean {
 
 type CatalogRepositories = Pick<
   Repositories,
-  "products" | "productMedia" | "productChannelListings" | "priceCalculations" | "productComponents" | "slicingSheets"
+  | "products"
+  | "productMedia"
+  | "productChannelListings"
+  | "priceCalculations"
+  | "productComponents"
+  | "slicingSheets"
+  | "printQueueItems"
+  | "productStockMovements"
+  | "materialStockMovements"
 >;
+
+// Registros que impedem a exclusão de uma peça — as FKs correspondentes são
+// `restrict`/`no action` no banco, porque histórico produtivo e contábil é
+// imutável (ver design.md decisão 1). Mídia, listagens de canal e fichas de
+// fatiamento não aparecem aqui: saem em cascata junto com a peça.
+export interface ProductDependencies {
+  printQueueItems: number;
+  productStockMovements: number;
+  materialStockMovements: number;
+  usedAsComponentIn: ProductComponent[];
+}
+
+export function hasBlockingDependencies(dependencies: ProductDependencies): boolean {
+  return (
+    dependencies.printQueueItems > 0 ||
+    dependencies.productStockMovements > 0 ||
+    dependencies.materialStockMovements > 0 ||
+    dependencies.usedAsComponentIn.length > 0
+  );
+}
+
+export class ProductDeletionBlockedError extends Error {
+  constructor(
+    message: string,
+    readonly dependencies: ProductDependencies,
+  ) {
+    super(message);
+    this.name = "ProductDeletionBlockedError";
+  }
+}
+
+// O que o diálogo de exclusão precisa saber, já em forma renderizável: se dá
+// para excluir, o que impede (frases prontas, com as peças compostas
+// nomeadas) e o que sairia em cascata junto. Calculado sob demanda ao abrir
+// o diálogo, não para a listagem inteira (ver design.md decisão 4).
+export interface ProductDeletionCheck {
+  canDelete: boolean;
+  blockers: string[];
+  cascade: {
+    media: number;
+    channelListings: number;
+    slicingSheets: number;
+  };
+}
+
+// Remove os objetos da peça no bucket `product-media`. Injetado pela Server
+// Action porque o Storage não é um repositório — o service não conhece o
+// cliente Supabase.
+export type RemoveStorageObjects = (storagePaths: string[]) => Promise<void>;
 
 export class CatalogService {
   constructor(private readonly repositories: CatalogRepositories) {}
@@ -32,8 +89,94 @@ export class CatalogService {
     return this.repositories.products.update(id, input);
   }
 
-  async deleteProduct(id: string): Promise<void> {
-    return this.repositories.products.delete(id);
+  async getProductDependencies(productId: string): Promise<ProductDependencies> {
+    const [printQueueItems, productStockMovements, materialStockMovements, usedAsComponentIn] = await Promise.all([
+      this.repositories.printQueueItems.countByProductId(productId),
+      this.repositories.productStockMovements.countByProductId(productId),
+      this.repositories.materialStockMovements.countByProductId(productId),
+      this.repositories.productComponents.findByComponentProductId(productId),
+    ]);
+
+    return { printQueueItems, productStockMovements, materialStockMovements, usedAsComponentIn };
+  }
+
+  // Exclusão permanente, permitida só para peças sem histórico dependente
+  // (ver Requirement "Exclusão de peça sem histórico dependente"). O cascade
+  // do banco leva mídia, listagens de canal e fichas de fatiamento; os
+  // objetos no Storage não são alcançados pelo cascade e por isso saem aqui.
+  //
+  // Storage antes do banco (ver design.md decisão 3): se a remoção dos
+  // arquivos falhar, abortamos com a peça íntegra. Na ordem inversa, uma
+  // falha deixaria arquivos órfãos sem nenhum registro que os aponte.
+  async getDeletionCheck(productId: string): Promise<ProductDeletionCheck> {
+    const [dependencies, media, channelListings, slicingSheets] = await Promise.all([
+      this.getProductDependencies(productId),
+      this.repositories.productMedia.findByProductId(productId),
+      this.repositories.productChannelListings.findByProductId(productId),
+      this.repositories.slicingSheets.findByProductId(productId),
+    ]);
+
+    return {
+      canDelete: !hasBlockingDependencies(dependencies),
+      blockers: await this.describeBlockers(dependencies),
+      cascade: {
+        media: media.length,
+        channelListings: channelListings.length,
+        slicingSheets: slicingSheets.length,
+      },
+    };
+  }
+
+  async deleteProduct(id: string, removeStorageObjects: RemoveStorageObjects): Promise<void> {
+    const dependencies = await this.getProductDependencies(id);
+    if (hasBlockingDependencies(dependencies)) {
+      const blockers = await this.describeBlockers(dependencies);
+      throw new ProductDeletionBlockedError(
+        `Esta peça não pode ser excluída porque tem histórico: ${blockers.join("; ")}. Você pode descontinuá-la.`,
+        dependencies,
+      );
+    }
+
+    const media = await this.repositories.productMedia.findByProductId(id);
+    const storagePaths = media.map((item) => item.storagePath);
+    if (storagePaths.length > 0) {
+      await removeStorageObjects(storagePaths);
+    }
+
+    await this.repositories.products.delete(id);
+  }
+
+  // Alternativa oferecida quando a exclusão é bloqueada: a peça some do
+  // catálogo ativo e todo o histórico dependente permanece intacto (ver
+  // Requirement "Descontinuar como alternativa à exclusão").
+  async discontinueProduct(id: string): Promise<Product> {
+    return this.repositories.products.update(id, { status: "descontinuado" });
+  }
+
+  // Uma frase por vínculo impeditivo. As peças compostas são nomeadas porque
+  // a ação corretiva depende disso ("remova o componente de X primeiro") —
+  // um número seco não seria acionável.
+  private async describeBlockers(dependencies: ProductDependencies): Promise<string[]> {
+    const blockers: string[] = [];
+
+    if (dependencies.printQueueItems > 0) {
+      blockers.push(`${dependencies.printQueueItems} item(ns) na fila de impressão`);
+    }
+    if (dependencies.productStockMovements > 0) {
+      blockers.push(`${dependencies.productStockMovements} movimentação(ões) de estoque de peças prontas`);
+    }
+    if (dependencies.materialStockMovements > 0) {
+      blockers.push(`${dependencies.materialStockMovements} movimentação(ões) de estoque de insumos`);
+    }
+    if (dependencies.usedAsComponentIn.length > 0) {
+      const parents = await Promise.all(
+        dependencies.usedAsComponentIn.map((component) => this.repositories.products.findById(component.parentProductId)),
+      );
+      const names = parents.filter((parent): parent is Product => parent !== null).map((parent) => `"${parent.name}"`);
+      blockers.push(`usada como componente de ${names.length > 0 ? names.join(", ") : "outra(s) peça(s)"}`);
+    }
+
+    return blockers;
   }
 
   // Vincula a peça a um cálculo de preço existente e copia a sugestão

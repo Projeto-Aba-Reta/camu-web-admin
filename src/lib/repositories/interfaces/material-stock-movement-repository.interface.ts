@@ -22,4 +22,8 @@ export interface IMaterialStockMovementRepository {
   // design.md decisão 1), nunca um campo de saldo armazenado.
   findBalanceByMaterialId(materialId: string): Promise<number>;
   findAllBalances(): Promise<MaterialStockBalance[]>;
+  // Guarda de exclusão de peça (ver design.md decisão 2): consumo de insumo
+  // atribuído a uma peça. product_id é nullable — movimentações sem peça
+  // (compra de filamento, ajuste) não contam.
+  countByProductId(productId: string): Promise<number>;
 }
