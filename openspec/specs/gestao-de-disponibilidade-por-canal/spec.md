@@ -27,9 +27,10 @@ O sistema SHALL permitir ativar ou desativar a listagem de uma peça em um canal
 - **WHEN** um usuário desativa o canal `shopee` para uma peça que também está listada na `amazon`
 - **THEN** a tela reflete a listagem da `shopee` como inativa e a da `amazon` permanece inalterada
 
-### Requirement: Acesso de gestão de disponibilidade por Produção e Vendas
-O sistema SHALL permitir ativar, desativar e ajustar preço de listagens por canal a usuários `owner`/`socio` ou com role `producao` ou `marketplace-vendas`.
+### Requirement: Acesso de gestão de disponibilidade por Produção e Marketing
+O sistema SHALL permitir ativar, desativar e ajustar preço de listagens por canal a usuários `owner`/`socio` ou com role `producao` ou `marketing`.
 
-#### Scenario: Usuário de Vendas ajusta disponibilidade por canal
-- **WHEN** um usuário com apenas a role `marketplace-vendas` ativa um novo canal para uma peça existente
+#### Scenario: Usuário de Marketing ajusta disponibilidade por canal
+- **WHEN** um usuário com apenas a role `marketing` ativa um novo canal para uma peça existente
 - **THEN** o sistema aceita a ação normalmente
+

@@ -34,9 +34,10 @@ O sistema SHALL permitir ativar ou desativar a listagem de uma peça em um canal
 - **WHEN** a listagem de uma peça no canal `amazon` é desativada
 - **THEN** as listagens dessa mesma peça em outros canais permanecem inalteradas
 
-### Requirement: Escrita liberada a Produção e Vendas
-O sistema SHALL permitir criar, atualizar e desativar listagens por canal a usuários `owner`/`socio` ou com role `producao` ou `marketplace-vendas`, com leitura ampla equivalente à leitura de peças.
+### Requirement: Escrita liberada a Produção e Marketing
+O sistema SHALL permitir criar, atualizar e desativar listagens por canal a usuários `owner`/`socio` ou com role `producao` ou `marketing`, com leitura ampla equivalente à leitura de peças.
 
-#### Scenario: Usuário de Vendas ajusta preço praticado em um canal
-- **WHEN** um usuário com apenas a role `marketplace-vendas` atualiza o preço praticado de uma listagem existente
+#### Scenario: Usuário de Marketing ajusta preço praticado em um canal
+- **WHEN** um usuário com apenas a role `marketing` atualiza o preço praticado de uma listagem existente
 - **THEN** o sistema aceita a atualização, pois a escrita de disponibilidade por canal é liberada para essa role
+
