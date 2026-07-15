@@ -42,12 +42,31 @@ Para cada categoria de parâmetro (custo, impressora, taxa de canal, faixa de po
 - **WHEN** um usuário abre o histórico das faixas de porte após uma alteração de margem
 - **THEN** a tela lista as versões da faixa alterada, cada uma com sua data de vigência, suas margens B2C e B2B e os modos aplicados na época
 
+### Requirement: Cadastro de portes personalizados na tela de configuração
+O sistema SHALL permitir, na tela de configuração de precificação, cadastrar um porte personalizado informando código, nome de exibição e ordem, além de editar o nome e a ordem de qualquer porte e remover portes personalizados sem referências. A tela SHALL exibir, junto de cada faixa de porte, o código e o nome de exibição do porte.
+
+#### Scenario: Cadastro de um porte GG pela tela
+- **WHEN** o Financeiro informa código `GG`, nome "Extra Grande" e ordem posterior à de G, e salva
+- **THEN** o sistema registra o porte e ele passa a aparecer como opção ao cadastrar faixa de peso/tempo e margens, e no seletor de porte das telas de cálculo
+
+#### Scenario: Porte de sistema não oferece remoção
+- **WHEN** o Financeiro visualiza os portes P, M e G na tela de configuração
+- **THEN** a tela permite editar nome, ordem, faixa e margens desses portes, mas não oferece a ação de removê-los nem de alterar o código
+
+#### Scenario: Faixa de porte exibe código e nome
+- **WHEN** o Financeiro consulta as faixas de porte vigentes
+- **THEN** cada faixa exibe o código e o nome de exibição do porte, além do peso, do tempo e das margens
+
 ### Requirement: Configuração de margem de lucro por faixa de porte
-O sistema SHALL permitir, no formulário de faixas de porte, informar por faixa (P/M/G) a margem de lucro B2C com seu modo de aplicação e a margem de lucro B2B com seu modo de aplicação, além do peso e do tempo já existentes, criando um novo registro versionado por submissão.
+O sistema SHALL permitir, no formulário de faixas de porte, informar por porte (fixo ou personalizado) a margem de lucro B2C com seu modo de aplicação e a margem de lucro B2B com seu modo de aplicação, além do peso e do tempo já existentes, criando um novo registro versionado por submissão.
 
 #### Scenario: Financeiro configura a margem do porte G
 - **WHEN** o Financeiro seleciona a faixa G, informa margem B2C de 20% no modo `somar` e margem B2B de 10% no modo `substituir`, e salva
 - **THEN** o sistema cria um novo registro da faixa G com as margens informadas e a tela passa a exibi-las como vigentes, preservando o registro anterior no histórico
+
+#### Scenario: Financeiro configura a margem de um porte personalizado
+- **WHEN** o Financeiro seleciona um porte personalizado `GG` e informa suas margens B2C e B2B com seus modos
+- **THEN** o sistema cria o registro de faixa do porte `GG` com as margens informadas, usadas nos cálculos seguintes de peças desse porte
 
 #### Scenario: Modo de aplicação explicado na interface
 - **WHEN** o usuário abre o seletor de modo de uma margem por porte
