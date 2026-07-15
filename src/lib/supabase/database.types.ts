@@ -629,6 +629,7 @@ export type Database = {
           cost_parameters_id: string
           created_at: string
           created_by: string | null
+          effective_b2c_margin: Json | null
           id: string
           print_hours: number | null
           printer_id: string | null
@@ -646,6 +647,7 @@ export type Database = {
           cost_parameters_id: string
           created_at?: string
           created_by?: string | null
+          effective_b2c_margin?: Json | null
           id?: string
           print_hours?: number | null
           printer_id?: string | null
@@ -663,6 +665,7 @@ export type Database = {
           cost_parameters_id?: string
           created_at?: string
           created_by?: string | null
+          effective_b2c_margin?: Json | null
           id?: string
           print_hours?: number | null
           printer_id?: string | null
@@ -1354,6 +1357,10 @@ export type Database = {
       }
       size_tier_ranges: {
         Row: {
+          b2b_margin_mode: string
+          b2b_margin_pct: number
+          b2c_margin_mode: string
+          b2c_margin_pct: number
           id: string
           max_print_hours: number
           max_weight_grams: number
@@ -1363,6 +1370,10 @@ export type Database = {
           valid_from: string
         }
         Insert: {
+          b2b_margin_mode?: string
+          b2b_margin_pct?: number
+          b2c_margin_mode?: string
+          b2c_margin_pct?: number
           id?: string
           max_print_hours: number
           max_weight_grams: number
@@ -1372,6 +1383,10 @@ export type Database = {
           valid_from?: string
         }
         Update: {
+          b2b_margin_mode?: string
+          b2b_margin_pct?: number
+          b2c_margin_mode?: string
+          b2c_margin_pct?: number
           id?: string
           max_print_hours?: number
           max_weight_grams?: number
@@ -1379,6 +1394,41 @@ export type Database = {
           min_weight_grams?: number
           tier?: string
           valid_from?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "size_tier_ranges_tier_fkey"
+            columns: ["tier"]
+            isOneToOne: false
+            referencedRelation: "size_tiers"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      size_tiers: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          is_system: boolean
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          is_system?: boolean
+          label: string
+          sort_order: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          is_system?: boolean
+          label?: string
+          sort_order?: number
         }
         Relationships: []
       }

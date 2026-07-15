@@ -11,12 +11,39 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CHANNEL_LABEL } from "@/components/precificacao/canal-fee-form";
-import type { PriceCalculation, PriceCalculationResult, SizeTier } from "@/types/pricing";
-
-const TIER_LABEL: Record<SizeTier, string> = { P: "Pequena (P)", M: "Média (M)", G: "Grande (G)" };
+import { tierLabel } from "@/lib/pricing/tier-label";
+import type {
+  EffectiveMargin,
+  PriceCalculation,
+  PriceCalculationResult,
+  SizeTier,
+  SizeTierDefinition,
+} from "@/types/pricing";
 
 function formatCurrency(value: number): string {
   return `R$ ${value.toFixed(2)}`;
+}
+
+function formatPercent(fraction: number): string {
+  return `${(fraction * 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
+}
+
+// Mostra de onde veio a margem: no modo "substituir" a margem-alvo base não
+// entra na conta, e a UI diz isso em vez de exibir uma soma que não houve.
+// Cálculos salvos antes da margem por porte não têm essa informação (null) —
+// eles não são recalculados nem migrados.
+function MargemEfetiva({ margin, baseLabel }: { margin: EffectiveMargin; baseLabel: string }) {
+  const origem =
+    margin.mode === "substituir"
+      ? `${formatPercent(margin.tierMarginPct)} do porte substitui a ${baseLabel} de ${formatPercent(margin.basePct)}`
+      : `${formatPercent(margin.basePct)} de ${baseLabel} + ${formatPercent(margin.tierMarginPct)} do porte`;
+
+  return (
+    <span className="whitespace-nowrap">
+      <strong className="font-semibold">{formatPercent(margin.effectivePct)}</strong>{" "}
+      <span className="text-xs text-muted-foreground">({origem})</span>
+    </span>
+  );
 }
 
 interface ResultadoCalculoProps {
@@ -24,6 +51,9 @@ interface ResultadoCalculoProps {
   saved: boolean;
   isResolvingTier?: boolean;
   onChooseTier?: (tier: SizeTier) => void;
+  // Portes cadastrados, para resolver o rótulo do porte sugerido pelo nome de
+  // exibição em vez de um Record fixo P/M/G.
+  tiers: SizeTierDefinition[];
   // Nomes das peças componentes, para exibir o breakdown por componente de
   // uma peça composta (ver Requirement "Breakdown de custo por componente
   // para peça composta"). Sem isso, cai no id do componente.
@@ -35,9 +65,11 @@ export function ResultadoCalculo({
   saved,
   isResolvingTier,
   onChooseTier,
+  tiers,
   componentNames,
 }: ResultadoCalculoProps) {
-  const { costBreakdown, totalCost, suggestedTier, channelPrices, b2bPrices, componentBreakdown } = result;
+  const { costBreakdown, totalCost, suggestedTier, channelPrices, b2bPrices, componentBreakdown, effectiveB2cMargin } =
+    result;
 
   return (
     <div className="space-y-4">
@@ -77,7 +109,7 @@ export function ResultadoCalculo({
           {suggestedTier.ambiguous ? (
             <div className="space-y-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-3">
               <p className="text-sm text-foreground">
-                Peso e tempo indicam portes diferentes ({suggestedTier.candidates.map((tier) => TIER_LABEL[tier]).join(" ou ")}).
+                Peso e tempo indicam portes diferentes ({suggestedTier.candidates.map((tier) => tierLabel(tier, tiers)).join(" ou ")}).
                 Escolha manualmente o porte para salvar o cálculo.
               </p>
               <div className="flex gap-2">
@@ -90,13 +122,13 @@ export function ResultadoCalculo({
                     disabled={isResolvingTier || !onChooseTier}
                     onClick={() => onChooseTier?.(tier)}
                   >
-                    Usar {TIER_LABEL[tier]}
+                    Usar {tierLabel(tier, tiers)}
                   </Button>
                 ))}
               </div>
             </div>
           ) : (
-            <Badge variant="secondary">{TIER_LABEL[suggestedTier.tier]}</Badge>
+            <Badge variant="secondary">{tierLabel(suggestedTier.tier, tiers)}</Badge>
           )}
         </div>
       )}
@@ -140,6 +172,12 @@ export function ResultadoCalculo({
             </span>
           )}
         </div>
+        {effectiveB2cMargin && (
+          <p className="px-4 pt-2 text-sm">
+            <span className="text-muted-foreground">Margem aplicada: </span>
+            <MargemEfetiva margin={effectiveB2cMargin} baseLabel="margem-alvo B2C" />
+          </p>
+        )}
         <Table>
           <TableHeader>
             <TableRow>
@@ -178,6 +216,7 @@ export function ResultadoCalculo({
               <TableHead>Quantidade mínima</TableHead>
               <TableHead>Preço sugerido</TableHead>
               <TableHead>Margem</TableHead>
+              <TableHead>Margem aplicada</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -187,11 +226,18 @@ export function ResultadoCalculo({
                   <TableCell className="font-medium">{price.minQuantity}+ un.</TableCell>
                   <TableCell>{formatCurrency(price.suggestedPrice)}</TableCell>
                   <TableCell>{formatCurrency(price.margin)}</TableCell>
+                  <TableCell>
+                    {price.effectiveMargin ? (
+                      <MargemEfetiva margin={price.effectiveMargin} baseLabel="margem-alvo da faixa" />
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={3} className="h-20 text-center text-muted-foreground">
+                <TableCell colSpan={4} className="h-20 text-center text-muted-foreground">
                   Nenhuma faixa B2B vigente cadastrada.
                 </TableCell>
               </TableRow>

@@ -16,10 +16,11 @@ export default async function NovaPecaPage() {
   const supabase = await createClient();
   const repositories = createRepositories(supabase);
 
-  const [printers, calculations, allPrinters] = await Promise.all([
+  const [printers, calculations, allPrinters, tiers] = await Promise.all([
     repositories.printers.findActive(),
     repositories.priceCalculations.findRecent(200),
     repositories.printers.findAll(),
+    repositories.sizeTiers.findAll(),
   ]);
 
   const printerNameById = new Map(allPrinters.map((printer) => [printer.id, printer.name]));
@@ -39,6 +40,7 @@ export default async function NovaPecaPage() {
         printers={printers}
         recentCalculations={recentCalculations}
         initialLinkedCalculation={null}
+        tiers={tiers}
         canWrite
       />
     </div>

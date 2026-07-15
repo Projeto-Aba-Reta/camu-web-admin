@@ -156,6 +156,10 @@ class FakeProductRepository implements IProductRepository {
 class FakeSlicingSheetRepository implements ISlicingSheetRepository {
   public sheets: SlicingSheet[] = [];
 
+  async findAll(): Promise<SlicingSheet[]> {
+    return this.sheets;
+  }
+
   async findByProductId(productId: string): Promise<SlicingSheet[]> {
     return this.sheets.filter((sheet) => sheet.productId === productId);
   }

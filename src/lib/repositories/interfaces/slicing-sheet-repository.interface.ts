@@ -15,6 +15,7 @@ export interface UpsertSlicingSheetInput {
 }
 
 export interface ISlicingSheetRepository {
+  findAll(): Promise<SlicingSheet[]>;
   findByProductId(productId: string): Promise<SlicingSheet[]>;
   findByProductAndPrinter(productId: string, printerId: string): Promise<SlicingSheet | null>;
   // Substitui a ficha existente para (productId, printerId) por completo

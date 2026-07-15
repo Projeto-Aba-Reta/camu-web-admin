@@ -42,15 +42,47 @@ export const channelFeeFormSchema = z.object({
 
 export type ChannelFeeFormValues = z.infer<typeof channelFeeFormSchema>;
 
-export const SIZE_TIERS = ["P", "M", "G"] as const;
+export const MARGIN_MODES = ["somar", "substituir"] as const;
+
+// Código de porte: curto e legível como rótulo. O formato [A-Z0-9]{1,4}
+// exclui de propósito o "/", que separa portes candidatos ao serializar um
+// cálculo ambíguo em price_calculations.suggested_tier (ver design.md,
+// Decisão 4, e supabase-price-calculation-repository.ts). Não relaxe este
+// formato sem trocar aquele separador.
+export const sizeTierCodeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^[A-Z0-9]{1,4}$/, "O código deve ter de 1 a 4 letras ou números (ex.: P, GG, XG).");
+
+export const sizeTierFormSchema = z.object({
+  code: sizeTierCodeSchema,
+  label: z.string().trim().min(1, "Informe o nome de exibição do porte."),
+  sortOrder: z.coerce.number({ message: "Informe a ordem do porte." }).int("A ordem deve ser um número inteiro."),
+});
+
+export type SizeTierFormValues = z.infer<typeof sizeTierFormSchema>;
+
+// Margem por porte é não-negativa: para praticar margem menor que a
+// margem-alvo global, o caminho é o modo "substituir", não uma margem
+// negativa — que tornaria a leitura da fórmula ambígua (ver design.md,
+// Decisão 2).
+const marginPercent = (label: string) =>
+  z.coerce.number({ message: `Informe a margem ${label} (%).` }).min(0, `A margem ${label} não pode ser negativa — use o modo "substituir" para praticar uma margem menor que a margem-alvo.`);
 
 export const sizeTierRangeFormSchema = z
   .object({
-    tier: z.enum(SIZE_TIERS, { message: "Selecione um porte." }),
+    // Código de um porte já cadastrado, escolhido no formulário — não mais um
+    // enum fixo P/M/G.
+    tier: z.string().min(1, "Selecione um porte."),
     minWeightGrams: nonNegativeNumber("Informe o peso mínimo."),
     maxWeightGrams: positiveNumber("Informe o peso máximo."),
     minPrintHours: nonNegativeNumber("Informe o tempo mínimo."),
     maxPrintHours: positiveNumber("Informe o tempo máximo."),
+    b2cMarginPctPercent: marginPercent("B2C do porte"),
+    b2cMarginMode: z.enum(MARGIN_MODES, { message: "Selecione o modo da margem B2C." }),
+    b2bMarginPctPercent: marginPercent("B2B do porte"),
+    b2bMarginMode: z.enum(MARGIN_MODES, { message: "Selecione o modo da margem B2B." }),
   })
   .refine((values) => values.maxWeightGrams > values.minWeightGrams, {
     message: "Peso máximo deve ser maior que o peso mínimo.",
@@ -62,6 +94,21 @@ export const sizeTierRangeFormSchema = z
   });
 
 export type SizeTierRangeFormValues = z.infer<typeof sizeTierRangeFormSchema>;
+
+// Peça de exemplo do simulador: mesma entrada do cálculo real (peso/tempo
+// digitados ou derivados de uma ficha), mais um porte opcional para o usuário
+// resolver ambiguidade. Diferente do motor, o simulador não persiste nada —
+// então a ambiguidade não bloqueia (ver Requirement "Porte ambíguo não
+// bloqueia a simulação").
+export const simuladorFormSchema = z.object({
+  weightGrams: z.coerce.number().positive("Informe o peso em gramas."),
+  printHours: z.coerce.number().positive("Informe o tempo de impressão em horas."),
+  printerId: z.string().min(1, "Selecione uma impressora."),
+  productId: z.string().optional(),
+  chosenTier: z.string().optional(),
+});
+
+export type SimuladorFormValues = z.infer<typeof simuladorFormSchema>;
 
 // weightGrams/printHours ficam opcionais quando productId é informado — o
 // motor deriva os dois valores da ficha de fatiamento cadastrada para a

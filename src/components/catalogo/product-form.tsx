@@ -19,13 +19,16 @@ import type { HistoricoRow } from "@/components/precificacao/historico-tabela";
 import { productFormSchema, type ProductFormValues } from "@/lib/validation/catalog-schemas";
 import { createProductAction, updateProductAction } from "@/app/(dashboard)/producao/catalogo/actions";
 import type { Product } from "@/types/catalog";
-import type { PriceCalculation, Printer } from "@/types/pricing";
+import type { PriceCalculation, Printer, SizeTierDefinition } from "@/types/pricing";
 
 interface ProductFormProps {
   product?: Product;
   printers: Printer[];
   recentCalculations: HistoricoRow[];
   initialLinkedCalculation: PriceCalculation | null;
+  // Portes cadastrados, para o resultado e o cálculo inline resolverem rótulos
+  // de porte.
+  tiers: SizeTierDefinition[];
   canWrite: boolean;
 }
 
@@ -34,6 +37,7 @@ export function ProductForm({
   printers,
   recentCalculations,
   initialLinkedCalculation,
+  tiers,
   canWrite,
 }: ProductFormProps) {
   const router = useRouter();
@@ -196,7 +200,7 @@ export function ProductForm({
 
             {selectedCalculation ? (
               <div className="space-y-3">
-                <ResultadoCalculo result={selectedCalculation} saved />
+                <ResultadoCalculo result={selectedCalculation} saved tiers={tiers} />
                 <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedCalculation(null)}>
                   Trocar cálculo vinculado
                 </Button>
@@ -215,6 +219,7 @@ export function ProductForm({
                 {showInlineCalc && (
                   <CalculoForm
                     printers={printers}
+                    tiers={tiers}
                     products={product ? [product] : []}
                     onCalculated={(calculation) => {
                       setSelectedCalculation(calculation);

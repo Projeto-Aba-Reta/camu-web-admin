@@ -1,5 +1,4 @@
 import type { ProductCategory, ProductStatus, ProductType } from "@/types/catalog";
-import type { SizeTier } from "@/types/pricing";
 
 // Categorias seguem camu-docs/06-marketplace/estrategia-canais.md (ver
 // proposal.md, Impact).
@@ -16,8 +15,6 @@ export const STATUS_LABEL: Record<ProductStatus, string> = {
   inativo: "Inativo",
   descontinuado: "Descontinuado",
 };
-
-export const SIZE_TIER_LABEL: Record<SizeTier, string> = { P: "Pequena (P)", M: "Média (M)", G: "Grande (G)" };
 
 export const PRODUCT_TYPE_LABEL: Record<ProductType, string> = {
   simples: "Simples (peça única)",

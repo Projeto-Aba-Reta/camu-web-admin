@@ -1,4 +1,4 @@
-import type { SizeTier, SizeTierRange } from "@/types/pricing";
+import type { MarginMode, SizeTier, SizeTierRange } from "@/types/pricing";
 
 export interface CreateSizeTierRangeInput {
   tier: SizeTier;
@@ -6,6 +6,11 @@ export interface CreateSizeTierRangeInput {
   maxWeightGrams: number;
   minPrintHours: number;
   maxPrintHours: number;
+  // Fração (0-1), não percentual: a conversão acontece no componente.
+  b2cMarginPct: number;
+  b2cMarginMode: MarginMode;
+  b2bMarginPct: number;
+  b2bMarginMode: MarginMode;
 }
 
 export interface ISizeTierRangeRepository {

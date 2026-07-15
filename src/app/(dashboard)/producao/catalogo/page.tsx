@@ -15,7 +15,10 @@ export default async function CatalogoPage() {
   const supabase = await createClient();
   const repositories = createRepositories(supabase);
 
-  const products = await repositories.products.findAll();
+  const [products, tiers] = await Promise.all([
+    repositories.products.findAll(),
+    repositories.sizeTiers.findAll(),
+  ]);
   const canWrite = Boolean(currentUser && canWriteCatalog(currentUser));
 
   const activeCountByCategory = products.reduce<Partial<Record<ProductCategory, number>>>((acc, product) => {
@@ -43,7 +46,7 @@ export default async function CatalogoPage() {
 
       <CatalogMaturityIndicator activeCountByCategory={activeCountByCategory} />
 
-      <ProductList products={products} canWrite={canWrite} />
+      <ProductList products={products} tiers={tiers} canWrite={canWrite} />
     </div>
   );
 }

@@ -10,6 +10,7 @@ import type { ICostParameterRepository } from "./interfaces/cost-parameter-repos
 import type { IPrinterRepository } from "./interfaces/printer-repository.interface";
 import type { IChannelFeeRepository } from "./interfaces/channel-fee-repository.interface";
 import type { ISizeTierRangeRepository } from "./interfaces/size-tier-range-repository.interface";
+import type { ISizeTierRepository } from "./interfaces/size-tier-repository.interface";
 import type { IPriceCalculationRepository } from "./interfaces/price-calculation-repository.interface";
 import type { IPartnershipAgreementRepository } from "./interfaces/partnership-agreement-repository.interface";
 import type { ICapitalContributionRepository } from "./interfaces/capital-contribution-repository.interface";
@@ -40,6 +41,7 @@ import { SupabaseCostParameterRepository } from "./supabase/supabase-cost-parame
 import { SupabasePrinterRepository } from "./supabase/supabase-printer-repository";
 import { SupabaseChannelFeeRepository } from "./supabase/supabase-channel-fee-repository";
 import { SupabaseSizeTierRangeRepository } from "./supabase/supabase-size-tier-range-repository";
+import { SupabaseSizeTierRepository } from "./supabase/supabase-size-tier-repository";
 import { SupabasePriceCalculationRepository } from "./supabase/supabase-price-calculation-repository";
 import { SupabasePartnershipAgreementRepository } from "./supabase/supabase-partnership-agreement-repository";
 import { SupabaseCapitalContributionRepository } from "./supabase/supabase-capital-contribution-repository";
@@ -72,6 +74,7 @@ export interface Repositories {
   printers: IPrinterRepository;
   channelFees: IChannelFeeRepository;
   sizeTierRanges: ISizeTierRangeRepository;
+  sizeTiers: ISizeTierRepository;
   priceCalculations: IPriceCalculationRepository;
   partnershipAgreements: IPartnershipAgreementRepository;
   capitalContributions: ICapitalContributionRepository;
@@ -107,6 +110,7 @@ export function createRepositories(supabaseClient: SupabaseClient<Database>): Re
     printers: new SupabasePrinterRepository(supabaseClient),
     channelFees: new SupabaseChannelFeeRepository(supabaseClient),
     sizeTierRanges: new SupabaseSizeTierRangeRepository(supabaseClient),
+    sizeTiers: new SupabaseSizeTierRepository(supabaseClient),
     priceCalculations: new SupabasePriceCalculationRepository(supabaseClient),
     partnershipAgreements: new SupabasePartnershipAgreementRepository(supabaseClient),
     capitalContributions: new SupabaseCapitalContributionRepository(supabaseClient),

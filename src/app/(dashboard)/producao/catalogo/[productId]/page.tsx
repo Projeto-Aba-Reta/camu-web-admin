@@ -26,7 +26,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const product = await repositories.products.findById(productId);
   if (!product) notFound();
 
-  const [media, channelListings, linkedCalculation, printers, recentCalculations, allPrinters, materials, allProducts, components] =
+  const [media, channelListings, linkedCalculation, printers, recentCalculations, allPrinters, materials, allProducts, components, tiers] =
     await Promise.all([
       repositories.productMedia.findByProductId(productId),
       repositories.productChannelListings.findByProductId(productId),
@@ -37,6 +37,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       repositories.materials.findAll(),
       repositories.products.findAll(),
       repositories.productComponents.findByParentId(productId),
+      repositories.sizeTiers.findAll(),
     ]);
 
   const slicingSheetService = new SlicingSheetService(repositories);
@@ -68,6 +69,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         printers={printers}
         recentCalculations={recentCalculationRows}
         initialLinkedCalculation={linkedCalculation}
+        tiers={tiers}
         canWrite={canWrite}
       />
 
@@ -76,6 +78,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
           parentProductId={product.id}
           initialComponents={components}
           candidateProducts={candidateComponents}
+          tiers={tiers}
           canWrite={canWrite}
         />
       )}

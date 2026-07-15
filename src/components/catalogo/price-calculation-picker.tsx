@@ -10,13 +10,22 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import type { HistoricoRow } from "@/components/precificacao/historico-tabela";
 import type { SizeTier } from "@/types/pricing";
 
-const TIER_LABEL: Record<SizeTier, string> = { P: "P", M: "M", G: "G" };
-
-function tierLabel(row: HistoricoRow): string {
+// Exibe o próprio código do porte (P, M, GG…), que já é a identidade curta.
+function tierDisplay(row: HistoricoRow): string {
   if (!row.suggestedTier) return "—";
-  return row.suggestedTier.ambiguous
-    ? row.suggestedTier.candidates.map((tier) => TIER_LABEL[tier]).join("/")
-    : TIER_LABEL[row.suggestedTier.tier];
+  return row.suggestedTier.ambiguous ? row.suggestedTier.candidates.join("/") : row.suggestedTier.tier;
+}
+
+// Códigos de porte presentes nos cálculos, para as opções do filtro — assim o
+// picker não precisa receber a lista de portes cadastrados.
+function tierOptionsFrom(calculations: HistoricoRow[]): SizeTier[] {
+  const codes = new Set<SizeTier>();
+  for (const row of calculations) {
+    if (!row.suggestedTier) continue;
+    if (row.suggestedTier.ambiguous) row.suggestedTier.candidates.forEach((code) => codes.add(code));
+    else codes.add(row.suggestedTier.tier);
+  }
+  return [...codes].sort();
 }
 
 function matchesTierFilter(row: HistoricoRow, tierFilter: string): boolean {
@@ -40,6 +49,8 @@ export function PriceCalculationPicker({ calculations, onSelect }: PriceCalculat
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [tierFilter, setTierFilter] = useState("");
+
+  const tierOptions = useMemo(() => tierOptionsFrom(calculations), [calculations]);
 
   const filtered = useMemo(() => {
     return calculations.filter((row) => {
@@ -80,9 +91,11 @@ export function PriceCalculationPicker({ calculations, onSelect }: PriceCalculat
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="P">P</SelectItem>
-                <SelectItem value="M">M</SelectItem>
-                <SelectItem value="G">G</SelectItem>
+                {tierOptions.map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {code}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -108,7 +121,7 @@ export function PriceCalculationPicker({ calculations, onSelect }: PriceCalculat
                     </TableCell>
                     <TableCell>{row.printerName}</TableCell>
                     <TableCell>
-                      <Badge variant={row.suggestedTier?.ambiguous ? "outline" : "secondary"}>{tierLabel(row)}</Badge>
+                      <Badge variant={row.suggestedTier?.ambiguous ? "outline" : "secondary"}>{tierDisplay(row)}</Badge>
                     </TableCell>
                     <TableCell>R$ {row.totalCost.toFixed(2)}</TableCell>
                     <TableCell>

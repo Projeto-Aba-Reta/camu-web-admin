@@ -275,6 +275,10 @@ class FakeMaterialStockMovementRepository implements IMaterialStockMovementRepos
 class FakeSlicingSheetRepository implements ISlicingSheetRepository {
   public sheets: SlicingSheet[] = [];
 
+  async findAll() {
+    return this.sheets;
+  }
+
   async findByProductId(productId: string) {
     return this.sheets.filter((s) => s.productId === productId);
   }

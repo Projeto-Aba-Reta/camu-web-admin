@@ -5,6 +5,7 @@ import type {
   ChannelPrice,
   CompositeComponentCost,
   CostBreakdown,
+  EffectiveMargin,
   PriceCalculation,
   SizeTier,
   SuggestedTier,
@@ -18,6 +19,11 @@ import type {
 // entre dois tiers candidatos é serializada como "P/G" e desserializada de
 // volta em SuggestedTier. null (cálculo de peça composta, sem porte único a
 // classificar) permanece null nos dois sentidos.
+//
+// Esta serialização depende de o código de um porte NUNCA conter "/". Isso é
+// garantido pela validação sizeTierCodeSchema em pricing-schemas.ts
+// ([A-Z0-9]{1,4}) — ver design.md, Decisão 4. Não relaxe aquele formato sem
+// trocar este separador por um que não colida com códigos de porte.
 function serializeSuggestedTier(tier: SuggestedTier | null): string | null {
   if (!tier) return null;
   return tier.ambiguous ? tier.candidates.join("/") : tier.tier;
@@ -47,6 +53,9 @@ function toPriceCalculation(
     channelPrices: row.channel_prices as unknown as ChannelPrice[],
     b2bPrices: (row.b2b_prices ?? []) as unknown as B2bPrice[],
     componentBreakdown: row.component_breakdown as unknown as CompositeComponentCost[] | null,
+    // null nos cálculos salvos antes da margem por porte — eles não são
+    // recalculados nem migrados (snapshot imutável).
+    effectiveB2cMargin: (row.effective_b2c_margin ?? null) as unknown as EffectiveMargin | null,
     createdBy: row.created_by,
     createdAt: row.created_at,
   };
@@ -92,6 +101,8 @@ export class SupabasePriceCalculationRepository implements IPriceCalculationRepo
         b2b_prices: input.b2bPrices as unknown as Database["public"]["Tables"]["price_calculations"]["Insert"]["b2b_prices"],
         component_breakdown:
           input.componentBreakdown as unknown as Database["public"]["Tables"]["price_calculations"]["Insert"]["component_breakdown"],
+        effective_b2c_margin:
+          input.effectiveB2cMargin as unknown as Database["public"]["Tables"]["price_calculations"]["Insert"]["effective_b2c_margin"],
         created_by: input.createdBy,
       })
       .select("*")
