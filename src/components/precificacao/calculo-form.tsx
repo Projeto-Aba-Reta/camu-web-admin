@@ -14,10 +14,18 @@ import { calculoFormSchema, type CalculoFormValues } from "@/lib/validation/pric
 import { calculatePriceAction } from "@/app/(dashboard)/financeiro/precificacao/actions";
 import { ResultadoCalculo } from "@/components/shared/resultado-calculo";
 import type { Product } from "@/types/catalog";
-import type { PriceCalculation, PriceCalculationResult, Printer, SizeTier } from "@/types/pricing";
+import type {
+  PriceCalculation,
+  PriceCalculationResult,
+  Printer,
+  SizeTier,
+  SizeTierDefinition,
+} from "@/types/pricing";
 
 interface CalculoFormProps {
   printers: Printer[];
+  // Portes cadastrados, para o resultado resolver o rótulo do porte sugerido.
+  tiers: SizeTierDefinition[];
   // Peças simples com ficha de fatiamento potencialmente cadastrada — ao
   // selecionar uma, peso/tempo deixam de ser exigidos e o motor deriva os
   // dois valores da ficha da combinação peça+impressora (ver Requirement
@@ -31,7 +39,7 @@ interface CalculoFormProps {
   onCalculated?: (calculation: PriceCalculation) => void;
 }
 
-export function CalculoForm({ printers, products = [], onCalculated }: CalculoFormProps) {
+export function CalculoForm({ printers, tiers, products = [], onCalculated }: CalculoFormProps) {
   const router = useRouter();
   const [result, setResult] = useState<PriceCalculationResult | PriceCalculation | null>(null);
   const [saved, setSaved] = useState(false);
@@ -70,10 +78,19 @@ export function CalculoForm({ printers, products = [], onCalculated }: CalculoFo
     }
   }
 
+  // O porte escolhido muda a margem aplicada, não só o rótulo: a action
+  // recalcula e devolve os preços da faixa escolhida, que substituem os do
+  // preview ambíguo aqui na tela.
   async function onChooseTier(tier: SizeTier) {
     if (!lastInput) return;
     setIsResolvingTier(true);
-    const response = await calculatePriceAction({ ...lastInput, chosenTier: tier });
+    const response = await calculatePriceAction({
+      ...lastInput,
+      productId: lastInput.productId || undefined,
+      weightGrams: lastInput.productId ? undefined : lastInput.weightGrams,
+      printHours: lastInput.productId ? undefined : lastInput.printHours,
+      chosenTier: tier,
+    });
     setIsResolvingTier(false);
 
     if (!response.ok) {
@@ -205,6 +222,7 @@ export function CalculoForm({ printers, products = [], onCalculated }: CalculoFo
           saved={saved}
           isResolvingTier={isResolvingTier}
           onChooseTier={onChooseTier}
+          tiers={tiers}
         />
       )}
     </div>

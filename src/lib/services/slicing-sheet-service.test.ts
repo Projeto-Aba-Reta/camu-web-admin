@@ -10,6 +10,10 @@ class FakeSlicingSheetRepository implements ISlicingSheetRepository {
   public sheets: SlicingSheet[] = [];
   private counter = 0;
 
+  async findAll(): Promise<SlicingSheet[]> {
+    return this.sheets;
+  }
+
   async findByProductId(productId: string): Promise<SlicingSheet[]> {
     return this.sheets.filter((sheet) => sheet.productId === productId);
   }

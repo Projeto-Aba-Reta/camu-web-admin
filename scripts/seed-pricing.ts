@@ -18,7 +18,8 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createRepositories } from "../src/lib/repositories";
 import { UserService } from "../src/lib/services/user-service";
 import type { Database } from "../src/lib/supabase/database.types";
-import type { MarketplaceChannel, SizeTier } from "../src/types/pricing";
+import type { CreateSizeTierRangeInput } from "../src/lib/repositories/interfaces/size-tier-range-repository.interface";
+import type { MarketplaceChannel } from "../src/types/pricing";
 
 // Client isolado com a service_role key — mesma justificativa de
 // scripts/seed-roles.ts (o módulo admin.ts importa "server-only", que lança
@@ -33,19 +34,47 @@ function createSeedAdminClient(): SupabaseClient<Database> {
 
 const ENDER_3_V3_SE = "Ender-3 V3 SE";
 
-const SIZE_TIER_DEFS: Array<{
-  tier: SizeTier;
-  minWeightGrams: number;
-  maxWeightGrams: number;
-  minPrintHours: number;
-  maxPrintHours: number;
-}> = [
+const SIZE_TIER_DEFS: CreateSizeTierRangeInput[] = [
   // Faixas de referência de custo-por-peca.md (P ~15g/~2,1h, M ~35g/~4,2h,
   // G ~80g/~8,4h), com folga acima/abaixo do ponto de referência para
   // cobrir variação real de peça sem deixar buracos entre as faixas.
-  { tier: "P", minWeightGrams: 5, maxWeightGrams: 20, minPrintHours: 0.5, maxPrintHours: 3 },
-  { tier: "M", minWeightGrams: 20, maxWeightGrams: 55, minPrintHours: 3, maxPrintHours: 6 },
-  { tier: "G", minWeightGrams: 55, maxWeightGrams: 150, minPrintHours: 6, maxPrintHours: 12 },
+  //
+  // Margem por porte: uma peça G imobiliza impressora e filamento por horas,
+  // uma P sai em minutos — cada faixa carrega sua própria margem, aqui toda
+  // somada à margem-alvo global (modo "somar").
+  {
+    tier: "P",
+    minWeightGrams: 5,
+    maxWeightGrams: 20,
+    minPrintHours: 0.5,
+    maxPrintHours: 3,
+    b2cMarginPct: 0.08,
+    b2cMarginMode: "somar",
+    b2bMarginPct: 0.04,
+    b2bMarginMode: "somar",
+  },
+  {
+    tier: "M",
+    minWeightGrams: 20,
+    maxWeightGrams: 55,
+    minPrintHours: 3,
+    maxPrintHours: 6,
+    b2cMarginPct: 0.12,
+    b2cMarginMode: "somar",
+    b2bMarginPct: 0.06,
+    b2bMarginMode: "somar",
+  },
+  {
+    tier: "G",
+    minWeightGrams: 55,
+    maxWeightGrams: 150,
+    minPrintHours: 6,
+    maxPrintHours: 12,
+    b2cMarginPct: 0.2,
+    b2cMarginMode: "somar",
+    b2bMarginPct: 0.1,
+    b2bMarginMode: "somar",
+  },
 ];
 
 // Mercado Livre: percentual confirmado com o Owner/Sócio como a taxa bruta
@@ -162,6 +191,22 @@ async function seedChannelFees(
   }
 }
 
+// Portes de sistema (P/M/G): precisam existir em size_tiers antes das faixas,
+// que os referenciam por FK. Insert direto (idempotente) — o registro de
+// portes não passa pelos repositórios de faixa.
+async function seedSizeTiers(adminClient: SupabaseClient<Database>): Promise<void> {
+  const { error } = await adminClient.from("size_tiers").upsert(
+    [
+      { code: "P", label: "Pequena", sort_order: 10, is_system: true },
+      { code: "M", label: "Média", sort_order: 20, is_system: true },
+      { code: "G", label: "Grande", sort_order: 30, is_system: true },
+    ],
+    { onConflict: "code", ignoreDuplicates: true },
+  );
+  if (error) throw error;
+  console.log("  - portes de sistema P/M/G garantidos.");
+}
+
 async function main() {
   console.log("Iniciando seed de parâmetros de precificação...\n");
 
@@ -178,7 +223,10 @@ async function main() {
   console.log("\nParque de impressoras...");
   await seedPrinter(repositories, owner?.id ?? null);
 
-  console.log("\nFaixas de porte P/M/G...");
+  console.log("\nPortes de tamanho...");
+  await seedSizeTiers(adminClient);
+
+  console.log("\nFaixas de porte...");
   await seedSizeTierRanges(repositories);
 
   console.log("\nTaxas por canal...");

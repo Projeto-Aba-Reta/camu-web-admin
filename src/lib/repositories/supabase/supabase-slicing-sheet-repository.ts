@@ -34,6 +34,25 @@ function toSlicingSheet(row: SheetRow, materials: MaterialRow[]): SlicingSheet {
 export class SupabaseSlicingSheetRepository implements ISlicingSheetRepository {
   constructor(private readonly supabase: SupabaseClient<Database>) {}
 
+  // Todas as fichas de uma vez (duas queries, não N): o simulador precisa
+  // listar as peças que têm ficha para oferecê-las como peça de exemplo.
+  async findAll(): Promise<SlicingSheet[]> {
+    const { data: sheets, error: sheetsError } = await this.supabase.from("product_slicing_sheets").select("*");
+    if (sheetsError) throw sheetsError;
+    if (!sheets || sheets.length === 0) return [];
+
+    const { data: materials, error: materialsError } = await this.supabase
+      .from("product_slicing_sheet_materials")
+      .select("*")
+      .in(
+        "slicing_sheet_id",
+        sheets.map((sheet) => sheet.id),
+      );
+    if (materialsError) throw materialsError;
+
+    return sheets.map((sheet) => toSlicingSheet(sheet, materials ?? []));
+  }
+
   async findByProductId(productId: string): Promise<SlicingSheet[]> {
     const { data: sheets, error: sheetsError } = await this.supabase
       .from("product_slicing_sheets")

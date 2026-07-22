@@ -20,23 +20,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { CHANNEL_LABEL } from "@/components/precificacao/canal-fee-form";
+import { CHANNEL_LABEL } from "@/lib/pricing/channel-label";
 import { ResultadoCalculo } from "@/components/shared/resultado-calculo";
-import type { PriceCalculation, SizeTier } from "@/types/pricing";
-
-const TIER_LABEL: Record<SizeTier, string> = { P: "P", M: "M", G: "G" };
+import type { PriceCalculation, SizeTier, SizeTierDefinition } from "@/types/pricing";
 
 export interface HistoricoRow extends PriceCalculation {
   printerName: string;
 }
 
-// null: cálculo de peça composta, sem porte único a classificar (ver
-// Requirement "Cálculo de custo agregado para peça composta").
-function tierLabel(calculation: PriceCalculation): string {
+// A coluna de porte exibe o próprio código (P, M, GG…), que já é curto e é a
+// identidade do porte — não precisa do nome de exibição aqui. null: cálculo
+// de peça composta salvo antes da exigência de porte (ver Requirement
+// "Cálculo de custo agregado para peça composta").
+function tierDisplay(calculation: PriceCalculation): string {
   if (!calculation.suggestedTier) return "—";
   return calculation.suggestedTier.ambiguous
-    ? calculation.suggestedTier.candidates.map((tier) => TIER_LABEL[tier]).join("/")
-    : TIER_LABEL[calculation.suggestedTier.tier];
+    ? calculation.suggestedTier.candidates.join("/")
+    : calculation.suggestedTier.tier;
 }
 
 function matchesTierFilter(calculation: PriceCalculation, tierFilter: string): boolean {
@@ -58,9 +58,11 @@ interface HistoricoTabelaProps {
   // id da peça -> nome, para exibir de qual peça é o cálculo (ex.: um boneco)
   // e nomear os componentes ao reabrir o resultado de uma peça composta.
   productNames: Record<string, string>;
+  // Portes cadastrados, para o filtro de porte e o resultado reaberto.
+  tiers: SizeTierDefinition[];
 }
 
-export function HistoricoTabela({ rows, productNames }: HistoricoTabelaProps) {
+export function HistoricoTabela({ rows, productNames, tiers }: HistoricoTabelaProps) {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [tierFilter, setTierFilter] = useState<string>("");
@@ -111,7 +113,7 @@ export function HistoricoTabela({ rows, productNames }: HistoricoTabelaProps) {
         header: "Porte",
         cell: ({ row }) => (
           <Badge variant={row.original.suggestedTier?.ambiguous ? "outline" : "secondary"}>
-            {tierLabel(row.original)}
+            {tierDisplay(row.original)}
           </Badge>
         ),
       },
@@ -169,9 +171,11 @@ export function HistoricoTabela({ rows, productNames }: HistoricoTabelaProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="P">P</SelectItem>
-              <SelectItem value="M">M</SelectItem>
-              <SelectItem value="G">G</SelectItem>
+              {tiers.map((tier) => (
+                <SelectItem key={tier.code} value={tier.code}>
+                  {tier.code}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -229,7 +233,7 @@ export function HistoricoTabela({ rows, productNames }: HistoricoTabelaProps) {
                 Resultado exatamente como registrado no momento do cálculo — não recalculado com os
                 parâmetros vigentes atuais.
               </p>
-              <ResultadoCalculo result={selected} saved componentNames={productNames} />
+              <ResultadoCalculo result={selected} saved tiers={tiers} componentNames={productNames} />
             </>
           )}
         </DialogContent>

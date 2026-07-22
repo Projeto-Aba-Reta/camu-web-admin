@@ -25,7 +25,7 @@ O sistema SHALL exibir, após um cálculo, os cinco componentes de custo (filame
 - **THEN** a tela lista os cinco componentes de custo com seus valores e o total somado
 
 ### Requirement: Exibição do porte sugerido com tratamento de ambiguidade
-O sistema SHALL exibir o porte sugerido (P, M ou G) retornado pelo motor de cálculo, e SHALL exibir um alerta não bloqueante com as faixas candidatas quando o motor sinalizar ambiguidade, permitindo ao usuário escolher manualmente o porte antes de salvar o cálculo.
+O sistema SHALL exibir o porte sugerido (P, M ou G) retornado pelo motor de cálculo, e SHALL exibir um alerta com as faixas candidatas quando o motor sinalizar ambiguidade, exigindo que o usuário escolha manualmente o porte antes de o cálculo ser salvo — já que o porte determina a margem de lucro aplicada, e não apenas o rótulo da peça.
 
 #### Scenario: Porte sugerido sem ambiguidade
 - **WHEN** o motor de cálculo retorna um único porte sugerido
@@ -34,6 +34,10 @@ O sistema SHALL exibir o porte sugerido (P, M ou G) retornado pelo motor de cál
 #### Scenario: Porte sugerido ambíguo
 - **WHEN** o motor de cálculo sinaliza que peso e tempo indicam portes diferentes
 - **THEN** a tela exibe as faixas candidatas e exige que o usuário selecione um porte antes de o cálculo ser salvo
+
+#### Scenario: Escolha do porte atualiza os preços exibidos
+- **WHEN** o usuário resolve uma ambiguidade escolhendo o porte G, cuja faixa tem margem diferente da faixa P
+- **THEN** a tela passa a exibir os preços recalculados com a margem efetiva do porte G, antes de salvar
 
 ### Requirement: Tabela de preço sugerido por canal
 O sistema SHALL exibir, para cada canal com taxa vigente cadastrada, o preço sugerido e a margem líquida calculados pelo motor de cálculo.
@@ -64,8 +68,27 @@ O sistema SHALL exibir, ao lado da tabela de preço sugerido por canal, uma tabe
 - **THEN** a tela lista o preço B2B de cada faixa de quantidade em uma linha própria, ao lado da tabela de preços por canal
 
 ### Requirement: Breakdown de custo por componente para peça composta
-O sistema SHALL exibir, ao calcular o preço de uma peça composta, o custo de cada componente e sua quantidade, além do custo total agregado.
+O sistema SHALL exibir, ao calcular o preço de uma peça composta, o breakdown de cada fonte de custo do conjunto: para cada parte inline, o seu custo (filamento, energia e depreciação) e a sua quantidade; e para cada componente referenciado do catálogo, o custo e a quantidade. A tela SHALL exibir também a reserva de falha e a embalagem aplicadas ao conjunto e o custo total agregado. A tela SHALL exigir que o usuário escolha o porte da peça composta antes de disparar o cálculo, já que uma peça composta não tem porte classificado automaticamente e o porte determina a margem aplicada.
 
-#### Scenario: Resultado do cálculo da Caixa Mandala
-- **WHEN** um cálculo é concluído para a peça composta "Caixa Mandala"
-- **THEN** a tela lista o custo e a quantidade de cada componente (decágono, cunha, trava) e o custo total do conjunto
+#### Scenario: Resultado do cálculo da Caixa Mandala com partes inline
+- **WHEN** um cálculo é concluído para a peça composta "Caixa Mandala" formada por partes inline (decágono, cunhas, travas), com o porte G escolhido pelo usuário
+- **THEN** a tela lista, para cada parte, seu custo (filamento, energia, depreciação) e quantidade, a reserva de falha e a embalagem do conjunto, o custo total agregado e os preços projetados com a margem efetiva da faixa G
+
+#### Scenario: Origem do preço de filamento exibida por parte
+- **WHEN** uma parte tem um insumo de filamento do estoque vinculado e outra não tem
+- **THEN** a tela indica, por parte, se o custo de filamento veio do insumo vinculado ou do preço global
+
+#### Scenario: Cálculo de peça composta sem porte escolhido
+- **WHEN** o usuário tenta calcular o preço de uma peça composta sem ter escolhido o porte
+- **THEN** a tela impede o disparo do cálculo e indica que a escolha do porte é necessária
+
+### Requirement: Exibição da margem efetiva aplicada e sua origem
+O sistema SHALL exibir, no resultado de um cálculo, a margem efetiva aplicada ao preço B2C e a cada faixa de volume B2B, junto com sua composição — margem-alvo base, margem da faixa de porte e modo (`somar` ou `substituir`) —, de forma que o usuário entenda por que aquele preço foi projetado.
+
+#### Scenario: Margem efetiva de uma peça M
+- **WHEN** um cálculo é concluído para uma peça classificada como M, com margem-alvo B2C de 15% e margem B2C de 10% no modo `somar` na faixa M
+- **THEN** a tela exibe a margem efetiva de 25% indicando que ela vem da soma da margem-alvo com a margem do porte M
+
+#### Scenario: Cálculo antigo sem margem registrada
+- **WHEN** o usuário consulta no histórico um cálculo salvo antes da existência da margem por porte
+- **THEN** a tela exibe o snapshot original com custo e preços, sem exibir composição de margem, e sem recalcular o registro

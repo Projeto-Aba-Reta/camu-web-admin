@@ -8,9 +8,10 @@ export default async function PrecificacaoCalcularPage() {
   const supabase = await createClient();
   const repositories = createRepositories(supabase);
 
-  const [printers, products] = await Promise.all([
+  const [printers, products, tiers] = await Promise.all([
     repositories.printers.findActive(),
     repositories.products.findAll(),
+    repositories.sizeTiers.findAll(),
   ]);
   const simpleProducts = products.filter((product) => product.productType === "simples");
 
@@ -23,7 +24,7 @@ export default async function PrecificacaoCalcularPage() {
 
       <PrecificacaoNav />
 
-      <CalculoForm printers={printers} products={simpleProducts} />
+      <CalculoForm printers={printers} tiers={tiers} products={simpleProducts} />
     </div>
   );
 }

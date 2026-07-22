@@ -1,11 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import type { SizeTier, SizeTierRange } from "@/types/pricing";
+import type { MarginMode, SizeTier, SizeTierRange } from "@/types/pricing";
 import type {
   CreateSizeTierRangeInput,
   ISizeTierRangeRepository,
 } from "../interfaces/size-tier-range-repository.interface";
 
+// Faixa cadastrada antes da margem por porte não tem margem: 0 no modo
+// "somar" reproduz exatamente o preço anterior a ela.
 function toSizeTierRange(
   row: Database["public"]["Tables"]["size_tier_ranges"]["Row"],
 ): SizeTierRange {
@@ -16,6 +18,10 @@ function toSizeTierRange(
     maxWeightGrams: row.max_weight_grams,
     minPrintHours: row.min_print_hours,
     maxPrintHours: row.max_print_hours,
+    b2cMarginPct: row.b2c_margin_pct ?? 0,
+    b2cMarginMode: (row.b2c_margin_mode ?? "somar") as MarginMode,
+    b2bMarginPct: row.b2b_margin_pct ?? 0,
+    b2bMarginMode: (row.b2b_margin_mode ?? "somar") as MarginMode,
     validFrom: row.valid_from,
   };
 }
@@ -60,6 +66,10 @@ export class SupabaseSizeTierRangeRepository implements ISizeTierRangeRepository
         max_weight_grams: input.maxWeightGrams,
         min_print_hours: input.minPrintHours,
         max_print_hours: input.maxPrintHours,
+        b2c_margin_pct: input.b2cMarginPct,
+        b2c_margin_mode: input.b2cMarginMode,
+        b2b_margin_pct: input.b2bMarginPct,
+        b2b_margin_mode: input.b2bMarginMode,
       })
       .select("*")
       .single();

@@ -629,6 +629,7 @@ export type Database = {
           cost_parameters_id: string
           created_at: string
           created_by: string | null
+          effective_b2c_margin: Json | null
           id: string
           print_hours: number | null
           printer_id: string | null
@@ -646,6 +647,7 @@ export type Database = {
           cost_parameters_id: string
           created_at?: string
           created_by?: string | null
+          effective_b2c_margin?: Json | null
           id?: string
           print_hours?: number | null
           printer_id?: string | null
@@ -663,6 +665,7 @@ export type Database = {
           cost_parameters_id?: string
           created_at?: string
           created_by?: string | null
+          effective_b2c_margin?: Json | null
           id?: string
           print_hours?: number | null
           printer_id?: string | null
@@ -980,6 +983,76 @@ export type Database = {
           },
         ]
       }
+      product_parts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          material_id: string | null
+          name: string
+          piece_grams: number
+          position: number
+          print_hours: number
+          printer_id: string
+          product_id: string
+          quantity: number
+          support_grams: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          material_id?: string | null
+          name: string
+          piece_grams?: number
+          position?: number
+          print_hours: number
+          printer_id: string
+          product_id: string
+          quantity: number
+          support_grams?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          material_id?: string | null
+          name?: string
+          piece_grams?: number
+          position?: number
+          print_hours?: number
+          printer_id?: string
+          product_id?: string
+          quantity?: number
+          support_grams?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_parts_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_parts_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_parts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_media: {
         Row: {
           created_at: string
@@ -1199,7 +1272,10 @@ export type Database = {
           name: string
           price_calculation_id: string | null
           product_type: string
+          production_lead_days_max: number | null
+          production_lead_days_min: number | null
           size_tier: string | null
+          slug: string
           status: string
           updated_at: string
         }
@@ -1212,7 +1288,10 @@ export type Database = {
           name: string
           price_calculation_id?: string | null
           product_type?: string
+          production_lead_days_max?: number | null
+          production_lead_days_min?: number | null
           size_tier?: string | null
+          slug: string
           status?: string
           updated_at?: string
         }
@@ -1225,7 +1304,10 @@ export type Database = {
           name?: string
           price_calculation_id?: string | null
           product_type?: string
+          production_lead_days_max?: number | null
+          production_lead_days_min?: number | null
           size_tier?: string | null
+          slug?: string
           status?: string
           updated_at?: string
         }
@@ -1354,6 +1436,10 @@ export type Database = {
       }
       size_tier_ranges: {
         Row: {
+          b2b_margin_mode: string
+          b2b_margin_pct: number
+          b2c_margin_mode: string
+          b2c_margin_pct: number
           id: string
           max_print_hours: number
           max_weight_grams: number
@@ -1363,6 +1449,10 @@ export type Database = {
           valid_from: string
         }
         Insert: {
+          b2b_margin_mode?: string
+          b2b_margin_pct?: number
+          b2c_margin_mode?: string
+          b2c_margin_pct?: number
           id?: string
           max_print_hours: number
           max_weight_grams: number
@@ -1372,6 +1462,10 @@ export type Database = {
           valid_from?: string
         }
         Update: {
+          b2b_margin_mode?: string
+          b2b_margin_pct?: number
+          b2c_margin_mode?: string
+          b2c_margin_pct?: number
           id?: string
           max_print_hours?: number
           max_weight_grams?: number
@@ -1379,6 +1473,41 @@ export type Database = {
           min_weight_grams?: number
           tier?: string
           valid_from?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "size_tier_ranges_tier_fkey"
+            columns: ["tier"]
+            isOneToOne: false
+            referencedRelation: "size_tiers"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      size_tiers: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          is_system: boolean
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          is_system?: boolean
+          label: string
+          sort_order: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          is_system?: boolean
+          label?: string
+          sort_order?: number
         }
         Relationships: []
       }

@@ -5,11 +5,14 @@ SUPABASE_ENV_KEYS := NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPA
 SUPABASE_ENV_GREP := ^(NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_ANON_KEY|SUPABASE_SERVICE_ROLE_KEY)=
 SETUP_STAMP := .dev-setup-complete
 
-.PHONY: help dev install env docker-check supabase-up supabase-sync-env seed db-reset stop status clean
+.PHONY: help dev install env docker-check supabase-up supabase-sync-env seed db-reset stop status clean db-push db-push-dry db-remote-status
 
 help:
 	@echo "make dev       - setup completo (deps, Supabase local, migrations pendentes sempre aplicadas, seed de dados de exemplo) e inicia o Next.js + a rotina de conclusao automatica da fila de impressao"
 	@echo "make db-reset  - reaplica todas as migrations do zero (apaga dados locais) e roda o seed de novo"
+	@echo "make db-push          - aplica as migrations pendentes no Supabase REMOTO (projeto linkado)"
+	@echo "make db-push-dry      - mostra o SQL que o db-push aplicaria, sem executar nada"
+	@echo "make db-remote-status - lista as migrations local x remoto do projeto linkado"
 	@echo "make seed      - roda so o seed de dados de exemplo: roles, socios, precificacao, estoque, catalogo, fichas de fatiamento e societario (idempotente, nao duplica)"
 	@echo "make stop      - para os containers do Supabase local"
 	@echo "make status    - mostra status/URLs do Supabase local"
@@ -92,6 +95,27 @@ db-reset: docker-check supabase-up
 	npx supabase db reset
 	@touch $(SETUP_STAMP)
 	$(MAKE) seed
+
+## --- remoto (projeto linkado) ---
+
+# Nao precisa de Docker: fala direto com o Postgres do projeto linkado
+# (supabase/.temp/project-ref). O CLI pede confirmacao listando as migrations
+# antes de aplicar; use `make db-push YES=1` para pular a confirmacao em CI.
+db-push: install
+	@if [ ! -f supabase/.temp/project-ref ]; then \
+		echo "Nenhum projeto remoto linkado. Rode: npx supabase link --project-ref <ref>"; \
+		exit 1; \
+	fi
+	@echo ">> Projeto remoto: $$(cat supabase/.temp/project-ref)"
+	npx supabase db push --linked $(if $(YES),--yes,)
+	@echo ">> Migrations aplicadas no remoto. Conferindo local x remoto:"
+	@$(MAKE) db-remote-status
+
+db-push-dry: install
+	npx supabase db push --linked --dry-run
+
+db-remote-status: install
+	npx supabase migration list --linked
 
 ## --- housekeeping ---
 

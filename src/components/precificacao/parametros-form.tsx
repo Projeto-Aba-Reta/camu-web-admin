@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { costParametersFormSchema, type CostParametersFormValues } from "@/lib/validation/pricing-schemas";
 import { createCostParametersAction } from "@/app/(dashboard)/financeiro/precificacao/actions";
+import { useCostParametersDraft } from "@/components/precificacao/pricing-draft-context";
 import type { CostParameters } from "@/types/pricing";
 
 interface ParametrosFormProps {
@@ -27,6 +29,7 @@ interface ParametrosFormProps {
 
 export function ParametrosForm({ current, canWrite }: ParametrosFormProps) {
   const router = useRouter();
+  const publishDraft = useCostParametersDraft();
 
   const form = useForm<z.input<typeof costParametersFormSchema>, unknown, CostParametersFormValues>({
     resolver: zodResolver(costParametersFormSchema),
@@ -39,6 +42,28 @@ export function ParametrosForm({ current, canWrite }: ParametrosFormProps) {
       targetMarginPctPercent: current ? current.targetMarginPct * 100 : 0,
     },
   });
+
+  // Publica no rascunho o que está digitado, sem salvar — o simulador projeta
+  // o "se salvar" a partir daqui (ver design.md, Decisão 5).
+  const watched = form.watch();
+  useEffect(() => {
+    publishDraft({
+      filamentCostPerKg: Number(watched.filamentCostPerKg) || 0,
+      energyCostPerKwh: Number(watched.energyCostPerKwh) || 0,
+      averagePowerWatts: Number(watched.averagePowerWatts) || 0,
+      failureReservePct: (Number(watched.failureReservePctPercent) || 0) / 100,
+      packagingCost: Number(watched.packagingCost) || 0,
+      targetMarginPct: (Number(watched.targetMarginPctPercent) || 0) / 100,
+    });
+  }, [
+    publishDraft,
+    watched.filamentCostPerKg,
+    watched.energyCostPerKwh,
+    watched.averagePowerWatts,
+    watched.failureReservePctPercent,
+    watched.packagingCost,
+    watched.targetMarginPctPercent,
+  ]);
 
   async function onSubmit(values: CostParametersFormValues) {
     const result = await createCostParametersAction({

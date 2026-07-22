@@ -10,6 +10,7 @@ import type { ICostParameterRepository } from "./interfaces/cost-parameter-repos
 import type { IPrinterRepository } from "./interfaces/printer-repository.interface";
 import type { IChannelFeeRepository } from "./interfaces/channel-fee-repository.interface";
 import type { ISizeTierRangeRepository } from "./interfaces/size-tier-range-repository.interface";
+import type { ISizeTierRepository } from "./interfaces/size-tier-repository.interface";
 import type { IPriceCalculationRepository } from "./interfaces/price-calculation-repository.interface";
 import type { IPartnershipAgreementRepository } from "./interfaces/partnership-agreement-repository.interface";
 import type { ICapitalContributionRepository } from "./interfaces/capital-contribution-repository.interface";
@@ -28,6 +29,7 @@ import type { IPrintQueueRepository } from "./interfaces/print-queue-repository.
 import type { ISlicingSheetRepository } from "./interfaces/slicing-sheet-repository.interface";
 import type { IB2bPricingTierRepository } from "./interfaces/b2b-pricing-tier-repository.interface";
 import type { IProductComponentRepository } from "./interfaces/product-component-repository.interface";
+import type { IProductPartRepository } from "./interfaces/product-part-repository.interface";
 import type { ICommemorativeDateRepository } from "./interfaces/commemorative-date-repository.interface";
 import type { ISocialContentPlanRepository } from "./interfaces/social-content-plan-repository.interface";
 import { SupabaseRoleRepository } from "./supabase/supabase-role-repository";
@@ -40,6 +42,7 @@ import { SupabaseCostParameterRepository } from "./supabase/supabase-cost-parame
 import { SupabasePrinterRepository } from "./supabase/supabase-printer-repository";
 import { SupabaseChannelFeeRepository } from "./supabase/supabase-channel-fee-repository";
 import { SupabaseSizeTierRangeRepository } from "./supabase/supabase-size-tier-range-repository";
+import { SupabaseSizeTierRepository } from "./supabase/supabase-size-tier-repository";
 import { SupabasePriceCalculationRepository } from "./supabase/supabase-price-calculation-repository";
 import { SupabasePartnershipAgreementRepository } from "./supabase/supabase-partnership-agreement-repository";
 import { SupabaseCapitalContributionRepository } from "./supabase/supabase-capital-contribution-repository";
@@ -58,6 +61,7 @@ import { SupabasePrintQueueRepository } from "./supabase/supabase-print-queue-re
 import { SupabaseSlicingSheetRepository } from "./supabase/supabase-slicing-sheet-repository";
 import { SupabaseB2bPricingTierRepository } from "./supabase/supabase-b2b-pricing-tier-repository";
 import { SupabaseProductComponentRepository } from "./supabase/supabase-product-component-repository";
+import { SupabaseProductPartRepository } from "./supabase/supabase-product-part-repository";
 import { SupabaseCommemorativeDateRepository } from "./supabase/supabase-commemorative-date-repository";
 import { SupabaseSocialContentPlanRepository } from "./supabase/supabase-social-content-plan-repository";
 
@@ -72,6 +76,7 @@ export interface Repositories {
   printers: IPrinterRepository;
   channelFees: IChannelFeeRepository;
   sizeTierRanges: ISizeTierRangeRepository;
+  sizeTiers: ISizeTierRepository;
   priceCalculations: IPriceCalculationRepository;
   partnershipAgreements: IPartnershipAgreementRepository;
   capitalContributions: ICapitalContributionRepository;
@@ -90,6 +95,7 @@ export interface Repositories {
   slicingSheets: ISlicingSheetRepository;
   b2bPricingTiers: IB2bPricingTierRepository;
   productComponents: IProductComponentRepository;
+  productParts: IProductPartRepository;
   commemorativeDates: ICommemorativeDateRepository;
   socialContentPlanItems: ISocialContentPlanRepository;
 }
@@ -107,6 +113,7 @@ export function createRepositories(supabaseClient: SupabaseClient<Database>): Re
     printers: new SupabasePrinterRepository(supabaseClient),
     channelFees: new SupabaseChannelFeeRepository(supabaseClient),
     sizeTierRanges: new SupabaseSizeTierRangeRepository(supabaseClient),
+    sizeTiers: new SupabaseSizeTierRepository(supabaseClient),
     priceCalculations: new SupabasePriceCalculationRepository(supabaseClient),
     partnershipAgreements: new SupabasePartnershipAgreementRepository(supabaseClient),
     capitalContributions: new SupabaseCapitalContributionRepository(supabaseClient),
@@ -125,6 +132,7 @@ export function createRepositories(supabaseClient: SupabaseClient<Database>): Re
     slicingSheets: new SupabaseSlicingSheetRepository(supabaseClient),
     b2bPricingTiers: new SupabaseB2bPricingTierRepository(supabaseClient),
     productComponents: new SupabaseProductComponentRepository(supabaseClient),
+    productParts: new SupabaseProductPartRepository(supabaseClient),
     commemorativeDates: new SupabaseCommemorativeDateRepository(supabaseClient),
     socialContentPlanItems: new SupabaseSocialContentPlanRepository(supabaseClient),
   };

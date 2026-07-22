@@ -11,6 +11,8 @@ import { ImpressoraForm, ImpressoraHistoryTable } from "@/components/precificaca
 import { CanalFeeForm, CanalFeeHistoryTable } from "@/components/precificacao/canal-fee-form";
 import { SizeTierForm, SizeTierHistoryTable } from "@/components/precificacao/size-tier-form";
 import { B2bTierForm, B2bTierHistoryTable } from "@/components/precificacao/b2b-tier-form";
+import { PricingDraftProvider } from "@/components/precificacao/pricing-draft-context";
+import { SimuladorPrecificacao } from "@/components/precificacao/simulador-precificacao";
 
 export default async function PrecificacaoConfiguracaoPage() {
   const currentUser = await getCurrentProfile();
@@ -27,8 +29,11 @@ export default async function PrecificacaoConfiguracaoPage() {
     channelFeesHistory,
     currentSizeTiers,
     sizeTiersHistory,
+    sizeTierDefinitions,
     currentB2bTiers,
     b2bTiersHistory,
+    products,
+    slicingSheets,
   ] = await Promise.all([
     repositories.costParameters.findCurrent(),
     repositories.costParameters.findHistory(),
@@ -37,12 +42,30 @@ export default async function PrecificacaoConfiguracaoPage() {
     repositories.channelFees.findAllHistory(),
     repositories.sizeTierRanges.findAllCurrent(),
     repositories.sizeTierRanges.findAllHistory(),
+    repositories.sizeTiers.findAll(),
     repositories.b2bPricingTiers.findAllCurrent(),
     repositories.b2bPricingTiers.findAllHistory(),
+    repositories.products.findAll(),
+    repositories.slicingSheets.findAll(),
   ]);
 
   const canWriteFinanceiro = canWriteFinanceiroParams(currentUser);
   const canWritePrinter = canWritePrinters(currentUser);
+
+  const activePrinters = allPrinterVersions.filter((printer) => printer.isActive);
+  const productNames = new Map(products.map((product) => [product.id, product.name]));
+
+  // Peças de exemplo do simulador: peso e tempo vêm da ficha de fatiamento
+  // cadastrada, igual ao motor faz num cálculo real.
+  const produtosComFicha = slicingSheets
+    .filter((sheet) => productNames.has(sheet.productId))
+    .map((sheet) => ({
+      id: sheet.id,
+      name: productNames.get(sheet.productId)!,
+      weightGrams: sheet.materials.reduce((sum, material) => sum + material.pieceGrams, 0),
+      printHours: sheet.printHours,
+      printerId: sheet.printerId,
+    }));
 
   return (
     <div className="space-y-6">
@@ -53,7 +76,8 @@ export default async function PrecificacaoConfiguracaoPage() {
 
       <PrecificacaoNav />
 
-      <div className="space-y-6">
+      <PricingDraftProvider>
+        <div className="space-y-6">
         <ConfigSection
           title="Parâmetros de custo"
           description="Filamento, energia, consumo médio, reserva de falha e embalagem."
@@ -77,9 +101,9 @@ export default async function PrecificacaoConfiguracaoPage() {
 
         <ConfigSection
           title="Faixas de porte (P/M/G)"
-          description="Faixas de referência de peso e tempo de impressão usadas na classificação automática de porte."
-          form={<SizeTierForm current={currentSizeTiers} canWrite={canWriteFinanceiro} />}
-          history={<SizeTierHistoryTable history={sizeTiersHistory} />}
+          description="Faixas de referência de peso e tempo de impressão usadas na classificação automática de porte, e a margem de lucro própria de cada porte."
+          form={<SizeTierForm current={currentSizeTiers} tiers={sizeTierDefinitions} canWrite={canWriteFinanceiro} />}
+          history={<SizeTierHistoryTable history={sizeTiersHistory} tiers={sizeTierDefinitions} />}
         />
 
         <ConfigSection
@@ -88,7 +112,29 @@ export default async function PrecificacaoConfiguracaoPage() {
           form={<B2bTierForm current={currentB2bTiers} canWrite={canWriteFinanceiro} />}
           history={<B2bTierHistoryTable history={b2bTiersHistory} />}
         />
-      </div>
+
+        {/* Simulador por último: ele lê o que os formulários acima têm
+            preenchido. Fica disponível mesmo sem permissão de escrita. */}
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Simulador de precificação</h2>
+            <p className="text-sm text-muted-foreground">
+              Veja a fórmula do motor de cálculo com as taxas atuais e simule uma peça com os valores que você está
+              editando acima — antes de salvar.
+            </p>
+          </div>
+          <SimuladorPrecificacao
+            costParameters={currentCostParameters}
+            printers={activePrinters}
+            channelFees={currentChannelFees}
+            sizeTierRanges={currentSizeTiers}
+            sizeTiers={sizeTierDefinitions}
+            b2bTiers={currentB2bTiers}
+            produtosComFicha={produtosComFicha}
+          />
+        </section>
+        </div>
+      </PricingDraftProvider>
     </div>
   );
 }

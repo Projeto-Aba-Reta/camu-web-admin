@@ -16,9 +16,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CATEGORY_LABEL, SIZE_TIER_LABEL, STATUS_LABEL } from "@/components/catalogo/constants";
+import { CATEGORY_LABEL, STATUS_LABEL } from "@/components/catalogo/constants";
 import { DeleteProductDialog } from "@/components/catalogo/delete-product-dialog";
+import { tierLabel } from "@/lib/pricing/tier-label";
 import type { Product } from "@/types/catalog";
+import type { SizeTierDefinition } from "@/types/pricing";
 
 const STATUS_VARIANT: Record<Product["status"], "secondary" | "outline" | "default"> = {
   ativo: "secondary",
@@ -29,11 +31,17 @@ const STATUS_VARIANT: Record<Product["status"], "secondary" | "outline" | "defau
 
 interface ProductListProps {
   products: Product[];
+  // Portes cadastrados, para o rótulo e o filtro de porte (não mais fixo
+  // P/M/G).
+  tiers: SizeTierDefinition[];
+  // Peças com listagem `loja_propria` ativa — as que estão no ar no site.
+  publishedOnStoreIds: string[];
   canWrite: boolean;
 }
 
-export function ProductList({ products, canWrite }: ProductListProps) {
+export function ProductList({ products, tiers, publishedOnStoreIds, canWrite }: ProductListProps) {
   const router = useRouter();
+  const publishedOnStore = useMemo(() => new Set(publishedOnStoreIds), [publishedOnStoreIds]);
   const [categoryFilter, setCategoryFilter] = useState("");
   const [tierFilter, setTierFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -73,7 +81,7 @@ export function ProductList({ products, canWrite }: ProductListProps) {
         header: "Porte",
         cell: ({ row }) =>
           row.original.sizeTier ? (
-            <Badge variant="outline">{SIZE_TIER_LABEL[row.original.sizeTier]}</Badge>
+            <Badge variant="outline">{tierLabel(row.original.sizeTier, tiers)}</Badge>
           ) : (
             <span className="text-muted-foreground">—</span>
           ),
@@ -82,6 +90,16 @@ export function ProductList({ products, canWrite }: ProductListProps) {
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => <Badge variant={STATUS_VARIANT[row.original.status]}>{STATUS_LABEL[row.original.status]}</Badge>,
+      },
+      {
+        id: "loja",
+        header: "Site",
+        cell: ({ row }) =>
+          publishedOnStore.has(row.original.id) ? (
+            <Badge variant="secondary">No site</Badge>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
       },
       {
         id: "actions",
@@ -124,7 +142,7 @@ export function ProductList({ products, canWrite }: ProductListProps) {
         },
       },
     ],
-    [canWrite, router],
+    [canWrite, publishedOnStore, router, tiers],
   );
 
   const table = useReactTable({
@@ -161,9 +179,9 @@ export function ProductList({ products, canWrite }: ProductListProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              {Object.entries(SIZE_TIER_LABEL).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
+              {tiers.map((tier) => (
+                <SelectItem key={tier.code} value={tier.code}>
+                  {tier.label} ({tier.code})
                 </SelectItem>
               ))}
             </SelectContent>

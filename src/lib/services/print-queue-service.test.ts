@@ -139,6 +139,9 @@ class FakeProductRepository implements IProductRepository {
   async findById(id: string): Promise<Product | null> {
     return this.products.find((product) => product.id === id) ?? null;
   }
+  async findBySlug(slug: string): Promise<Product | null> {
+    return this.products.find((product) => product.slug === slug) ?? null;
+  }
   async findAll(): Promise<Product[]> {
     return this.products;
   }
@@ -155,6 +158,10 @@ class FakeProductRepository implements IProductRepository {
 
 class FakeSlicingSheetRepository implements ISlicingSheetRepository {
   public sheets: SlicingSheet[] = [];
+
+  async findAll(): Promise<SlicingSheet[]> {
+    return this.sheets;
+  }
 
   async findByProductId(productId: string): Promise<SlicingSheet[]> {
     return this.sheets.filter((sheet) => sheet.productId === productId);
@@ -298,11 +305,14 @@ const OTHER_PRINTER: Printer = {
 const PRODUCT: Product = {
   id: "product-1",
   name: "Miniatura Leon",
+  slug: "miniatura-leon",
   description: null,
   category: "miniatura_colecionavel",
   sizeTier: "M",
   status: "ativo",
   productType: "simples",
+  productionLeadDaysMin: null,
+  productionLeadDaysMax: null,
   priceCalculationId: null,
   createdBy: null,
   createdAt: "2026-01-01T00:00:00.000Z",

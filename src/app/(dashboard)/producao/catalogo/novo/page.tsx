@@ -5,6 +5,7 @@ import { getCurrentProfile } from "@/lib/auth/get-current-profile";
 import { canWriteCatalog } from "@/lib/auth/catalog-access";
 import { PageHeader } from "@/components/layout/page-header";
 import { ProductForm } from "@/components/catalogo/product-form";
+import { ProductSaveBar, ProductSaveBarProvider } from "@/components/catalogo/product-save-bar";
 import type { HistoricoRow } from "@/components/precificacao/historico-tabela";
 
 export default async function NovaPecaPage() {
@@ -16,10 +17,11 @@ export default async function NovaPecaPage() {
   const supabase = await createClient();
   const repositories = createRepositories(supabase);
 
-  const [printers, calculations, allPrinters] = await Promise.all([
+  const [printers, calculations, allPrinters, tiers] = await Promise.all([
     repositories.printers.findActive(),
     repositories.priceCalculations.findRecent(200),
     repositories.printers.findAll(),
+    repositories.sizeTiers.findAll(),
   ]);
 
   const printerNameById = new Map(allPrinters.map((printer) => [printer.id, printer.name]));
@@ -29,18 +31,23 @@ export default async function NovaPecaPage() {
   }));
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Nova peça"
-        description="Cadastre a peça e vincule um cálculo de preço já existente ou calcule um novo sem sair desta tela."
-      />
+    <ProductSaveBarProvider>
+      <div className="space-y-6">
+        <PageHeader
+          title="Nova peça"
+          description="Cadastre a peça e vincule um cálculo de preço já existente ou calcule um novo sem sair desta tela."
+        />
 
-      <ProductForm
-        printers={printers}
-        recentCalculations={recentCalculations}
-        initialLinkedCalculation={null}
-        canWrite
-      />
-    </div>
+        <ProductForm
+          printers={printers}
+          recentCalculations={recentCalculations}
+          initialLinkedCalculation={null}
+          tiers={tiers}
+          canWrite
+        />
+
+        <ProductSaveBar label="Cadastrar peça" />
+      </div>
+    </ProductSaveBarProvider>
   );
 }

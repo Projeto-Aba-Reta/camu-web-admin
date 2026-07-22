@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { InventoryService } from "./inventory-service";
+import { InventoryService, toStockQuantity } from "./inventory-service";
+import { materialFormSchema } from "@/lib/validation/inventory-schemas";
 import type {
   CreateMaterialStockMovementInput,
   IMaterialStockMovementRepository,
@@ -280,5 +281,36 @@ describe("InventoryService.registerMaterialConsumption", () => {
 
     expect(result.productMovement).toBeNull();
     expect(await productStockMovements.findByProductId("product-1")).toHaveLength(0);
+  });
+});
+
+describe("toStockQuantity", () => {
+  it("converte filamento em kg para gramas (×1000), preservando o sinal", () => {
+    expect(toStockQuantity({ type: "filamento", unit: "kg" }, 1)).toBe(1000);
+    expect(toStockQuantity({ type: "filamento", unit: "kg" }, -0.07)).toBeCloseTo(-70, 6);
+  });
+
+  it("mantém a quantidade quando o filamento já está em gramas", () => {
+    expect(toStockQuantity({ type: "filamento", unit: "g" }, 70)).toBe(70);
+  });
+
+  it("não converte insumos que não são filamento", () => {
+    expect(toStockQuantity({ type: "embalagem", unit: "unidade" }, 20)).toBe(20);
+  });
+});
+
+describe("materialFormSchema — unidade de filamento", () => {
+  it("aceita filamento em kg ou g", () => {
+    expect(materialFormSchema.safeParse({ name: "PLA", type: "filamento", unit: "kg", referenceCost: 90 }).success).toBe(true);
+    expect(materialFormSchema.safeParse({ name: "PLA", type: "filamento", unit: "g", referenceCost: 0.09 }).success).toBe(true);
+  });
+
+  it("rejeita filamento com unidade fora de kg/g", () => {
+    const result = materialFormSchema.safeParse({ name: "PLA", type: "filamento", unit: "rolo", referenceCost: 90 });
+    expect(result.success).toBe(false);
+  });
+
+  it("aceita embalagem com unidade livre", () => {
+    expect(materialFormSchema.safeParse({ name: "Caixa", type: "embalagem", unit: "unidade", referenceCost: 3 }).success).toBe(true);
   });
 });

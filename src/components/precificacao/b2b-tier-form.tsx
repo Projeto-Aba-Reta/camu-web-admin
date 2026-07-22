@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { b2bPricingTierFormSchema, type B2bPricingTierFormValues } from "@/lib/validation/pricing-schemas";
 import { createB2bPricingTierAction } from "@/app/(dashboard)/financeiro/precificacao/actions";
+import { useB2bTierDraft } from "@/components/precificacao/pricing-draft-context";
 import type { B2bPricingTier } from "@/types/pricing";
 
 interface B2bTierFormProps {
@@ -27,11 +29,22 @@ interface B2bTierFormProps {
 
 export function B2bTierForm({ current, canWrite }: B2bTierFormProps) {
   const router = useRouter();
+  const publishDraft = useB2bTierDraft();
 
   const form = useForm<z.input<typeof b2bPricingTierFormSchema>, unknown, B2bPricingTierFormValues>({
     resolver: zodResolver(b2bPricingTierFormSchema),
     defaultValues: { minQuantity: 0, targetMarginPctPercent: 0 },
   });
+
+  // Publica no rascunho o que está digitado, sem salvar (ver design.md,
+  // Decisão 5).
+  const watched = form.watch();
+  useEffect(() => {
+    publishDraft({
+      minQuantity: Number(watched.minQuantity) || 0,
+      targetMarginPct: (Number(watched.targetMarginPctPercent) || 0) / 100,
+    });
+  }, [publishDraft, watched.minQuantity, watched.targetMarginPctPercent]);
 
   async function onSubmit(values: B2bPricingTierFormValues) {
     const result = await createB2bPricingTierAction({

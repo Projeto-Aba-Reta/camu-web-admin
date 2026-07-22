@@ -8,10 +8,11 @@ export default async function PrecificacaoHistoricoPage() {
   const supabase = await createClient();
   const repositories = createRepositories(supabase);
 
-  const [calculations, printers, products] = await Promise.all([
+  const [calculations, printers, products, tiers] = await Promise.all([
     repositories.priceCalculations.findRecent(200),
     repositories.printers.findAll(),
     repositories.products.findAll(),
+    repositories.sizeTiers.findAll(),
   ]);
 
   const printerNameById = new Map(printers.map((printer) => [printer.id, printer.name]));
@@ -37,7 +38,7 @@ export default async function PrecificacaoHistoricoPage() {
 
       <PrecificacaoNav />
 
-      <HistoricoTabela rows={rows} productNames={productNames} />
+      <HistoricoTabela rows={rows} productNames={productNames} tiers={tiers} />
     </div>
   );
 }

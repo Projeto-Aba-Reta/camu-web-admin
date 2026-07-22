@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { slugify } from "@/lib/catalog/slug";
 import { CatalogService, ProductDeletionBlockedError } from "./catalog-service";
 import type { IPrintQueueRepository } from "@/lib/repositories/interfaces/print-queue-repository.interface";
 import type { IProductStockMovementRepository } from "@/lib/repositories/interfaces/product-stock-movement-repository.interface";
@@ -23,10 +24,15 @@ import type {
   IProductComponentRepository,
 } from "@/lib/repositories/interfaces/product-component-repository.interface";
 import type {
+  CreatePiecePartInput,
+  IProductPartRepository,
+  UpdatePiecePartInput,
+} from "@/lib/repositories/interfaces/product-part-repository.interface";
+import type {
   ISlicingSheetRepository,
   UpsertSlicingSheetInput,
 } from "@/lib/repositories/interfaces/slicing-sheet-repository.interface";
-import type { Product, ProductChannelListing, ProductComponent, ProductMedia } from "@/types/catalog";
+import type { PiecePart, Product, ProductChannelListing, ProductComponent, ProductMedia } from "@/types/catalog";
 import type { PriceCalculation } from "@/types/pricing";
 import type { SlicingSheet } from "@/types/slicing-sheet";
 
@@ -36,18 +42,26 @@ class FakeProductRepository implements IProductRepository {
   async findById(id: string) {
     return this.products.find((p) => p.id === id) ?? null;
   }
+  async findBySlug(slug: string) {
+    return this.products.find((p) => p.slug === slug) ?? null;
+  }
   async findAll() {
     return this.products;
   }
-  async create(input: CreateProductInput): Promise<Product> {
+  // slug opcional só no fake: quem resolve o slug é o service, então os
+  // testes que criam peças direto pelo repositório não precisam informá-lo.
+  async create(input: Omit<CreateProductInput, "slug"> & { slug?: string }): Promise<Product> {
     const product: Product = {
       id: `product-${this.products.length + 1}`,
       name: input.name,
+      slug: input.slug ?? slugify(input.name),
       description: input.description,
       category: input.category,
       sizeTier: null,
       status: "rascunho",
       productType: input.productType ?? "simples",
+      productionLeadDaysMin: input.productionLeadDaysMin ?? null,
+      productionLeadDaysMax: input.productionLeadDaysMax ?? null,
       priceCalculationId: null,
       createdBy: input.createdBy,
       createdAt: "2026-01-01T00:00:00.000Z",
@@ -109,6 +123,9 @@ class FakeProductChannelListingRepository implements IProductChannelListingRepos
 
   async findByProductId(productId: string) {
     return this.listings.filter((l) => l.productId === productId);
+  }
+  async findByChannel(channel: ProductChannelListing["channel"]) {
+    return this.listings.filter((l) => l.channel === channel);
   }
   async create(input: CreateProductChannelListingInput): Promise<ProductChannelListing> {
     const listing: ProductChannelListing = {
@@ -275,6 +292,10 @@ class FakeMaterialStockMovementRepository implements IMaterialStockMovementRepos
 class FakeSlicingSheetRepository implements ISlicingSheetRepository {
   public sheets: SlicingSheet[] = [];
 
+  async findAll() {
+    return this.sheets;
+  }
+
   async findByProductId(productId: string) {
     return this.sheets.filter((s) => s.productId === productId);
   }
@@ -289,12 +310,41 @@ class FakeSlicingSheetRepository implements ISlicingSheetRepository {
   }
 }
 
+class FakeProductPartRepository implements IProductPartRepository {
+  constructor(private readonly parts: PiecePart[] = []) {}
+  async findByProductId(productId: string) {
+    return this.parts.filter((p) => p.productId === productId);
+  }
+  async create(input: CreatePiecePartInput): Promise<PiecePart> {
+    const part: PiecePart = {
+      ...input,
+      id: `part-${this.parts.length + 1}`,
+      position: input.position ?? 0,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+    this.parts.push(part);
+    return part;
+  }
+  async update(id: string, input: UpdatePiecePartInput): Promise<PiecePart> {
+    const part = this.parts.find((p) => p.id === id);
+    if (!part) throw new Error(`part ${id} not found in fake`);
+    Object.assign(part, input);
+    return part;
+  }
+  async remove(id: string): Promise<void> {
+    const index = this.parts.findIndex((p) => p.id === id);
+    if (index >= 0) this.parts.splice(index, 1);
+  }
+}
+
 function makeService() {
   const products = new FakeProductRepository();
   const productMedia = new FakeProductMediaRepository();
   const productChannelListings = new FakeProductChannelListingRepository();
   const priceCalculations = new FakePriceCalculationRepository([makeCalculation()]);
   const productComponents = new FakeProductComponentRepository();
+  const productParts = new FakeProductPartRepository();
   const slicingSheets = new FakeSlicingSheetRepository();
   const printQueueItems = new FakePrintQueueRepository();
   const productStockMovements = new FakeProductStockMovementRepository();
@@ -306,6 +356,7 @@ function makeService() {
     productChannelListings,
     priceCalculations,
     productComponents,
+    productParts,
     slicingSheets,
     printQueueItems,
     productStockMovements,
@@ -318,6 +369,7 @@ function makeService() {
     productChannelListings,
     priceCalculations,
     productComponents,
+    productParts,
     slicingSheets,
     printQueueItems,
     productStockMovements,
@@ -426,6 +478,149 @@ describe("CatalogService.createChannelListing", () => {
   });
 });
 
+describe("CatalogService slug", () => {
+  it("gera o slug a partir do nome quando não informado", async () => {
+    const { service } = makeService();
+    const product = await service.createProduct({
+      name: "Miniatura RPG — Guerreiro Anão",
+      description: null,
+      category: "miniatura_colecionavel",
+      createdBy: null,
+    });
+
+    expect(product.slug).toBe("miniatura-rpg-guerreiro-anao");
+  });
+
+  it("desambigua o slug em caso de colisão", async () => {
+    const { service } = makeService();
+    const base = { description: null, category: "utilitario", createdBy: null } as const;
+
+    const first = await service.createProduct({ name: "Guerreiro", ...base });
+    const second = await service.createProduct({ name: "Guerreiro", ...base });
+
+    expect(first.slug).toBe("guerreiro");
+    expect(second.slug).toBe("guerreiro-2");
+  });
+
+  it("rejeita editar o slug para um valor já usado por outra peça", async () => {
+    const { service } = makeService();
+    const base = { description: null, category: "utilitario", createdBy: null } as const;
+    await service.createProduct({ name: "Guerreiro", ...base });
+    const outra = await service.createProduct({ name: "Mago", ...base });
+
+    await expect(service.updateProduct(outra.id, { slug: "guerreiro" })).rejects.toThrow(/já é usado/);
+  });
+
+  it("rejeita slug fora do formato de URL", async () => {
+    const { service } = makeService();
+    const product = await service.createProduct({
+      name: "Mago",
+      description: null,
+      category: "utilitario",
+      createdBy: null,
+    });
+
+    await expect(service.updateProduct(product.id, { slug: "Mago Supremo!" })).rejects.toThrow(/Slug inválido/);
+  });
+});
+
+describe("CatalogService loja própria", () => {
+  async function makeStoreReadyProduct() {
+    const helpers = makeService();
+    const { service, products, productMedia } = helpers;
+    const product = await service.createProduct({
+      name: "Guerreiro Anão",
+      description: null,
+      category: "miniatura_colecionavel",
+      createdBy: null,
+    });
+    await products.update(product.id, { status: "ativo" });
+    const cover = await productMedia.create({ productId: product.id, storagePath: "capa.jpg", displayOrder: 0 });
+    await productMedia.setCover(cover.id, product.id);
+    return { ...helpers, product };
+  }
+
+  it("recusa publicar peça sem foto de capa, dizendo o que falta", async () => {
+    const { service, products } = makeService();
+    const product = await service.createProduct({
+      name: "Sem capa",
+      description: null,
+      category: "utilitario",
+      createdBy: null,
+    });
+    await products.update(product.id, { status: "ativo" });
+
+    await expect(
+      service.upsertChannelListing(product.id, {
+        channel: "loja_propria",
+        listedPrice: 90,
+        isActive: true,
+      }),
+    ).rejects.toThrow(/foto de capa/);
+  });
+
+  it("recusa publicar peça que não está ativa", async () => {
+    const { service, productMedia } = makeService();
+    const product = await service.createProduct({
+      name: "Rascunho",
+      description: null,
+      category: "utilitario",
+      createdBy: null,
+    });
+    const cover = await productMedia.create({ productId: product.id, storagePath: "capa.jpg", displayOrder: 0 });
+    await productMedia.setCover(cover.id, product.id);
+
+    await expect(
+      service.upsertChannelListing(product.id, { channel: "loja_propria", listedPrice: 90, isActive: true }),
+    ).rejects.toThrow(/status ativo/);
+  });
+
+  it("publica a peça pronta e não exige motivo de divergência", async () => {
+    const { service, product, products } = await makeStoreReadyProduct();
+    // Cálculo vinculado: os marketplaces passariam a exigir motivo, mas
+    // loja_propria não tem preço sugerido para comparar.
+    await products.update(product.id, { priceCalculationId: "calc-1" });
+
+    const listing = await service.upsertChannelListing(product.id, {
+      channel: "loja_propria",
+      listedPrice: 90,
+      isActive: true,
+    });
+
+    expect(listing.isActive).toBe(true);
+    expect(listing.listedPrice).toBe(90);
+    expect(await service.listProductIdsPublishedOnStore()).toEqual([product.id]);
+  });
+
+  it("despublicar da loja própria não mexe nas listagens de marketplace", async () => {
+    const { service, product, productChannelListings } = await makeStoreReadyProduct();
+    await productChannelListings.create({ productId: product.id, channel: "shopee", listedPrice: 120 });
+    await service.upsertChannelListing(product.id, { channel: "loja_propria", listedPrice: 90, isActive: true });
+
+    await service.upsertChannelListing(product.id, { channel: "loja_propria", listedPrice: 90, isActive: false });
+
+    expect(await service.listProductIdsPublishedOnStore()).toEqual([]);
+    const shopee = (await productChannelListings.findByProductId(product.id)).find((l) => l.channel === "shopee");
+    expect(shopee?.isActive).toBe(true);
+    expect(shopee?.listedPrice).toBe(120);
+  });
+
+  it("lista o que falta sem bloquear a leitura da prontidão", async () => {
+    const { service } = makeService();
+    const product = await service.createProduct({
+      name: "Incompleta",
+      description: null,
+      category: "utilitario",
+      createdBy: null,
+    });
+
+    const readiness = await service.getStorePublishReadiness(product.id);
+
+    expect(readiness.ready).toBe(false);
+    expect(readiness.missing).toEqual(["status ativo", "foto de capa", "preço do site"]);
+  });
+});
+
 describe("CatalogService.addComponent", () => {
   async function makeComposedFixture() {
     const helpers = makeService();
@@ -482,6 +677,41 @@ describe("CatalogService.addComponent", () => {
     // Adicionar decagono como componente de mandala fecharia o ciclo
     // mandala → decagono → mandala.
     await expect(service.addComponent(mandala.id, decagono.id, 1, null)).rejects.toThrow(/ciclo/);
+  });
+});
+
+describe("CatalogService.addMedia", () => {
+  async function makeProduct(helpers: ReturnType<typeof makeService>) {
+    return helpers.products.create({
+      name: "Miniatura teste",
+      description: null,
+      category: "miniatura_colecionavel",
+      createdBy: null,
+    });
+  }
+
+  it("marca a primeira foto da peça como capa", async () => {
+    const helpers = makeService();
+    const product = await makeProduct(helpers);
+
+    const first = await helpers.service.addMedia({ productId: product.id, storagePath: "a.jpg", displayOrder: 0 });
+
+    expect(first.isCover).toBe(true);
+    const media = await helpers.productMedia.findByProductId(product.id);
+    expect(media.find((item) => item.id === first.id)?.isCover).toBe(true);
+  });
+
+  it("não troca a capa quando a peça já tem uma", async () => {
+    const helpers = makeService();
+    const product = await makeProduct(helpers);
+    const first = await helpers.service.addMedia({ productId: product.id, storagePath: "a.jpg", displayOrder: 0 });
+
+    const second = await helpers.service.addMedia({ productId: product.id, storagePath: "b.jpg", displayOrder: 1 });
+
+    expect(second.isCover).toBe(false);
+    const media = await helpers.productMedia.findByProductId(product.id);
+    expect(media.find((item) => item.id === first.id)?.isCover).toBe(true);
+    expect(media.filter((item) => item.isCover)).toHaveLength(1);
   });
 });
 
@@ -622,5 +852,70 @@ describe("CatalogService.discontinueProduct", () => {
 
     expect(updated.status).toBe("descontinuado");
     expect(await productComponents.findByComponentProductId(component.id)).toHaveLength(1);
+  });
+});
+
+describe("CatalogService.addPart", () => {
+  const basePart = {
+    name: "Decágono",
+    quantity: 1,
+    materialId: null,
+    pieceGrams: 40,
+    supportGrams: 0,
+    printerId: "printer-1",
+    printHours: 3,
+    createdBy: null,
+  };
+
+  async function makeComposite() {
+    const { service, products, productParts } = makeService();
+    const composite = await products.create({
+      name: "Caixa Mandala",
+      description: null,
+      category: "linha_leon",
+      productType: "composta",
+      createdBy: null,
+    });
+    return { service, products, productParts, composite };
+  }
+
+  it("adiciona e lista uma parte de uma peça composta", async () => {
+    const { service, composite } = await makeComposite();
+    const part = await service.addPart({ productId: composite.id, ...basePart });
+    expect(part.name).toBe("Decágono");
+    expect(await service.listParts(composite.id)).toHaveLength(1);
+  });
+
+  it("rejeita adicionar parte a uma peça simples", async () => {
+    const { service, products } = makeService();
+    const simples = await products.create({
+      name: "Peça simples",
+      description: null,
+      category: "linha_leon",
+      productType: "simples",
+      createdBy: null,
+    });
+    await expect(service.addPart({ productId: simples.id, ...basePart })).rejects.toThrow(/composta/i);
+  });
+
+  it("rejeita quantidade inválida", async () => {
+    const { service, composite } = await makeComposite();
+    await expect(service.addPart({ productId: composite.id, ...basePart, quantity: 0 })).rejects.toThrow(
+      /quantidade/i,
+    );
+  });
+
+  it("rejeita parte sem consumo de filamento (0g na peça e no suporte)", async () => {
+    const { service, composite } = await makeComposite();
+    await expect(
+      service.addPart({ productId: composite.id, ...basePart, pieceGrams: 0, supportGrams: 0 }),
+    ).rejects.toThrow(/filamento/i);
+  });
+
+  it("remove uma parte", async () => {
+    const { service, composite } = await makeComposite();
+    const part = await service.addPart({ productId: composite.id, ...basePart });
+    await service.removePart(part.id);
+    expect(await service.listParts(composite.id)).toHaveLength(0);
   });
 });

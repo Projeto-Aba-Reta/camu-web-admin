@@ -46,6 +46,8 @@ declare
   v_calc_id        uuid;
   v_sheet_id       uuid;
   v_tier           text;
+  v_tier_range     record;
+  v_b2c_margin     numeric;
 
   v_filament_cost  numeric;
   v_energy_cost    numeric;
@@ -157,13 +159,28 @@ if not exists (select 1 from public.printers where name = 'Ender-3 V3 SE') then
   raise notice 'Impressora Ender-3 V3 SE criada.';
 end if;
 
-insert into public.size_tier_ranges (tier, min_weight_grams, max_weight_grams, min_print_hours, max_print_hours)
-select t.tier, t.min_w, t.max_w, t.min_h, t.max_h
+-- Portes de sistema (P/M/G). As faixas abaixo referenciam size_tiers.code
+-- por FK, então os portes precisam existir antes.
+insert into public.size_tiers (code, label, sort_order, is_system) values
+  ('P', 'Pequena', 10, true),
+  ('M', 'Média',   20, true),
+  ('G', 'Grande',  30, true)
+on conflict (code) do nothing;
+
+-- Margem por porte: peça G imobiliza impressora e filamento por muito mais
+-- tempo que uma P, então cada faixa carrega sua própria margem. Aqui todas
+-- somam à margem-alvo global (modo 'somar'); 'substituir' faria a margem do
+-- porte valer sozinha.
+insert into public.size_tier_ranges (
+  tier, min_weight_grams, max_weight_grams, min_print_hours, max_print_hours,
+  b2c_margin_pct, b2c_margin_mode, b2b_margin_pct, b2b_margin_mode
+)
+select t.tier, t.min_w, t.max_w, t.min_h, t.max_h, t.b2c_pct, 'somar', t.b2b_pct, 'somar'
 from (values
-  ('P', 5::numeric,  20::numeric,  0.5::numeric, 3::numeric),
-  ('M', 20::numeric, 55::numeric,  3::numeric,   6::numeric),
-  ('G', 55::numeric, 150::numeric, 6::numeric,   12::numeric)
-) as t(tier, min_w, max_w, min_h, max_h)
+  ('P', 5::numeric,  20::numeric,  0.5::numeric, 3::numeric,  0.08::numeric, 0.04::numeric),
+  ('M', 20::numeric, 55::numeric,  3::numeric,   6::numeric,  0.12::numeric, 0.06::numeric),
+  ('G', 55::numeric, 150::numeric, 6::numeric,   12::numeric, 0.20::numeric, 0.10::numeric)
+) as t(tier, min_w, max_w, min_h, max_h, b2c_pct, b2b_pct)
 where not exists (
   select 1 from public.size_tier_ranges existing where existing.tier = t.tier
 );
@@ -274,8 +291,9 @@ loop
   v_total_cost    := v_subtotal + v_failure_cost + v_cost_params.packaging_cost;
 
   -- Porte (PricingService.classifyTier): as 4 peças caem, sem ambiguidade,
-  -- numa faixa que casa peso E tempo ao mesmo tempo.
-  select r.tier into v_tier
+  -- numa faixa que casa peso E tempo ao mesmo tempo. A faixa carrega também
+  -- as margens de lucro do porte, usadas abaixo.
+  select r.* into v_tier_range
   from public.size_tier_ranges r
   where r.valid_from <= now()
     and v_def.weight_grams between r.min_weight_grams and r.max_weight_grams
@@ -283,7 +301,17 @@ loop
   order by r.valid_from desc
   limit 1;
 
-  -- Preço por canal: (custo × (1 + margem-alvo)) ÷ (1 - taxa%) + taxa fixa.
+  v_tier := v_tier_range.tier;
+
+  -- Margem efetiva B2C (PricingService.resolveEffectiveMargin): 'somar' soma
+  -- a margem do porte à margem-alvo global; 'substituir' faz a do porte valer
+  -- sozinha.
+  v_b2c_margin := case v_tier_range.b2c_margin_mode
+    when 'substituir' then v_tier_range.b2c_margin_pct
+    else v_cost_params.target_margin_pct + v_tier_range.b2c_margin_pct
+  end;
+
+  -- Preço por canal: (custo × (1 + margem efetiva)) ÷ (1 - taxa%) + taxa fixa.
   with current_fees as (
     select distinct on (f.channel) f.channel, f.percentage_fee, f.fixed_fee
     from public.channel_fees f
@@ -304,11 +332,12 @@ loop
   into v_channel_prices
   from current_fees f
   cross join lateral (
-    select v_total_cost * (1 + v_cost_params.target_margin_pct) / (1 - f.percentage_fee) + f.fixed_fee as price
+    select v_total_cost * (1 + v_b2c_margin) / (1 - f.percentage_fee) + f.fixed_fee as price
   ) p;
 
   -- Preço B2B: sem faixas cadastradas (o seed local também não cadastra),
-  -- então o snapshot fica vazio, igual ao ambiente local.
+  -- então o snapshot fica vazio, igual ao ambiente local. A base da margem
+  -- efetiva B2B é a margem da faixa de volume, nunca a margem-alvo B2C.
   with current_tiers as (
     select distinct on (t.min_quantity) t.min_quantity, t.target_margin_pct
     from public.b2b_pricing_tiers t
@@ -319,19 +348,32 @@ loop
     jsonb_agg(
       jsonb_build_object(
         'minQuantity', t.min_quantity,
-        'suggestedPrice', v_total_cost * (1 + t.target_margin_pct),
-        'margin', v_total_cost * (1 + t.target_margin_pct) - v_total_cost
+        'suggestedPrice', v_total_cost * (1 + m.effective_pct),
+        'margin', v_total_cost * m.effective_pct,
+        'effectiveMargin', jsonb_build_object(
+          'basePct',       t.target_margin_pct,
+          'tierMarginPct', v_tier_range.b2b_margin_pct,
+          'mode',          v_tier_range.b2b_margin_mode,
+          'effectivePct',  m.effective_pct
+        )
       )
       order by t.min_quantity
     ),
     '[]'::jsonb
   )
   into v_b2b_prices
-  from current_tiers t;
+  from current_tiers t
+  cross join lateral (
+    select case v_tier_range.b2b_margin_mode
+      when 'substituir' then v_tier_range.b2b_margin_pct
+      else t.target_margin_pct + v_tier_range.b2b_margin_pct
+    end as effective_pct
+  ) m;
 
   insert into public.price_calculations (
     weight_grams, print_hours, printer_id, cost_parameters_id, suggested_tier,
-    total_cost, cost_breakdown, channel_prices, b2b_prices, created_by
+    total_cost, cost_breakdown, channel_prices, b2b_prices, effective_b2c_margin,
+    created_by
   ) values (
     v_def.weight_grams,
     v_def.print_hours,
@@ -348,6 +390,12 @@ loop
     ),
     v_channel_prices,
     v_b2b_prices,
+    jsonb_build_object(
+      'basePct',       v_cost_params.target_margin_pct,
+      'tierMarginPct', v_tier_range.b2c_margin_pct,
+      'mode',          v_tier_range.b2c_margin_mode,
+      'effectivePct',  v_b2c_margin
+    ),
     v_owner_id
   )
   returning id into v_calc_id;

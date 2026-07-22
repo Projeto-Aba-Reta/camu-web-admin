@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,16 +19,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { channelFeeFormSchema, type ChannelFeeFormValues } from "@/lib/validation/pricing-schemas";
+import { CHANNEL_LABEL } from "@/lib/pricing/channel-label";
 import { createChannelFeeAction } from "@/app/(dashboard)/financeiro/precificacao/actions";
-import type { ChannelFee, MarketplaceChannel } from "@/types/pricing";
-
-export const CHANNEL_LABEL: Record<MarketplaceChannel, string> = {
-  mercado_livre: "Mercado Livre",
-  shopee: "Shopee",
-  tiktok_shop: "TikTok Shop",
-  amazon: "Amazon",
-  shein: "SHEIN",
-};
+import { useChannelFeeDraft } from "@/components/precificacao/pricing-draft-context";
+import type { ChannelFee } from "@/types/pricing";
 
 interface CanalFeeFormProps {
   current: ChannelFee[];
@@ -36,11 +31,38 @@ interface CanalFeeFormProps {
 
 export function CanalFeeForm({ current, canWrite }: CanalFeeFormProps) {
   const router = useRouter();
+  const publishDraft = useChannelFeeDraft();
 
   const form = useForm<z.input<typeof channelFeeFormSchema>, unknown, ChannelFeeFormValues>({
     resolver: zodResolver(channelFeeFormSchema),
     defaultValues: { channel: "mercado_livre", percentageFeePercent: 0, fixedFee: 0 },
   });
+
+  // Trocar de canal carrega a taxa vigente dele: sem isso, o rascunho
+  // publicado abaixo zeraria a taxa do canal no simulador.
+  const selectedChannel = form.watch("channel");
+  const { reset } = form;
+  useEffect(() => {
+    const vigente = current.find((fee) => fee.channel === selectedChannel);
+    if (!vigente) return;
+    reset({
+      channel: vigente.channel,
+      percentageFeePercent: vigente.percentageFee * 100,
+      fixedFee: vigente.fixedFee,
+    });
+  }, [selectedChannel, current, reset]);
+
+  // Publica no rascunho o que está digitado, sem salvar (ver design.md,
+  // Decisão 5).
+  const watched = form.watch();
+  useEffect(() => {
+    if (!watched.channel) return;
+    publishDraft({
+      channel: watched.channel,
+      percentageFee: (Number(watched.percentageFeePercent) || 0) / 100,
+      fixedFee: Number(watched.fixedFee) || 0,
+    });
+  }, [publishDraft, watched.channel, watched.percentageFeePercent, watched.fixedFee]);
 
   async function onSubmit(values: ChannelFeeFormValues) {
     const result = await createChannelFeeAction({

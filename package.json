@@ -20,7 +20,8 @@
     "seed-slicing-sheets": "tsx --conditions=react-server scripts/seed-slicing-sheets.ts",
     "seed-all": "npm run seed-roles && npm run seed-pricing && npm run seed-inventory && npm run seed-catalog && npm run seed-slicing-sheets && npm run seed-governance",
     "dev:cron": "tsx --conditions=react-server scripts/run-print-queue-cron.ts",
-    "test": "vitest"
+    "test": "vitest",
+    "test:db": "supabase test db"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",

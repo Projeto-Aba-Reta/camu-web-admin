@@ -1,11 +1,24 @@
 import type { Repositories } from "@/lib/repositories";
+import {
+  calculateB2bPrice,
+  calculateChannelPrice,
+  calculateCostBreakdown,
+  calculateCostBreakdownFromFilament,
+  calculatePartUnitCost,
+  classifyTier,
+  findTierRange,
+  resolveB2bMargin,
+  resolveB2cMargin,
+  resolveFilamentCostPerKg,
+  sumCostBreakdown,
+} from "@/lib/services/pricing-formula";
 import type {
   B2bPrice,
-  B2bPricingTier,
   CalculateCompositePriceInput,
   ChannelPrice,
-  CompositeComponentCost,
+  CompositeBreakdownEntry,
   CostBreakdown,
+  EffectiveMargin,
   PriceCalculation,
   PriceCalculationInput,
   PriceCalculationResult,
@@ -13,108 +26,12 @@ import type {
   SizeTierRange,
   SuggestedTier,
 } from "@/types/pricing";
+import type { Material } from "@/types/inventory";
 
-const TIER_ORDER: SizeTier[] = ["P", "M", "G"];
-
-function inRange(value: number, min: number, max: number): boolean {
-  return value >= min && value <= max;
-}
-
-// Classifica o porte comparando peso e tempo contra as faixas vigentes.
-// Se um único tier casa com peso E tempo simultaneamente, a classificação é
-// direta. Caso contrário, junta os candidatos que casam por peso e por
-// tempo separadamente: se sobrar exatamente um, ainda é uma classificação
-// confiável (só um dos dois sinais bateu numa faixa); se sobrar mais de um,
-// sinaliza ambiguidade sem escolher automaticamente (ver Requirement
-// "Classificação automática de porte P/M/G").
-export function classifyTier(
-  weightGrams: number,
-  printHours: number,
-  ranges: SizeTierRange[],
-): SuggestedTier {
-  const weightMatches = ranges.filter((r) => inRange(weightGrams, r.minWeightGrams, r.maxWeightGrams));
-  const timeMatches = ranges.filter((r) => inRange(printHours, r.minPrintHours, r.maxPrintHours));
-
-  const weightTiers = new Set(weightMatches.map((r) => r.tier));
-  const timeTiers = new Set(timeMatches.map((r) => r.tier));
-
-  const both = TIER_ORDER.filter((tier) => weightTiers.has(tier) && timeTiers.has(tier));
-  if (both.length === 1) return { ambiguous: false, tier: both[0] };
-
-  const union = TIER_ORDER.filter((tier) => weightTiers.has(tier) || timeTiers.has(tier));
-  if (union.length === 1) return { ambiguous: false, tier: union[0] };
-  if (union.length === 0) {
-    throw new Error(
-      "Não há faixa de porte (P/M/G) vigente que se aplique a este peso/tempo — cadastre faixas de referência antes de calcular.",
-    );
-  }
-  return { ambiguous: true, candidates: union };
-}
-
-function calculateCostBreakdown(
-  weightGrams: number,
-  printHours: number,
-  depreciationPerHour: number,
-  costParameters: {
-    filamentCostPerKg: number;
-    energyCostPerKwh: number;
-    averagePowerWatts: number;
-    failureReservePct: number;
-    packagingCost: number;
-  },
-): CostBreakdown {
-  const filamentCost = (weightGrams / 1000) * costParameters.filamentCostPerKg;
-  const energyCost = printHours * (costParameters.averagePowerWatts / 1000) * costParameters.energyCostPerKwh;
-  const depreciationCost = printHours * depreciationPerHour;
-  const subtotal = filamentCost + energyCost + depreciationCost;
-  const failureReserveCost = subtotal * costParameters.failureReservePct;
-  const packagingCost = costParameters.packagingCost;
-
-  return { filamentCost, energyCost, depreciationCost, failureReserveCost, packagingCost };
-}
-
-function sumCostBreakdown(breakdown: CostBreakdown): number {
-  return (
-    breakdown.filamentCost +
-    breakdown.energyCost +
-    breakdown.depreciationCost +
-    breakdown.failureReserveCost +
-    breakdown.packagingCost
-  );
-}
-
-function addWeightedBreakdown(target: CostBreakdown, addend: CostBreakdown, weight: number): void {
-  target.filamentCost += addend.filamentCost * weight;
-  target.energyCost += addend.energyCost * weight;
-  target.depreciationCost += addend.depreciationCost * weight;
-  target.failureReserveCost += addend.failureReserveCost * weight;
-  target.packagingCost += addend.packagingCost * weight;
-}
-
-// Preço sugerido por canal: (custo × (1 + margem-alvo)) ÷ (1 - percentual da
-// taxa) + taxa fixa (ver design.md, decisão 4). Com margem-alvo 0 (default),
-// é exatamente o preço de equilíbrio original — cobre custo + taxas do
-// canal, sem margem embutida.
-function calculateChannelPrice(
-  totalCost: number,
-  targetMarginPct: number,
-  percentageFee: number,
-  fixedFee: number,
-): { suggestedPrice: number; margin: number } {
-  const costWithMargin = totalCost * (1 + targetMarginPct);
-  const suggestedPrice = costWithMargin / (1 - percentageFee) + fixedFee;
-  const netRevenue = suggestedPrice * (1 - percentageFee) - fixedFee;
-  const margin = netRevenue - totalCost;
-  return { suggestedPrice, margin };
-}
-
-// Preço B2B por faixa de volume: custo × (1 + margem-alvo da faixa), sem
-// taxa de canal (ver design.md, decisão 5 — não há intermediário de
-// marketplace na venda B2B).
-function calculateB2bPrice(totalCost: number, tier: B2bPricingTier): B2bPrice {
-  const suggestedPrice = totalCost * (1 + tier.targetMarginPct);
-  return { minQuantity: tier.minQuantity, suggestedPrice, margin: suggestedPrice - totalCost };
-}
+// A fórmula em si vive em pricing-formula.ts (funções puras, compartilhadas
+// com o simulador). Aqui fica o que depende de repositório: buscar os
+// parâmetros vigentes, resolver o porte da peça e montar o snapshot salvo.
+export { classifyTier } from "@/lib/services/pricing-formula";
 
 type PricingRepositories = Pick<
   Repositories,
@@ -122,10 +39,13 @@ type PricingRepositories = Pick<
   | "printers"
   | "channelFees"
   | "sizeTierRanges"
+  | "sizeTiers"
   | "priceCalculations"
   | "slicingSheets"
   | "products"
   | "productComponents"
+  | "productParts"
+  | "materials"
   | "b2bPricingTiers"
 >;
 
@@ -133,11 +53,12 @@ export class PricingService {
   constructor(private readonly repositories: PricingRepositories) {}
 
   async calculatePrice(input: PriceCalculationInput): Promise<PriceCalculationResult> {
-    const [costParameters, printer, channelFees, sizeTierRanges, b2bTiers] = await Promise.all([
+    const [costParameters, printer, channelFees, sizeTierRanges, sizeTiers, b2bTiers] = await Promise.all([
       this.repositories.costParameters.findCurrent(),
       this.repositories.printers.findById(input.printerId),
       this.repositories.channelFees.findAllCurrent(),
       this.repositories.sizeTierRanges.findAllCurrent(),
+      this.repositories.sizeTiers.findAll(),
       this.repositories.b2bPricingTiers.findAllCurrent(),
     ]);
 
@@ -151,6 +72,7 @@ export class PricingService {
     let weightGrams = input.weightGrams;
     let printHours = input.printHours;
     let slicingSheetId: string | null = null;
+    let costBreakdown: CostBreakdown;
 
     // Sem peso/tempo digitados: deriva da ficha de fatiamento cadastrada
     // para a peça + impressora (ver Requirement "Cálculo a partir de uma
@@ -170,19 +92,54 @@ export class PricingService {
       weightGrams = sheet.materials.reduce((sum, material) => sum + material.pieceGrams, 0);
       printHours = sheet.printHours;
       slicingSheetId = sheet.id;
+
+      // Custo de filamento por linha de material: usa o custo por kg do insumo
+      // vinculado quando resolvível, com fallback ao preço global (ver
+      // Requirement "Custo de filamento por linha respeita o insumo
+      // vinculado"). Base de gramas = pieceGrams, mesma do peso derivado.
+      const materialsById = await this.loadMaterialsById();
+      const filamentCost = sheet.materials.reduce((sum, line) => {
+        const { costPerKg } = resolveFilamentCostPerKg(
+          materialsById.get(line.materialId),
+          costParameters.filamentCostPerKg,
+        );
+        return sum + (line.pieceGrams / 1000) * costPerKg;
+      }, 0);
+      costBreakdown = calculateCostBreakdownFromFilament(
+        filamentCost,
+        printHours,
+        printer.depreciationPerHour,
+        costParameters,
+      );
+    } else {
+      // Peso/tempo digitados manualmente, sem ficha: usa o preço global de
+      // filamento por kg (não há linha de material com insumo a resolver).
+      costBreakdown = calculateCostBreakdown(weightGrams, printHours, printer.depreciationPerHour, costParameters);
     }
 
-    const costBreakdown = calculateCostBreakdown(weightGrams, printHours, printer.depreciationPerHour, costParameters);
     const totalCost = sumCostBreakdown(costBreakdown);
 
-    const suggestedTier = classifyTier(weightGrams, printHours, sizeTierRanges);
+    const classified = classifyTier(weightGrams, printHours, sizeTierRanges, sizeTiers);
+    // Porte escolhido pelo usuário vence a classificação automática: é assim
+    // que a ambiguidade é resolvida, e a escolha muda a margem aplicada, não
+    // só o rótulo (ver Requirement "Porte ambíguo resolvido pelo usuário
+    // altera a margem aplicada").
+    const suggestedTier: SuggestedTier = input.chosenTier
+      ? { ambiguous: false, tier: input.chosenTier }
+      : classified;
 
-    const channelPrices: ChannelPrice[] = channelFees.map((fee) => ({
-      channel: fee.channel,
-      ...calculateChannelPrice(totalCost, costParameters.targetMarginPct, fee.percentageFee, fee.fixedFee),
-    }));
-
-    const b2bPrices: B2bPrice[] = b2bTiers.map((tier) => calculateB2bPrice(totalCost, tier));
+    // Ambíguo e sem escolha: devolve o preview com a margem do primeiro
+    // candidato apenas para a UI ter números a exibir — o cálculo não é
+    // salvo enquanto o porte não for resolvido.
+    const tierForMargin = suggestedTier.ambiguous ? suggestedTier.candidates[0] : suggestedTier.tier;
+    const priced = this.priceFromCost(
+      totalCost,
+      tierForMargin,
+      sizeTierRanges,
+      costParameters.targetMarginPct,
+      channelFees,
+      b2bTiers,
+    );
 
     return {
       weightGrams,
@@ -194,28 +151,31 @@ export class PricingService {
       suggestedTier,
       totalCost,
       costBreakdown,
-      channelPrices,
-      b2bPrices,
       componentBreakdown: null,
+      ...priced,
     };
   }
 
-  // chosenTier resolve o caso de ambiguidade (ver Decision 3 do design.md de
-  // precificacao-telas): quando o motor sinaliza duas faixas candidatas, o
-  // registro salvo usa o porte escolhido manualmente pelo usuário em vez do
-  // estado ambíguo bruto.
+  // chosenTier resolve o caso de ambiguidade: quando o motor sinaliza duas
+  // faixas candidatas, a escolha do usuário define tanto o porte salvo
+  // quanto a margem aplicada, então o cálculo é refeito com ela.
   async calculateAndSavePrice(
     input: PriceCalculationInput,
     chosenTier?: SizeTier,
   ): Promise<PriceCalculation> {
-    const result = await this.calculatePrice(input);
-    const suggestedTier: SuggestedTier | null =
-      result.suggestedTier?.ambiguous && chosenTier
-        ? { ambiguous: false, tier: chosenTier }
-        : result.suggestedTier;
+    const result = await this.calculatePrice({ ...input, chosenTier: chosenTier ?? input.chosenTier });
+
+    // Nenhum cálculo é salvo sem porte resolvido — sem porte não há margem a
+    // aplicar (ver Requirement "Porte resolvido é obrigatório para salvar um
+    // cálculo").
+    if (result.suggestedTier?.ambiguous) {
+      throw new Error(
+        "Peso e tempo indicam portes diferentes — escolha o porte da peça antes de salvar o cálculo.",
+      );
+    }
+
     return this.repositories.priceCalculations.create({
       ...result,
-      suggestedTier,
       createdBy: input.createdBy,
     });
   }
@@ -226,9 +186,19 @@ export class PricingService {
   // multiplicado pela sua quantidade — ver Requirement "Custo agregado de
   // peça composta".
   async calculateCompositePrice(input: CalculateCompositePriceInput): Promise<PriceCalculationResult> {
-    const [costParameters, channelFees, b2bTiers, product] = await Promise.all([
+    // Uma peça composta não tem um único peso/tempo a classificar, e o porte
+    // determina a margem — então ele precisa vir do usuário (ver design.md,
+    // Decisão 3).
+    if (!input.chosenTier) {
+      throw new Error(
+        "Escolha o porte (P, M ou G) da peça composta antes de calcular — o porte determina a margem de lucro aplicada.",
+      );
+    }
+
+    const [costParameters, channelFees, sizeTierRanges, b2bTiers, product] = await Promise.all([
       this.repositories.costParameters.findCurrent(),
       this.repositories.channelFees.findAllCurrent(),
+      this.repositories.sizeTierRanges.findAllCurrent(),
       this.repositories.b2bPricingTiers.findAllCurrent(),
       this.repositories.products.findById(input.productId),
     ]);
@@ -243,11 +213,22 @@ export class PricingService {
       throw new Error(`Peça "${product.name}" não é do tipo composta.`);
     }
 
-    const components = await this.repositories.productComponents.findByParentId(input.productId);
-    if (components.length === 0) {
-      throw new Error(`Peça composta "${product.name}" não tem componentes cadastrados.`);
+    const [parts, components, materialsById] = await Promise.all([
+      this.repositories.productParts.findByProductId(input.productId),
+      this.repositories.productComponents.findByParentId(input.productId),
+      this.loadMaterialsById(),
+    ]);
+    if (parts.length === 0 && components.length === 0) {
+      throw new Error(
+        `Peça composta "${product.name}" não tem partes nem componentes cadastrados — a composição está vazia.`,
+      );
     }
 
+    // Reserva de falha incide por peça impressa (cada parte e cada componente
+    // carrega a sua); a embalagem é contada uma única vez no conjunto. Por
+    // isso a embalagem embutida no custo salvo de cada componente é excluída
+    // aqui e recolocada uma vez ao final (ver Requirement "Custo agregado de
+    // peça composta").
     const aggregatedBreakdown: CostBreakdown = {
       filamentCost: 0,
       energyCost: 0,
@@ -255,26 +236,73 @@ export class PricingService {
       failureReserveCost: 0,
       packagingCost: 0,
     };
-    const componentBreakdown: CompositeComponentCost[] = [];
+    const componentBreakdown: CompositeBreakdownEntry[] = [];
 
-    for (const component of components) {
-      const resolved = await this.resolveComponentCost(component.componentProductId, input.createdBy);
-      addWeightedBreakdown(aggregatedBreakdown, resolved.costBreakdown, component.quantity);
+    for (const part of parts) {
+      const printer = await this.repositories.printers.findById(part.printerId);
+      if (!printer) {
+        throw new Error(`Impressora ${part.printerId} da parte "${part.name}" não encontrada.`);
+      }
+      const { costPerKg, source } = resolveFilamentCostPerKg(
+        part.materialId ? materialsById.get(part.materialId) : null,
+        costParameters.filamentCostPerKg,
+      );
+      const filamentCost = (part.pieceGrams / 1000) * costPerKg;
+      const unit = calculatePartUnitCost(filamentCost, part.printHours, printer.depreciationPerHour, costParameters);
+      const unitCost = unit.filamentCost + unit.energyCost + unit.depreciationCost + unit.failureReserveCost;
+
+      aggregatedBreakdown.filamentCost += unit.filamentCost * part.quantity;
+      aggregatedBreakdown.energyCost += unit.energyCost * part.quantity;
+      aggregatedBreakdown.depreciationCost += unit.depreciationCost * part.quantity;
+      aggregatedBreakdown.failureReserveCost += unit.failureReserveCost * part.quantity;
+
       componentBreakdown.push({
-        componentProductId: component.componentProductId,
-        quantity: component.quantity,
-        unitCost: resolved.totalCost,
-        totalCost: resolved.totalCost * component.quantity,
+        kind: "part",
+        partId: part.id,
+        name: part.name,
+        quantity: part.quantity,
+        filamentSource: source,
+        materialId: part.materialId,
+        unitFilamentCost: unit.filamentCost,
+        unitEnergyCost: unit.energyCost,
+        unitDepreciationCost: unit.depreciationCost,
+        unitCost,
+        totalCost: unitCost * part.quantity,
       });
     }
 
-    const totalCost = sumCostBreakdown(aggregatedBreakdown);
+    for (const component of components) {
+      const resolved = await this.resolveComponentCost(component.componentProductId, input.createdBy);
+      const cb = resolved.costBreakdown;
+      // Custo do componente sem a sua embalagem: filamento + energia +
+      // depreciação + reserva de falha própria (falha por peça impressa).
+      const unitCost = cb.filamentCost + cb.energyCost + cb.depreciationCost + cb.failureReserveCost;
 
-    const channelPrices: ChannelPrice[] = channelFees.map((fee) => ({
-      channel: fee.channel,
-      ...calculateChannelPrice(totalCost, costParameters.targetMarginPct, fee.percentageFee, fee.fixedFee),
-    }));
-    const b2bPrices: B2bPrice[] = b2bTiers.map((tier) => calculateB2bPrice(totalCost, tier));
+      aggregatedBreakdown.filamentCost += cb.filamentCost * component.quantity;
+      aggregatedBreakdown.energyCost += cb.energyCost * component.quantity;
+      aggregatedBreakdown.depreciationCost += cb.depreciationCost * component.quantity;
+      aggregatedBreakdown.failureReserveCost += cb.failureReserveCost * component.quantity;
+
+      componentBreakdown.push({
+        kind: "component",
+        componentProductId: component.componentProductId,
+        quantity: component.quantity,
+        unitCost,
+        totalCost: unitCost * component.quantity,
+      });
+    }
+
+    // Embalagem uma única vez para o conjunto (produto final embalado uma vez).
+    aggregatedBreakdown.packagingCost = costParameters.packagingCost;
+    const totalCost = sumCostBreakdown(aggregatedBreakdown);
+    const priced = this.priceFromCost(
+      totalCost,
+      input.chosenTier,
+      sizeTierRanges,
+      costParameters.targetMarginPct,
+      channelFees,
+      b2bTiers,
+    );
 
     return {
       weightGrams: null,
@@ -283,12 +311,11 @@ export class PricingService {
       productId: input.productId,
       slicingSheetId: null,
       costParametersId: costParameters.id,
-      suggestedTier: null,
+      suggestedTier: { ambiguous: false, tier: input.chosenTier },
       totalCost,
       costBreakdown: aggregatedBreakdown,
-      channelPrices,
-      b2bPrices,
       componentBreakdown,
+      ...priced,
     };
   }
 
@@ -297,11 +324,53 @@ export class PricingService {
     return this.repositories.priceCalculations.create({ ...result, createdBy: input.createdBy });
   }
 
+  // Projeta os preços B2C/B2B a partir do custo já apurado e do porte da
+  // peça. A margem do porte é resolvida duas vezes, com bases diferentes: a
+  // do B2C parte da margem-alvo global, a do B2B parte da margem de cada
+  // faixa de volume (ver Requirement "Margem B2C e margem B2B configuradas
+  // independentemente").
+  private priceFromCost(
+    totalCost: number,
+    tier: SizeTier,
+    sizeTierRanges: SizeTierRange[],
+    targetMarginPct: number,
+    channelFees: Array<{ channel: ChannelPrice["channel"]; percentageFee: number; fixedFee: number }>,
+    b2bTiers: Array<{ minQuantity: number; targetMarginPct: number }>,
+  ): { channelPrices: ChannelPrice[]; b2bPrices: B2bPrice[]; effectiveB2cMargin: EffectiveMargin } {
+    const range = findTierRange(sizeTierRanges, tier);
+    const effectiveB2cMargin = resolveB2cMargin(targetMarginPct, range);
+
+    const channelPrices: ChannelPrice[] = channelFees.map((fee) => ({
+      channel: fee.channel,
+      ...calculateChannelPrice(totalCost, effectiveB2cMargin, fee.percentageFee, fee.fixedFee),
+    }));
+
+    const b2bPrices: B2bPrice[] = b2bTiers.map((volumeTier) =>
+      calculateB2bPrice(
+        totalCost,
+        volumeTier.minQuantity,
+        resolveB2bMargin(volumeTier.targetMarginPct, range),
+      ),
+    );
+
+    return { channelPrices, b2bPrices, effectiveB2cMargin };
+  }
+
+  // Materiais indexados por id, para resolver o custo por kg do filamento de
+  // cada linha de ficha / parte a partir do insumo vinculado. São poucos
+  // insumos (filamentos + embalagens), então uma leitura única é mais barata
+  // que um findById por linha.
+  private async loadMaterialsById(): Promise<Map<string, Material>> {
+    const materials = await this.repositories.materials.findAll();
+    return new Map(materials.map((material) => [material.id, material]));
+  }
+
   // Custo unitário de um componente: reaproveita o cálculo mais recente já
   // vinculado à peça (products.price_calculation_id) quando existir; caso
   // contrário, exige uma ficha de fatiamento cadastrada e calcula (sem
   // vincular automaticamente — ver Requirement "Componente sem cálculo
-  // salvo mas com ficha de fatiamento").
+  // salvo mas com ficha de fatiamento"). O componente é sempre peça simples,
+  // então o porte sai da classificação automática, sem exigir escolha.
   private async resolveComponentCost(
     componentProductId: string,
     createdBy: string | null,
