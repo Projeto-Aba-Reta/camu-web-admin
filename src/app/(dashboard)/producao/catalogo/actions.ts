@@ -7,7 +7,7 @@ import { createRepositories, type Repositories } from "@/lib/repositories";
 import { CatalogService, type ProductDeletionCheck } from "@/lib/services/catalog-service";
 import { SlicingSheetService } from "@/lib/services/slicing-sheet-service";
 import { requireCatalogWrite, requireChannelListingWrite } from "@/lib/auth/catalog-access";
-import type { ProductCategory, ProductComponent, ProductMedia, ProductStatus, ProductType } from "@/types/catalog";
+import type { PiecePart, ProductCategory, ProductComponent, ProductMedia, ProductStatus, ProductType } from "@/types/catalog";
 import type { MarketplaceChannel } from "@/types/pricing";
 
 export interface ActionResult {
@@ -412,5 +412,66 @@ export async function removeComponentAction(parentProductId: string, componentId
     return { ok: true };
   } catch (error) {
     return { ok: false, error: errorMessage(error, "Não foi possível remover o componente.") };
+  }
+}
+
+// =============================================================================
+// Partes inline de peça composta
+// =============================================================================
+
+export interface PartFormInput {
+  name: string;
+  quantity: number;
+  materialId: string | null;
+  pieceGrams: number;
+  supportGrams: number;
+  printerId: string;
+  printHours: number;
+}
+
+export interface SavePartActionResult extends ActionResult {
+  part?: PiecePart;
+}
+
+export async function addPartAction(productId: string, input: PartFormInput): Promise<SavePartActionResult> {
+  try {
+    const user = await requireCatalogWrite();
+    const repositories = await getRepositories();
+    const catalogService = new CatalogService(repositories);
+    const part = await catalogService.addPart({ productId, ...input, createdBy: user.id });
+    revalidatePath(productPath(productId));
+    return { ok: true, part };
+  } catch (error) {
+    return { ok: false, error: errorMessage(error, "Não foi possível adicionar a parte.") };
+  }
+}
+
+export async function updatePartAction(
+  productId: string,
+  partId: string,
+  input: PartFormInput,
+): Promise<SavePartActionResult> {
+  try {
+    await requireCatalogWrite();
+    const repositories = await getRepositories();
+    const catalogService = new CatalogService(repositories);
+    const part = await catalogService.updatePart(partId, input);
+    revalidatePath(productPath(productId));
+    return { ok: true, part };
+  } catch (error) {
+    return { ok: false, error: errorMessage(error, "Não foi possível atualizar a parte.") };
+  }
+}
+
+export async function removePartAction(productId: string, partId: string): Promise<ActionResult> {
+  try {
+    await requireCatalogWrite();
+    const repositories = await getRepositories();
+    const catalogService = new CatalogService(repositories);
+    await catalogService.removePart(partId);
+    revalidatePath(productPath(productId));
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: errorMessage(error, "Não foi possível remover a parte.") };
   }
 }

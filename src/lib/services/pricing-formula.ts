@@ -1,7 +1,10 @@
 import type {
   B2bPrice,
+  CompositeBreakdownEntry,
+  CompositePartCost,
   CostBreakdown,
   EffectiveMargin,
+  FilamentSource,
   MarginMode,
   MarketplaceChannel,
   SizeTier,
@@ -71,19 +74,46 @@ export function findTierRange(ranges: SizeTierRange[], tier: SizeTier): SizeTier
   return ranges.find((range) => range.tier === tier) ?? null;
 }
 
-export function calculateCostBreakdown(
-  weightGrams: number,
+// Custo por kg de filamento resolvido a partir do insumo do estoque vinculado,
+// com fallback ao preço global — ver Requirement "Custo por kg de filamento
+// disponível para o motor de cálculo". O insumo de filamento tem unidade kg ou
+// g (garantido por constraint), então o custo por kg é sempre derivável: kg usa
+// o custo de referência direto, g multiplica por 1000. Qualquer outra situação
+// (sem insumo, insumo que não é filamento) cai no preço global.
+export function resolveFilamentCostPerKg(
+  material: { type: string; unit: string; referenceCost: number } | null | undefined,
+  globalCostPerKg: number,
+): { costPerKg: number; source: FilamentSource } {
+  if (material && material.type === "filamento") {
+    if (material.unit === "kg") return { costPerKg: material.referenceCost, source: "material" };
+    if (material.unit === "g") return { costPerKg: material.referenceCost * 1000, source: "material" };
+  }
+  return { costPerKg: globalCostPerKg, source: "global" };
+}
+
+// Discrimina uma entrada de component_breakdown. Snapshots salvos antes das
+// partes inline não têm `kind`: a ausência é lida como componente do catálogo
+// (ver design.md, Decisão 4). Snapshots são imutáveis — nunca reescreva a
+// entrada antiga para incluir `kind`.
+export function isPartBreakdownEntry(entry: CompositeBreakdownEntry): entry is CompositePartCost {
+  return entry.kind === "part";
+}
+
+interface MachineCostParameters {
+  energyCostPerKwh: number;
+  averagePowerWatts: number;
+  failureReservePct: number;
+  packagingCost: number;
+}
+
+// Núcleo do custo a partir de um custo de filamento já resolvido (por linha de
+// material / insumo). calculateCostBreakdown é o caso "peso × preço global".
+export function calculateCostBreakdownFromFilament(
+  filamentCost: number,
   printHours: number,
   depreciationPerHour: number,
-  costParameters: {
-    filamentCostPerKg: number;
-    energyCostPerKwh: number;
-    averagePowerWatts: number;
-    failureReservePct: number;
-    packagingCost: number;
-  },
+  costParameters: MachineCostParameters,
 ): CostBreakdown {
-  const filamentCost = (weightGrams / 1000) * costParameters.filamentCostPerKg;
   const energyCost = printHours * (costParameters.averagePowerWatts / 1000) * costParameters.energyCostPerKwh;
   const depreciationCost = printHours * depreciationPerHour;
   const subtotal = filamentCost + energyCost + depreciationCost;
@@ -91,6 +121,33 @@ export function calculateCostBreakdown(
   const packagingCost = costParameters.packagingCost;
 
   return { filamentCost, energyCost, depreciationCost, failureReserveCost, packagingCost };
+}
+
+export function calculateCostBreakdown(
+  weightGrams: number,
+  printHours: number,
+  depreciationPerHour: number,
+  costParameters: MachineCostParameters & { filamentCostPerKg: number },
+): CostBreakdown {
+  const filamentCost = (weightGrams / 1000) * costParameters.filamentCostPerKg;
+  return calculateCostBreakdownFromFilament(filamentCost, printHours, depreciationPerHour, costParameters);
+}
+
+// Custo de uma unidade de uma parte inline de peça composta: filamento +
+// energia + depreciação + reserva de falha (por peça impressa — ver Requirement
+// "Custo agregado de peça composta"). Sem embalagem: a embalagem é contada uma
+// única vez no conjunto, não por parte.
+export function calculatePartUnitCost(
+  filamentCost: number,
+  printHours: number,
+  depreciationPerHour: number,
+  costParameters: Pick<MachineCostParameters, "energyCostPerKwh" | "averagePowerWatts" | "failureReservePct">,
+): Pick<CostBreakdown, "filamentCost" | "energyCost" | "depreciationCost" | "failureReserveCost"> {
+  const energyCost = printHours * (costParameters.averagePowerWatts / 1000) * costParameters.energyCostPerKwh;
+  const depreciationCost = printHours * depreciationPerHour;
+  const subtotal = filamentCost + energyCost + depreciationCost;
+  const failureReserveCost = subtotal * costParameters.failureReservePct;
+  return { filamentCost, energyCost, depreciationCost, failureReserveCost };
 }
 
 export function sumCostBreakdown(breakdown: CostBreakdown): number {

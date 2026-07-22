@@ -2,16 +2,29 @@ import { z } from "zod";
 
 export const MATERIAL_TYPES = ["filamento", "embalagem"] as const;
 
+// Filamento é cadastrado sempre em kg ou g: garante custo por kg resolvível e
+// baixa de estoque consistente (o saldo de filamento é canônico em gramas) —
+// ver Requirement "Cadastro de insumo com custo de referência".
+export const FILAMENT_UNITS = ["kg", "g"] as const;
+
 export const MATERIAL_MOVEMENT_TYPES = ["compra", "consumo_producao", "perda_refugo", "ajuste_manual"] as const;
 
 export const PRODUCT_MOVEMENT_TYPES = ["producao", "venda", "perda", "ajuste_manual"] as const;
 
-export const materialFormSchema = z.object({
-  name: z.string().trim().min(1, "Nome é obrigatório."),
-  type: z.enum(MATERIAL_TYPES, { message: "Selecione um tipo." }),
-  unit: z.string().trim().min(1, "Unidade é obrigatória."),
-  referenceCost: z.coerce.number({ message: "Informe o custo de referência." }).nonnegative("Informe um valor válido."),
-});
+export const materialFormSchema = z
+  .object({
+    name: z.string().trim().min(1, "Nome é obrigatório."),
+    type: z.enum(MATERIAL_TYPES, { message: "Selecione um tipo." }),
+    unit: z.string().trim().min(1, "Unidade é obrigatória."),
+    referenceCost: z.coerce
+      .number({ message: "Informe o custo de referência." })
+      .nonnegative("Informe um valor válido."),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === "filamento" && !FILAMENT_UNITS.includes(data.unit as (typeof FILAMENT_UNITS)[number])) {
+      ctx.addIssue({ code: "custom", path: ["unit"], message: "Filamento deve ser cadastrado em kg ou g." });
+    }
+  });
 
 export type MaterialFormValues = z.infer<typeof materialFormSchema>;
 

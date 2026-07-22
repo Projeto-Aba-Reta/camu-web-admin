@@ -10,6 +10,16 @@ import type {
   ProductStockMovement,
 } from "@/types/inventory";
 
+// Converte uma quantidade informada na unidade do insumo para a unidade
+// canônica de estoque. Para filamento, o saldo é sempre em gramas: uma entrada
+// informada em kg é convertida (×1000), uma em g fica como está. Preserva o
+// sinal (entrada positiva / saída negativa). Demais insumos (embalagem) não são
+// convertidos — ver Requirement "Saldo sempre derivado das movimentações".
+export function toStockQuantity(material: Pick<Material, "type" | "unit">, quantity: number): number {
+  if (material.type === "filamento" && material.unit === "kg") return quantity * 1000;
+  return quantity;
+}
+
 export interface RegisterMaterialConsumptionInput {
   materialId: string;
   quantity: number;

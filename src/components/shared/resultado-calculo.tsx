@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CHANNEL_LABEL } from "@/components/precificacao/canal-fee-form";
+import { isPartBreakdownEntry } from "@/lib/services/pricing-formula";
 import { tierLabel } from "@/lib/pricing/tier-label";
 import type {
   EffectiveMargin,
@@ -136,28 +137,45 @@ export function ResultadoCalculo({
       {componentBreakdown && (
         <div className="rounded-md border">
           <div className="p-4 pb-0">
-            <h3 className="text-sm font-semibold text-foreground">Custo por componente</h3>
+            <h3 className="text-sm font-semibold text-foreground">Custo por parte / componente</h3>
           </div>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Componente</TableHead>
+                <TableHead>Item</TableHead>
                 <TableHead>Quantidade</TableHead>
                 <TableHead>Custo unitário</TableHead>
                 <TableHead>Custo total</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {componentBreakdown.map((component) => (
-                <TableRow key={component.componentProductId}>
-                  <TableCell className="font-medium">
-                    {componentNames?.[component.componentProductId] ?? component.componentProductId}
-                  </TableCell>
-                  <TableCell>{component.quantity}</TableCell>
-                  <TableCell>{formatCurrency(component.unitCost)}</TableCell>
-                  <TableCell>{formatCurrency(component.totalCost)}</TableCell>
-                </TableRow>
-              ))}
+              {componentBreakdown.map((entry) => {
+                // Parte inline: exibe o nome próprio e de onde veio o preço do
+                // filamento (insumo do estoque vs. preço global). Componente do
+                // catálogo (kind ausente/"component"): resolve o nome pela peça.
+                const isPart = isPartBreakdownEntry(entry);
+                const key = isPart ? `part-${entry.partId}` : `component-${entry.componentProductId}`;
+                const label = isPart
+                  ? entry.name
+                  : componentNames?.[entry.componentProductId] ?? entry.componentProductId;
+                return (
+                  <TableRow key={key}>
+                    <TableCell className="font-medium">
+                      {label}
+                      {isPart && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {entry.filamentSource === "material"
+                            ? "filamento do estoque"
+                            : "filamento (preço global)"}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>{entry.quantity}</TableCell>
+                    <TableCell>{formatCurrency(entry.unitCost)}</TableCell>
+                    <TableCell>{formatCurrency(entry.totalCost)}</TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>

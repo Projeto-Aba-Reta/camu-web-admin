@@ -38,10 +38,16 @@ function createSeedAdminClient(): SupabaseClient<Database> {
 // ambiente recém-inicializado, sem precisar simular uma queda de estoque
 // manualmente. O filamento fica acima do limite (saldo 3kg >= 1kg) para
 // mostrar o contraste (insumo saudável vs. insumo em alerta).
+// `unit` é a unidade do reference_cost (R$/unit). Para filamento, o saldo de
+// estoque é sempre em gramas (unidade canônica — ver design.md decisão 6 do
+// change precificacao-de-pecas-em-partes), então initialPurchase e
+// minimumQuantity de filamento são informados em gramas: 3kg = 3000g,
+// limite mínimo 1kg = 1000g. `stockUnit` é só o rótulo do saldo nos logs.
 const MATERIAL_DEFS: Array<{
   name: string;
   type: MaterialType;
   unit: string;
+  stockUnit: string;
   referenceCost: number;
   initialPurchase: number;
   minimumQuantity: number;
@@ -51,15 +57,17 @@ const MATERIAL_DEFS: Array<{
     name: "Filamento PLA genérico",
     type: "filamento",
     unit: "kg",
+    stockUnit: "g",
     referenceCost: 90,
-    initialPurchase: 3,
-    minimumQuantity: 1,
+    initialPurchase: 3000,
+    minimumQuantity: 1000,
     purchaseNotes: "Investimento inicial (camu-docs/03-financeiro/investimento-inicial.md).",
   },
   {
     name: "Embalagem padrão",
     type: "embalagem",
     unit: "unidade",
+    stockUnit: "unidade",
     // Mesmo valor de packaging_cost usado em cost_parameters (ver
     // scripts/seed-pricing.ts) — caixa/saco + cartão por peça.
     referenceCost: 3,
@@ -109,7 +117,7 @@ async function main() {
         notes: def.purchaseNotes,
         createdBy: owner?.id ?? null,
       });
-      console.log(`  - compra inicial de ${def.initialPurchase}${def.unit} registrada para "${def.name}".`);
+      console.log(`  - compra inicial de ${def.initialPurchase}${def.stockUnit} registrada para "${def.name}".`);
     }
 
     const existingThreshold = await repositories.materialStockThresholds.findByMaterialId(material.id);
@@ -121,7 +129,7 @@ async function main() {
         minimumQuantity: def.minimumQuantity,
         updatedBy: owner?.id ?? null,
       });
-      console.log(`  - limite mínimo de "${def.name}" definido em ${def.minimumQuantity}${def.unit}.`);
+      console.log(`  - limite mínimo de "${def.name}" definido em ${def.minimumQuantity}${def.stockUnit}.`);
     }
   }
 

@@ -29,6 +29,7 @@ import type { IPrintQueueRepository } from "./interfaces/print-queue-repository.
 import type { ISlicingSheetRepository } from "./interfaces/slicing-sheet-repository.interface";
 import type { IB2bPricingTierRepository } from "./interfaces/b2b-pricing-tier-repository.interface";
 import type { IProductComponentRepository } from "./interfaces/product-component-repository.interface";
+import type { IProductPartRepository } from "./interfaces/product-part-repository.interface";
 import type { ICommemorativeDateRepository } from "./interfaces/commemorative-date-repository.interface";
 import type { ISocialContentPlanRepository } from "./interfaces/social-content-plan-repository.interface";
 import { SupabaseRoleRepository } from "./supabase/supabase-role-repository";
@@ -60,6 +61,7 @@ import { SupabasePrintQueueRepository } from "./supabase/supabase-print-queue-re
 import { SupabaseSlicingSheetRepository } from "./supabase/supabase-slicing-sheet-repository";
 import { SupabaseB2bPricingTierRepository } from "./supabase/supabase-b2b-pricing-tier-repository";
 import { SupabaseProductComponentRepository } from "./supabase/supabase-product-component-repository";
+import { SupabaseProductPartRepository } from "./supabase/supabase-product-part-repository";
 import { SupabaseCommemorativeDateRepository } from "./supabase/supabase-commemorative-date-repository";
 import { SupabaseSocialContentPlanRepository } from "./supabase/supabase-social-content-plan-repository";
 
@@ -93,6 +95,7 @@ export interface Repositories {
   slicingSheets: ISlicingSheetRepository;
   b2bPricingTiers: IB2bPricingTierRepository;
   productComponents: IProductComponentRepository;
+  productParts: IProductPartRepository;
   commemorativeDates: ICommemorativeDateRepository;
   socialContentPlanItems: ISocialContentPlanRepository;
 }
@@ -129,6 +132,7 @@ export function createRepositories(supabaseClient: SupabaseClient<Database>): Re
     slicingSheets: new SupabaseSlicingSheetRepository(supabaseClient),
     b2bPricingTiers: new SupabaseB2bPricingTierRepository(supabaseClient),
     productComponents: new SupabaseProductComponentRepository(supabaseClient),
+    productParts: new SupabaseProductPartRepository(supabaseClient),
     commemorativeDates: new SupabaseCommemorativeDateRepository(supabaseClient),
     socialContentPlanItems: new SupabaseSocialContentPlanRepository(supabaseClient),
   };

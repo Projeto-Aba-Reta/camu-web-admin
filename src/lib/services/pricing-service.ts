@@ -1,20 +1,22 @@
 import type { Repositories } from "@/lib/repositories";
 import {
-  addWeightedBreakdown,
   calculateB2bPrice,
   calculateChannelPrice,
   calculateCostBreakdown,
+  calculateCostBreakdownFromFilament,
+  calculatePartUnitCost,
   classifyTier,
   findTierRange,
   resolveB2bMargin,
   resolveB2cMargin,
+  resolveFilamentCostPerKg,
   sumCostBreakdown,
 } from "@/lib/services/pricing-formula";
 import type {
   B2bPrice,
   CalculateCompositePriceInput,
   ChannelPrice,
-  CompositeComponentCost,
+  CompositeBreakdownEntry,
   CostBreakdown,
   EffectiveMargin,
   PriceCalculation,
@@ -24,6 +26,7 @@ import type {
   SizeTierRange,
   SuggestedTier,
 } from "@/types/pricing";
+import type { Material } from "@/types/inventory";
 
 // A fórmula em si vive em pricing-formula.ts (funções puras, compartilhadas
 // com o simulador). Aqui fica o que depende de repositório: buscar os
@@ -41,6 +44,8 @@ type PricingRepositories = Pick<
   | "slicingSheets"
   | "products"
   | "productComponents"
+  | "productParts"
+  | "materials"
   | "b2bPricingTiers"
 >;
 
@@ -67,6 +72,7 @@ export class PricingService {
     let weightGrams = input.weightGrams;
     let printHours = input.printHours;
     let slicingSheetId: string | null = null;
+    let costBreakdown: CostBreakdown;
 
     // Sem peso/tempo digitados: deriva da ficha de fatiamento cadastrada
     // para a peça + impressora (ver Requirement "Cálculo a partir de uma
@@ -86,9 +92,31 @@ export class PricingService {
       weightGrams = sheet.materials.reduce((sum, material) => sum + material.pieceGrams, 0);
       printHours = sheet.printHours;
       slicingSheetId = sheet.id;
+
+      // Custo de filamento por linha de material: usa o custo por kg do insumo
+      // vinculado quando resolvível, com fallback ao preço global (ver
+      // Requirement "Custo de filamento por linha respeita o insumo
+      // vinculado"). Base de gramas = pieceGrams, mesma do peso derivado.
+      const materialsById = await this.loadMaterialsById();
+      const filamentCost = sheet.materials.reduce((sum, line) => {
+        const { costPerKg } = resolveFilamentCostPerKg(
+          materialsById.get(line.materialId),
+          costParameters.filamentCostPerKg,
+        );
+        return sum + (line.pieceGrams / 1000) * costPerKg;
+      }, 0);
+      costBreakdown = calculateCostBreakdownFromFilament(
+        filamentCost,
+        printHours,
+        printer.depreciationPerHour,
+        costParameters,
+      );
+    } else {
+      // Peso/tempo digitados manualmente, sem ficha: usa o preço global de
+      // filamento por kg (não há linha de material com insumo a resolver).
+      costBreakdown = calculateCostBreakdown(weightGrams, printHours, printer.depreciationPerHour, costParameters);
     }
 
-    const costBreakdown = calculateCostBreakdown(weightGrams, printHours, printer.depreciationPerHour, costParameters);
     const totalCost = sumCostBreakdown(costBreakdown);
 
     const classified = classifyTier(weightGrams, printHours, sizeTierRanges, sizeTiers);
@@ -185,11 +213,22 @@ export class PricingService {
       throw new Error(`Peça "${product.name}" não é do tipo composta.`);
     }
 
-    const components = await this.repositories.productComponents.findByParentId(input.productId);
-    if (components.length === 0) {
-      throw new Error(`Peça composta "${product.name}" não tem componentes cadastrados.`);
+    const [parts, components, materialsById] = await Promise.all([
+      this.repositories.productParts.findByProductId(input.productId),
+      this.repositories.productComponents.findByParentId(input.productId),
+      this.loadMaterialsById(),
+    ]);
+    if (parts.length === 0 && components.length === 0) {
+      throw new Error(
+        `Peça composta "${product.name}" não tem partes nem componentes cadastrados — a composição está vazia.`,
+      );
     }
 
+    // Reserva de falha incide por peça impressa (cada parte e cada componente
+    // carrega a sua); a embalagem é contada uma única vez no conjunto. Por
+    // isso a embalagem embutida no custo salvo de cada componente é excluída
+    // aqui e recolocada uma vez ao final (ver Requirement "Custo agregado de
+    // peça composta").
     const aggregatedBreakdown: CostBreakdown = {
       filamentCost: 0,
       energyCost: 0,
@@ -197,19 +236,64 @@ export class PricingService {
       failureReserveCost: 0,
       packagingCost: 0,
     };
-    const componentBreakdown: CompositeComponentCost[] = [];
+    const componentBreakdown: CompositeBreakdownEntry[] = [];
 
-    for (const component of components) {
-      const resolved = await this.resolveComponentCost(component.componentProductId, input.createdBy);
-      addWeightedBreakdown(aggregatedBreakdown, resolved.costBreakdown, component.quantity);
+    for (const part of parts) {
+      const printer = await this.repositories.printers.findById(part.printerId);
+      if (!printer) {
+        throw new Error(`Impressora ${part.printerId} da parte "${part.name}" não encontrada.`);
+      }
+      const { costPerKg, source } = resolveFilamentCostPerKg(
+        part.materialId ? materialsById.get(part.materialId) : null,
+        costParameters.filamentCostPerKg,
+      );
+      const filamentCost = (part.pieceGrams / 1000) * costPerKg;
+      const unit = calculatePartUnitCost(filamentCost, part.printHours, printer.depreciationPerHour, costParameters);
+      const unitCost = unit.filamentCost + unit.energyCost + unit.depreciationCost + unit.failureReserveCost;
+
+      aggregatedBreakdown.filamentCost += unit.filamentCost * part.quantity;
+      aggregatedBreakdown.energyCost += unit.energyCost * part.quantity;
+      aggregatedBreakdown.depreciationCost += unit.depreciationCost * part.quantity;
+      aggregatedBreakdown.failureReserveCost += unit.failureReserveCost * part.quantity;
+
       componentBreakdown.push({
-        componentProductId: component.componentProductId,
-        quantity: component.quantity,
-        unitCost: resolved.totalCost,
-        totalCost: resolved.totalCost * component.quantity,
+        kind: "part",
+        partId: part.id,
+        name: part.name,
+        quantity: part.quantity,
+        filamentSource: source,
+        materialId: part.materialId,
+        unitFilamentCost: unit.filamentCost,
+        unitEnergyCost: unit.energyCost,
+        unitDepreciationCost: unit.depreciationCost,
+        unitCost,
+        totalCost: unitCost * part.quantity,
       });
     }
 
+    for (const component of components) {
+      const resolved = await this.resolveComponentCost(component.componentProductId, input.createdBy);
+      const cb = resolved.costBreakdown;
+      // Custo do componente sem a sua embalagem: filamento + energia +
+      // depreciação + reserva de falha própria (falha por peça impressa).
+      const unitCost = cb.filamentCost + cb.energyCost + cb.depreciationCost + cb.failureReserveCost;
+
+      aggregatedBreakdown.filamentCost += cb.filamentCost * component.quantity;
+      aggregatedBreakdown.energyCost += cb.energyCost * component.quantity;
+      aggregatedBreakdown.depreciationCost += cb.depreciationCost * component.quantity;
+      aggregatedBreakdown.failureReserveCost += cb.failureReserveCost * component.quantity;
+
+      componentBreakdown.push({
+        kind: "component",
+        componentProductId: component.componentProductId,
+        quantity: component.quantity,
+        unitCost,
+        totalCost: unitCost * component.quantity,
+      });
+    }
+
+    // Embalagem uma única vez para o conjunto (produto final embalado uma vez).
+    aggregatedBreakdown.packagingCost = costParameters.packagingCost;
     const totalCost = sumCostBreakdown(aggregatedBreakdown);
     const priced = this.priceFromCost(
       totalCost,
@@ -270,6 +354,15 @@ export class PricingService {
     );
 
     return { channelPrices, b2bPrices, effectiveB2cMargin };
+  }
+
+  // Materiais indexados por id, para resolver o custo por kg do filamento de
+  // cada linha de ficha / parte a partir do insumo vinculado. São poucos
+  // insumos (filamentos + embalagens), então uma leitura única é mais barata
+  // que um findById por linha.
+  private async loadMaterialsById(): Promise<Map<string, Material>> {
+    const materials = await this.repositories.materials.findAll();
+    return new Map(materials.map((material) => [material.id, material]));
   }
 
   // Custo unitário de um componente: reaproveita o cálculo mais recente já

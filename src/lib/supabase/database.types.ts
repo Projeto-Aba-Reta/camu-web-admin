@@ -983,6 +983,76 @@ export type Database = {
           },
         ]
       }
+      product_parts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          material_id: string | null
+          name: string
+          piece_grams: number
+          position: number
+          print_hours: number
+          printer_id: string
+          product_id: string
+          quantity: number
+          support_grams: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          material_id?: string | null
+          name: string
+          piece_grams?: number
+          position?: number
+          print_hours: number
+          printer_id: string
+          product_id: string
+          quantity: number
+          support_grams?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          material_id?: string | null
+          name?: string
+          piece_grams?: number
+          position?: number
+          print_hours?: number
+          printer_id?: string
+          product_id?: string
+          quantity?: number
+          support_grams?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_parts_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_parts_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_parts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_media: {
         Row: {
           created_at: string

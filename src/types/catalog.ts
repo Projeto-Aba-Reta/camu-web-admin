@@ -32,6 +32,27 @@ export interface ProductComponent {
   createdAt: string;
 }
 
+// Parte inline (não vendável) de uma peça composta: carrega filamento, gramas,
+// impressora e tempo próprios, diferente de ProductComponent (que referencia
+// uma peça vendável do catálogo). materialId nulo => custo de filamento pelo
+// preço global (fallback) — ver Requirement "Cadastro de parte inline de peça
+// composta".
+export interface PiecePart {
+  id: string;
+  productId: string;
+  name: string;
+  quantity: number;
+  materialId: string | null;
+  pieceGrams: number;
+  supportGrams: number;
+  printerId: string;
+  printHours: number;
+  position: number;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ProductMedia {
   id: string;
   productId: string;

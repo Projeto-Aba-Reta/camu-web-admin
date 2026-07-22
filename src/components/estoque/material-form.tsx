@@ -20,7 +20,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MATERIAL_TYPE_LABEL } from "@/components/estoque/constants";
-import { materialFormSchema, type MaterialFormValues } from "@/lib/validation/inventory-schemas";
+import { FILAMENT_UNITS, materialFormSchema, type MaterialFormValues } from "@/lib/validation/inventory-schemas";
 import { createMaterialAction, updateMaterialAction } from "@/app/(dashboard)/producao/estoque/actions";
 import type { Material } from "@/types/inventory";
 
@@ -45,6 +45,8 @@ export function MaterialForm({ material }: MaterialFormProps) {
     resolver: zodResolver(materialFormSchema),
     defaultValues: defaultValues(material),
   });
+
+  const materialType = form.watch("type");
 
   function handleOpenChange(nextOpen: boolean) {
     if (nextOpen) {
@@ -128,9 +130,29 @@ export function MaterialForm({ material }: MaterialFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Unidade</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Ex.: g, un" />
-                  </FormControl>
+                  {/* Filamento é restrito a kg/g (o custo por kg precisa ser
+                      resolvível e o saldo de estoque é canônico em gramas);
+                      demais insumos aceitam unidade livre. */}
+                  {materialType === "filamento" ? (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="kg ou g" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {FILAMENT_UNITS.map((unit) => (
+                          <SelectItem key={unit} value={unit}>
+                            {unit}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <FormControl>
+                      <Input {...field} placeholder="Ex.: unidade, rolo" />
+                    </FormControl>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}

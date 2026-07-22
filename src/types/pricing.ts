@@ -118,14 +118,45 @@ export interface B2bPrice {
   effectiveMargin: EffectiveMargin;
 }
 
-// Custo de um componente dentro do cálculo agregado de uma peça composta
-// (ver Requirement "Custo agregado de peça composta").
+// Origem do preço do filamento de uma parte: "material" quando derivado do
+// insumo vinculado no estoque, "global" quando caiu no preço global por kg
+// (parte sem insumo vinculado) — ver Requirement "Parte com filamento
+// vinculado ao estoque de insumos".
+export type FilamentSource = "material" | "global";
+
+// Custo de um componente do catálogo dentro do cálculo agregado de uma peça
+// composta (ver Requirement "Custo agregado de peça composta"). `kind` é
+// ausente em snapshots salvos antes das partes inline — a leitura trata a
+// ausência como "component" (ver design.md, Decisão 4).
 export interface CompositeComponentCost {
+  kind?: "component";
   componentProductId: string;
   quantity: number;
   unitCost: number;
   totalCost: number;
 }
+
+// Custo de uma parte inline dentro do cálculo agregado de uma peça composta.
+// Guarda o breakdown por parte (filamento/energia/depreciação) e a origem do
+// preço do filamento, para auditoria do snapshot.
+export interface CompositePartCost {
+  kind: "part";
+  partId: string;
+  name: string;
+  quantity: number;
+  filamentSource: FilamentSource;
+  materialId: string | null;
+  unitFilamentCost: number;
+  unitEnergyCost: number;
+  unitDepreciationCost: number;
+  unitCost: number;
+  totalCost: number;
+}
+
+// Uma entrada do component_breakdown de uma peça composta: parte inline ou
+// componente do catálogo. Discriminada por `kind` ("part" vs ausente/
+// "component").
+export type CompositeBreakdownEntry = CompositePartCost | CompositeComponentCost;
 
 // Porte sugerido: pode ser um único tier (encaixe claro) ou uma ambiguidade
 // entre dois tiers candidatos, quando peso e tempo apontam para faixas
@@ -171,7 +202,7 @@ export interface PriceCalculationResult {
   costBreakdown: CostBreakdown;
   channelPrices: ChannelPrice[];
   b2bPrices: B2bPrice[];
-  componentBreakdown: CompositeComponentCost[] | null;
+  componentBreakdown: CompositeBreakdownEntry[] | null;
   // Margem efetiva usada em todos os channelPrices (a base é a mesma para
   // todos os canais — o que varia entre canais é a taxa, não a margem).
   // null nos cálculos salvos antes da margem por porte, que não são

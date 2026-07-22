@@ -3,7 +3,7 @@ import type { Database } from "@/lib/supabase/database.types";
 import type {
   B2bPrice,
   ChannelPrice,
-  CompositeComponentCost,
+  CompositeBreakdownEntry,
   CostBreakdown,
   EffectiveMargin,
   PriceCalculation,
@@ -52,7 +52,7 @@ function toPriceCalculation(
     costBreakdown: row.cost_breakdown as unknown as CostBreakdown,
     channelPrices: row.channel_prices as unknown as ChannelPrice[],
     b2bPrices: (row.b2b_prices ?? []) as unknown as B2bPrice[],
-    componentBreakdown: row.component_breakdown as unknown as CompositeComponentCost[] | null,
+    componentBreakdown: row.component_breakdown as unknown as CompositeBreakdownEntry[] | null,
     // null nos cálculos salvos antes da margem por porte — eles não são
     // recalculados nem migrados (snapshot imutável).
     effectiveB2cMargin: (row.effective_b2c_margin ?? null) as unknown as EffectiveMargin | null,

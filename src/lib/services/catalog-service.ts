@@ -2,7 +2,11 @@ import type { Repositories } from "@/lib/repositories";
 import type { CreateProductInput, UpdateProductInput } from "@/lib/repositories/interfaces/product-repository.interface";
 import type { CreateProductMediaInput } from "@/lib/repositories/interfaces/product-media-repository.interface";
 import type { CreateProductChannelListingInput } from "@/lib/repositories/interfaces/product-channel-listing-repository.interface";
-import type { Product, ProductChannelListing, ProductComponent, ProductMedia } from "@/types/catalog";
+import type {
+  CreatePiecePartInput,
+  UpdatePiecePartInput,
+} from "@/lib/repositories/interfaces/product-part-repository.interface";
+import type { PiecePart, Product, ProductChannelListing, ProductComponent, ProductMedia } from "@/types/catalog";
 import type { PriceCalculation } from "@/types/pricing";
 
 function suggestedPriceForChannel(calculation: PriceCalculation, channel: string): number | null {
@@ -23,6 +27,7 @@ type CatalogRepositories = Pick<
   | "productChannelListings"
   | "priceCalculations"
   | "productComponents"
+  | "productParts"
   | "slicingSheets"
   | "printQueueItems"
   | "productStockMovements"
@@ -295,6 +300,67 @@ export class CatalogService {
 
   async removeComponent(id: string): Promise<void> {
     return this.repositories.productComponents.remove(id);
+  }
+
+  // -------------------------------------------------------------------------
+  // Partes inline (não vendáveis) de peça composta — ver capability
+  // partes-de-peca-composta. Diferente de componente, a parte não referencia
+  // outra peça do catálogo e carrega seus próprios dados de custo (filamento,
+  // gramas, impressora, tempo), então não exige custo prévio.
+  // -------------------------------------------------------------------------
+
+  async listParts(productId: string): Promise<PiecePart[]> {
+    return this.repositories.productParts.findByProductId(productId);
+  }
+
+  async addPart(input: CreatePiecePartInput): Promise<PiecePart> {
+    this.assertPartFields(input);
+    // Só faz sentido cadastrar parte numa peça composta.
+    const product = await this.repositories.products.findById(input.productId);
+    if (!product) {
+      throw new Error(`Peça ${input.productId} não encontrada.`);
+    }
+    if (product.productType !== "composta") {
+      throw new Error(`Peça "${product.name}" não é composta — partes só existem em peças compostas.`);
+    }
+    return this.repositories.productParts.create(input);
+  }
+
+  async updatePart(id: string, input: UpdatePiecePartInput): Promise<PiecePart> {
+    this.assertPartFields(input);
+    return this.repositories.productParts.update(id, input);
+  }
+
+  async removePart(id: string): Promise<void> {
+    return this.repositories.productParts.remove(id);
+  }
+
+  // Validações que espelham os CHECKs do banco, para devolver uma mensagem
+  // acionável antes do round-trip (a constraint continua sendo a rede de
+  // segurança). Campos ausentes num update parcial não são validados.
+  private assertPartFields(input: Partial<CreatePiecePartInput>): void {
+    if (input.name !== undefined && input.name.trim().length === 0) {
+      throw new Error("A parte precisa de um nome.");
+    }
+    if (input.quantity !== undefined && (!Number.isInteger(input.quantity) || input.quantity <= 0)) {
+      throw new Error("A quantidade da parte precisa ser um inteiro maior que zero.");
+    }
+    if (input.printHours !== undefined && input.printHours <= 0) {
+      throw new Error("O tempo de impressão da parte precisa ser maior que zero.");
+    }
+    if (input.pieceGrams !== undefined && input.pieceGrams < 0) {
+      throw new Error("As gramas na peça não podem ser negativas.");
+    }
+    if (input.supportGrams !== undefined && input.supportGrams < 0) {
+      throw new Error("As gramas em suporte não podem ser negativas.");
+    }
+    const piece = input.pieceGrams ?? 0;
+    const support = input.supportGrams ?? 0;
+    // Só valida a soma quando ao menos um dos dois foi informado (create ou
+    // update que mexe em gramas); um update que não toca em gramas passa.
+    if ((input.pieceGrams !== undefined || input.supportGrams !== undefined) && piece + support <= 0) {
+      throw new Error("A parte precisa consumir filamento (gramas na peça ou em suporte).");
+    }
   }
 
   // Verdadeiro se parentProductId já é alcançável a partir de

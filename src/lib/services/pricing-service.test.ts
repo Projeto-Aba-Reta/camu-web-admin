@@ -26,6 +26,12 @@ import type {
   IProductComponentRepository,
 } from "@/lib/repositories/interfaces/product-component-repository.interface";
 import type {
+  CreatePiecePartInput,
+  IProductPartRepository,
+  UpdatePiecePartInput,
+} from "@/lib/repositories/interfaces/product-part-repository.interface";
+import type { IMaterialRepository } from "@/lib/repositories/interfaces/material-repository.interface";
+import type {
   B2bPricingTier,
   ChannelFee,
   CostParameters,
@@ -40,8 +46,9 @@ import type {
   ISizeTierRepository,
   UpdateSizeTierInput,
 } from "@/lib/repositories/interfaces/size-tier-repository.interface";
-import type { Product, ProductComponent } from "@/types/catalog";
+import type { Product, ProductComponent, PiecePart } from "@/types/catalog";
 import type { SlicingSheet } from "@/types/slicing-sheet";
+import type { Material } from "@/types/inventory";
 
 // Portes cadastrados de referência: P/M/G de sistema, na ordem da régua.
 const SIZE_TIERS_DEF: SizeTierDefinition[] = [
@@ -83,6 +90,10 @@ const ENDER_3: Printer = {
   validFrom: "2026-01-01",
   createdBy: null,
 };
+
+// Mesmo packaging_cost usado em makeCostParameters — a embalagem entra uma
+// única vez no custo de uma peça composta.
+const PACKAGING_COST = 3;
 
 function makeCostParameters(overrides: Partial<CostParameters> = {}): CostParameters {
   return {
@@ -280,11 +291,45 @@ class FakeProductComponentRepository implements IProductComponentRepository {
   }
 }
 
+class FakeProductPartRepository implements IProductPartRepository {
+  constructor(private readonly parts: PiecePart[]) {}
+  async findByProductId(productId: string) {
+    return this.parts.filter((p) => p.productId === productId);
+  }
+  async create(input: CreatePiecePartInput): Promise<PiecePart> {
+    throw new Error("not implemented in fake" + JSON.stringify(input));
+  }
+  async update(id: string, input: UpdatePiecePartInput): Promise<PiecePart> {
+    throw new Error("not implemented in fake" + id + JSON.stringify(input));
+  }
+  async remove(): Promise<void> {
+    throw new Error("not implemented in fake");
+  }
+}
+
+class FakeMaterialRepository implements IMaterialRepository {
+  constructor(private readonly materials: Material[]) {}
+  async findById(id: string) {
+    return this.materials.find((m) => m.id === id) ?? null;
+  }
+  async findAll() {
+    return this.materials;
+  }
+  async create(): Promise<Material> {
+    throw new Error("not implemented in fake");
+  }
+  async update(): Promise<Material> {
+    throw new Error("not implemented in fake");
+  }
+}
+
 interface MakeServiceOptions {
   b2bTiers?: B2bPricingTier[];
   slicingSheets?: SlicingSheet[];
   products?: Product[];
   productComponents?: ProductComponent[];
+  productParts?: PiecePart[];
+  materials?: Material[];
   sizeTierRanges?: SizeTierRange[];
   sizeTiers?: SizeTierDefinition[];
 }
@@ -302,6 +347,8 @@ function makeService(costParameters: CostParameters, options: MakeServiceOptions
   const slicingSheets = new FakeSlicingSheetRepository(options.slicingSheets ?? []);
   const products = new FakeProductRepository(options.products ?? []);
   const productComponents = new FakeProductComponentRepository(options.productComponents ?? []);
+  const productParts = new FakeProductPartRepository(options.productParts ?? []);
+  const materials = new FakeMaterialRepository(options.materials ?? []);
 
   const service = new PricingService({
     costParameters: costParametersRepo,
@@ -313,6 +360,8 @@ function makeService(costParameters: CostParameters, options: MakeServiceOptions
     slicingSheets,
     products,
     productComponents,
+    productParts,
+    materials,
     b2bPricingTiers,
   });
 
@@ -708,15 +757,24 @@ describe("PricingService.calculateCompositePrice", () => {
     });
 
     expect(result.componentBreakdown).toHaveLength(2);
-    const decagonoLine = result.componentBreakdown!.find((c) => c.componentProductId === "decagono")!;
-    expect(decagonoLine.unitCost).toBe(6.34);
-    expect(decagonoLine.totalCost).toBe(6.34);
+    const componentLines = result.componentBreakdown!.filter((c) => c.kind !== "part");
+    const decagonoLine = componentLines.find((c) => c.componentProductId === "decagono")!;
+    // unitCost do componente exclui a embalagem própria (0,05 × 6,34 = 0,317),
+    // porque a embalagem é contada uma única vez no conjunto — ver Requirement
+    // "Custo agregado de peça composta".
+    expect(decagonoLine.unitCost).toBeCloseTo(6.34 - 6.34 * 0.05, 6);
+    expect(decagonoLine.totalCost).toBeCloseTo(6.34 - 6.34 * 0.05, 6);
 
-    const cunhaLine = result.componentBreakdown!.find((c) => c.componentProductId === "cunha")!;
+    const cunhaLine = componentLines.find((c) => c.componentProductId === "cunha")!;
     expect(cunhaLine.quantity).toBe(10);
     expect(cunhaLine.totalCost).toBeCloseTo(cunhaLine.unitCost * 10, 6);
 
-    expect(result.totalCost).toBeCloseTo(decagonoLine.totalCost + cunhaLine.totalCost, 6);
+    // Total = soma dos itens (sem embalagem própria) + 1 embalagem do conjunto.
+    expect(result.totalCost).toBeCloseTo(
+      decagonoLine.totalCost + cunhaLine.totalCost + PACKAGING_COST,
+      6,
+    );
+    expect(result.costBreakdown.packagingCost).toBe(PACKAGING_COST);
     // O porte da composta é o escolhido pelo usuário — não há peso/tempo
     // único a classificar.
     expect(result.suggestedTier).toEqual({ ambiguous: false, tier: "G" });
@@ -800,6 +858,97 @@ describe("PricingService.calculateCompositePrice", () => {
     await expect(
       service.calculateCompositePrice({ productId: "mandala", chosenTier: "M", createdBy: null }),
     ).rejects.toThrow();
+  });
+
+  const PLA_VERMELHO: Material = {
+    id: "mat-red",
+    name: "Filamento PLA Vermelho",
+    type: "filamento",
+    unit: "kg",
+    referenceCost: 200,
+    createdBy: null,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  };
+
+  function makePart(overrides: Partial<PiecePart> & Pick<PiecePart, "id" | "name">): PiecePart {
+    return {
+      productId: "mandala",
+      quantity: 1,
+      materialId: null,
+      pieceGrams: 10,
+      supportGrams: 0,
+      printerId: ENDER_3.id,
+      printHours: 1,
+      position: 0,
+      createdBy: null,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+      ...overrides,
+    };
+  }
+
+  it("agrega partes inline: filamento do insumo vs. global, falha por parte e embalagem uma vez", async () => {
+    const { service } = makeService(makeCostParameters(), {
+      products: [MANDALA],
+      materials: [PLA_VERMELHO],
+      productParts: [
+        makePart({ id: "part-dec", name: "Decágono", materialId: "mat-red", pieceGrams: 40, printHours: 3, quantity: 1 }),
+        makePart({ id: "part-cun", name: "Cunha", materialId: null, pieceGrams: 8, printHours: 0.5, quantity: 10 }),
+      ],
+    });
+
+    const result = await service.calculateCompositePrice({ productId: "mandala", chosenTier: "G", createdBy: null });
+
+    const parts = result.componentBreakdown!.filter((e) => e.kind === "part");
+    expect(parts).toHaveLength(2);
+
+    const dec = parts.find((p) => p.partId === "part-dec")!;
+    expect(dec.filamentSource).toBe("material");
+    // 40g × R$200/kg = 8,0 filamento; +0,36 energia +2,4 deprec = 10,76;
+    // +12,5% falha = 12,105.
+    expect(dec.unitCost).toBeCloseTo(12.105, 6);
+    expect(dec.totalCost).toBeCloseTo(12.105, 6);
+
+    const cun = parts.find((p) => p.partId === "part-cun")!;
+    expect(cun.filamentSource).toBe("global");
+    // 8g × R$130/kg = 1,04; +0,06 +0,4 = 1,5; +12,5% = 1,6875; ×10 = 16,875.
+    expect(cun.unitCost).toBeCloseTo(1.6875, 6);
+    expect(cun.totalCost).toBeCloseTo(16.875, 6);
+
+    expect(result.costBreakdown.packagingCost).toBe(PACKAGING_COST);
+    expect(result.totalCost).toBeCloseTo(12.105 + 16.875 + PACKAGING_COST, 6);
+    expect(result.weightGrams).toBeNull();
+    expect(result.suggestedTier).toEqual({ ambiguous: false, tier: "G" });
+  });
+
+  it("agrega peça composta mista: parte inline + componente do catálogo, com uma única embalagem", async () => {
+    const { service, priceCalculations } = makeService(makeCostParameters(), {
+      products: [DECAGONO, MANDALA],
+      materials: [PLA_VERMELHO],
+      productComponents: [
+        { id: "pc-1", parentProductId: "mandala", componentProductId: "decagono", quantity: 1, createdBy: null, createdAt: "2026-01-01" },
+      ],
+      productParts: [makePart({ id: "part-base", name: "Base", materialId: "mat-red", pieceGrams: 40, printHours: 3 })],
+    });
+    priceCalculations.saved.push(makeSavedCalculation("calc-decagono", 6.34));
+
+    const result = await service.calculateCompositePrice({ productId: "mandala", chosenTier: "M", createdBy: null });
+
+    expect(result.componentBreakdown!.some((e) => e.kind === "part")).toBe(true);
+    expect(result.componentBreakdown!.some((e) => e.kind !== "part")).toBe(true);
+    // Parte (12,105) + componente sem embalagem própria (6,34 − 0,317 = 6,023)
+    // + 1 embalagem (3).
+    expect(result.totalCost).toBeCloseTo(12.105 + (6.34 - 6.34 * 0.05) + PACKAGING_COST, 6);
+    expect(result.costBreakdown.packagingCost).toBe(PACKAGING_COST);
+  });
+
+  it("rejeita peça composta sem partes nem componentes (composição vazia)", async () => {
+    const { service } = makeService(makeCostParameters(), { products: [MANDALA] });
+
+    await expect(
+      service.calculateCompositePrice({ productId: "mandala", chosenTier: "M", createdBy: null }),
+    ).rejects.toThrow(/vazia|partes|componentes/i);
   });
 });
 

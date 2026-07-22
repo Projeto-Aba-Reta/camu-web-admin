@@ -9,6 +9,7 @@ import { MediaManager } from "@/components/catalogo/media-manager";
 import { ChannelListingForm } from "@/components/catalogo/channel-listing-form";
 import { SlicingSheetSection } from "@/components/catalogo/slicing-sheet-section";
 import { ProductComponentsManager } from "@/components/catalogo/product-components-manager";
+import { ProductPartsManager } from "@/components/catalogo/product-parts-manager";
 import { ProductDetailActions } from "@/components/catalogo/product-detail-actions";
 import { SlicingSheetService } from "@/lib/services/slicing-sheet-service";
 import type { HistoricoRow } from "@/components/precificacao/historico-tabela";
@@ -26,7 +27,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const product = await repositories.products.findById(productId);
   if (!product) notFound();
 
-  const [media, channelListings, linkedCalculation, printers, recentCalculations, allPrinters, materials, allProducts, components, tiers] =
+  const [media, channelListings, linkedCalculation, printers, recentCalculations, allPrinters, materials, allProducts, components, parts, tiers] =
     await Promise.all([
       repositories.productMedia.findByProductId(productId),
       repositories.productChannelListings.findByProductId(productId),
@@ -37,6 +38,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       repositories.materials.findAll(),
       repositories.products.findAll(),
       repositories.productComponents.findByParentId(productId),
+      repositories.productParts.findByProductId(productId),
       repositories.sizeTiers.findAll(),
     ]);
 
@@ -74,13 +76,23 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       />
 
       {product.productType === "composta" && (
-        <ProductComponentsManager
-          parentProductId={product.id}
-          initialComponents={components}
-          candidateProducts={candidateComponents}
-          tiers={tiers}
-          canWrite={canWrite}
-        />
+        <>
+          <ProductPartsManager
+            productId={product.id}
+            initialParts={parts}
+            printers={printers}
+            filamentMaterials={filamentMaterials}
+            canWrite={canWrite}
+          />
+          <ProductComponentsManager
+            parentProductId={product.id}
+            initialComponents={components}
+            initialPartsCount={parts.length}
+            candidateProducts={candidateComponents}
+            tiers={tiers}
+            canWrite={canWrite}
+          />
+        </>
       )}
 
       <MediaManager productId={product.id} initialMedia={media} canWrite={canWrite} />

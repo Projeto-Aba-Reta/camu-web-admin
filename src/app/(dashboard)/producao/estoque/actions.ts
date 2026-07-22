@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createRepositories, type Repositories } from "@/lib/repositories";
-import { InventoryService } from "@/lib/services/inventory-service";
+import { InventoryService, toStockQuantity } from "@/lib/services/inventory-service";
 import { requireInventoryWrite } from "@/lib/auth/inventory-access";
 import type { MaterialMovementType, MaterialType, ProductMovementType } from "@/types/inventory";
 
@@ -79,10 +79,18 @@ export async function registerMaterialMovementAction(input: MaterialMovementActi
     const repositories = await getRepositories();
     const inventoryService = new InventoryService(repositories);
 
+    // A quantidade é informada na unidade do insumo (kg ou g para filamento);
+    // o saldo é canônico em gramas, então convertemos aqui antes de gravar.
+    const material = await repositories.materials.findById(input.materialId);
+    if (!material) {
+      throw new Error(`Insumo ${input.materialId} não encontrado.`);
+    }
+    const quantity = toStockQuantity(material, input.quantity);
+
     if (input.movementType === "consumo_producao") {
       await inventoryService.registerMaterialConsumption({
         materialId: input.materialId,
-        quantity: input.quantity,
+        quantity,
         printerId: input.printerId ?? null,
         productId: input.productId ?? null,
         notes: input.notes ?? null,
@@ -93,7 +101,7 @@ export async function registerMaterialMovementAction(input: MaterialMovementActi
     } else {
       await inventoryService.registerMaterialMovement({
         materialId: input.materialId,
-        quantity: input.quantity,
+        quantity,
         movementType: input.movementType,
         notes: input.notes ?? null,
         createdBy: user.id,

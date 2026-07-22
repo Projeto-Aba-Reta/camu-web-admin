@@ -1,10 +1,4 @@
-# estoque-de-insumos
-
-## Purpose
-
-Catálogo de insumos (filamento por tipo/cor, embalagem) usado na produção das peças, com custo de referência próprio por insumo — complementar aos parâmetros globais de precificação, permitindo variação de custo por cor/fornecedor sem exigir um novo parâmetro global a cada compra. Leitura ampla para Owner/Sócio e roles `producao`/`financeiro`; escrita restrita a Produção.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Cadastro de insumo com custo de referência
 O sistema SHALL permitir cadastrar um insumo (filamento ou embalagem) com nome, tipo, unidade de medida e custo de referência próprio, independente dos parâmetros globais de precificação. Para insumos do tipo filamento, a unidade de medida SHALL ser obrigatoriamente `kg` ou `g`, e o custo de referência SHALL ser interpretado como custo por essa unidade — de modo que o custo por kg do filamento seja sempre resolvível e a baixa de estoque na produção seja calculada de forma consistente.
@@ -21,19 +15,7 @@ O sistema SHALL permitir cadastrar um insumo (filamento ou embalagem) com nome, 
 - **WHEN** um usuário cadastra um insumo do tipo embalagem com unidade `unidade`
 - **THEN** o sistema aceita normalmente, pois a restrição de unidade vale apenas para filamento
 
-### Requirement: Leitura ampla por Produção e Financeiro
-O sistema SHALL permitir leitura do catálogo de insumos a usuários `owner`/`socio` ou com role `producao`/`financeiro`.
-
-#### Scenario: Usuário de Financeiro consulta insumos
-- **WHEN** um usuário com apenas a role `financeiro` consulta o catálogo de insumos
-- **THEN** o sistema retorna a lista de insumos e seus custos de referência
-
-### Requirement: Escrita restrita a Produção
-O sistema SHALL permitir cadastrar e editar insumos apenas a usuários `owner`/`socio` ou com a role `producao`.
-
-#### Scenario: Usuário de Financeiro tenta cadastrar insumo
-- **WHEN** um usuário com apenas a role `financeiro` tenta cadastrar um novo insumo
-- **THEN** o sistema rejeita a escrita por Row Level Security
+## ADDED Requirements
 
 ### Requirement: Custo por kg de filamento disponível para o motor de cálculo
 O sistema SHALL expor, para cada insumo do tipo filamento, um custo por kg derivado do seu custo de referência e da sua unidade de medida (`kg` usado direto; `g` multiplicado por 1000), consumível pelo motor de cálculo de preço. Quando o custo de referência de um insumo de filamento for atualizado, o custo por kg derivado SHALL refletir o novo valor apenas em cálculos executados a partir de então.
