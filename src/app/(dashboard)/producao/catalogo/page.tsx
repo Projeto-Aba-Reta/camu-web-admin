@@ -8,16 +8,19 @@ import { ProducaoNav } from "@/components/producao/producao-nav";
 import { Button } from "@/components/ui/button";
 import { CatalogMaturityIndicator } from "@/components/catalogo/catalog-maturity-indicator";
 import { ProductList } from "@/components/catalogo/product-list";
+import { CatalogService } from "@/lib/services/catalog-service";
 import type { ProductCategory } from "@/types/catalog";
 
 export default async function CatalogoPage() {
   const currentUser = await getCurrentProfile();
   const supabase = await createClient();
   const repositories = createRepositories(supabase);
+  const catalogService = new CatalogService(repositories);
 
-  const [products, tiers] = await Promise.all([
+  const [products, tiers, publishedOnStoreIds] = await Promise.all([
     repositories.products.findAll(),
     repositories.sizeTiers.findAll(),
+    catalogService.listProductIdsPublishedOnStore(),
   ]);
   const canWrite = Boolean(currentUser && canWriteCatalog(currentUser));
 
@@ -46,7 +49,12 @@ export default async function CatalogoPage() {
 
       <CatalogMaturityIndicator activeCountByCategory={activeCountByCategory} />
 
-      <ProductList products={products} tiers={tiers} canWrite={canWrite} />
+      <ProductList
+        products={products}
+        tiers={tiers}
+        publishedOnStoreIds={publishedOnStoreIds}
+        canWrite={canWrite}
+      />
     </div>
   );
 }

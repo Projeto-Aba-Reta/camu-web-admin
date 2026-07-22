@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { slugify } from "@/lib/catalog/slug";
 import { CatalogService, ProductDeletionBlockedError } from "./catalog-service";
 import type { IPrintQueueRepository } from "@/lib/repositories/interfaces/print-queue-repository.interface";
 import type { IProductStockMovementRepository } from "@/lib/repositories/interfaces/product-stock-movement-repository.interface";
@@ -41,18 +42,26 @@ class FakeProductRepository implements IProductRepository {
   async findById(id: string) {
     return this.products.find((p) => p.id === id) ?? null;
   }
+  async findBySlug(slug: string) {
+    return this.products.find((p) => p.slug === slug) ?? null;
+  }
   async findAll() {
     return this.products;
   }
-  async create(input: CreateProductInput): Promise<Product> {
+  // slug opcional só no fake: quem resolve o slug é o service, então os
+  // testes que criam peças direto pelo repositório não precisam informá-lo.
+  async create(input: Omit<CreateProductInput, "slug"> & { slug?: string }): Promise<Product> {
     const product: Product = {
       id: `product-${this.products.length + 1}`,
       name: input.name,
+      slug: input.slug ?? slugify(input.name),
       description: input.description,
       category: input.category,
       sizeTier: null,
       status: "rascunho",
       productType: input.productType ?? "simples",
+      productionLeadDaysMin: input.productionLeadDaysMin ?? null,
+      productionLeadDaysMax: input.productionLeadDaysMax ?? null,
       priceCalculationId: null,
       createdBy: input.createdBy,
       createdAt: "2026-01-01T00:00:00.000Z",
@@ -114,6 +123,9 @@ class FakeProductChannelListingRepository implements IProductChannelListingRepos
 
   async findByProductId(productId: string) {
     return this.listings.filter((l) => l.productId === productId);
+  }
+  async findByChannel(channel: ProductChannelListing["channel"]) {
+    return this.listings.filter((l) => l.channel === channel);
   }
   async create(input: CreateProductChannelListingInput): Promise<ProductChannelListing> {
     const listing: ProductChannelListing = {
@@ -466,6 +478,149 @@ describe("CatalogService.createChannelListing", () => {
   });
 });
 
+describe("CatalogService slug", () => {
+  it("gera o slug a partir do nome quando não informado", async () => {
+    const { service } = makeService();
+    const product = await service.createProduct({
+      name: "Miniatura RPG — Guerreiro Anão",
+      description: null,
+      category: "miniatura_colecionavel",
+      createdBy: null,
+    });
+
+    expect(product.slug).toBe("miniatura-rpg-guerreiro-anao");
+  });
+
+  it("desambigua o slug em caso de colisão", async () => {
+    const { service } = makeService();
+    const base = { description: null, category: "utilitario", createdBy: null } as const;
+
+    const first = await service.createProduct({ name: "Guerreiro", ...base });
+    const second = await service.createProduct({ name: "Guerreiro", ...base });
+
+    expect(first.slug).toBe("guerreiro");
+    expect(second.slug).toBe("guerreiro-2");
+  });
+
+  it("rejeita editar o slug para um valor já usado por outra peça", async () => {
+    const { service } = makeService();
+    const base = { description: null, category: "utilitario", createdBy: null } as const;
+    await service.createProduct({ name: "Guerreiro", ...base });
+    const outra = await service.createProduct({ name: "Mago", ...base });
+
+    await expect(service.updateProduct(outra.id, { slug: "guerreiro" })).rejects.toThrow(/já é usado/);
+  });
+
+  it("rejeita slug fora do formato de URL", async () => {
+    const { service } = makeService();
+    const product = await service.createProduct({
+      name: "Mago",
+      description: null,
+      category: "utilitario",
+      createdBy: null,
+    });
+
+    await expect(service.updateProduct(product.id, { slug: "Mago Supremo!" })).rejects.toThrow(/Slug inválido/);
+  });
+});
+
+describe("CatalogService loja própria", () => {
+  async function makeStoreReadyProduct() {
+    const helpers = makeService();
+    const { service, products, productMedia } = helpers;
+    const product = await service.createProduct({
+      name: "Guerreiro Anão",
+      description: null,
+      category: "miniatura_colecionavel",
+      createdBy: null,
+    });
+    await products.update(product.id, { status: "ativo" });
+    const cover = await productMedia.create({ productId: product.id, storagePath: "capa.jpg", displayOrder: 0 });
+    await productMedia.setCover(cover.id, product.id);
+    return { ...helpers, product };
+  }
+
+  it("recusa publicar peça sem foto de capa, dizendo o que falta", async () => {
+    const { service, products } = makeService();
+    const product = await service.createProduct({
+      name: "Sem capa",
+      description: null,
+      category: "utilitario",
+      createdBy: null,
+    });
+    await products.update(product.id, { status: "ativo" });
+
+    await expect(
+      service.upsertChannelListing(product.id, {
+        channel: "loja_propria",
+        listedPrice: 90,
+        isActive: true,
+      }),
+    ).rejects.toThrow(/foto de capa/);
+  });
+
+  it("recusa publicar peça que não está ativa", async () => {
+    const { service, productMedia } = makeService();
+    const product = await service.createProduct({
+      name: "Rascunho",
+      description: null,
+      category: "utilitario",
+      createdBy: null,
+    });
+    const cover = await productMedia.create({ productId: product.id, storagePath: "capa.jpg", displayOrder: 0 });
+    await productMedia.setCover(cover.id, product.id);
+
+    await expect(
+      service.upsertChannelListing(product.id, { channel: "loja_propria", listedPrice: 90, isActive: true }),
+    ).rejects.toThrow(/status ativo/);
+  });
+
+  it("publica a peça pronta e não exige motivo de divergência", async () => {
+    const { service, product, products } = await makeStoreReadyProduct();
+    // Cálculo vinculado: os marketplaces passariam a exigir motivo, mas
+    // loja_propria não tem preço sugerido para comparar.
+    await products.update(product.id, { priceCalculationId: "calc-1" });
+
+    const listing = await service.upsertChannelListing(product.id, {
+      channel: "loja_propria",
+      listedPrice: 90,
+      isActive: true,
+    });
+
+    expect(listing.isActive).toBe(true);
+    expect(listing.listedPrice).toBe(90);
+    expect(await service.listProductIdsPublishedOnStore()).toEqual([product.id]);
+  });
+
+  it("despublicar da loja própria não mexe nas listagens de marketplace", async () => {
+    const { service, product, productChannelListings } = await makeStoreReadyProduct();
+    await productChannelListings.create({ productId: product.id, channel: "shopee", listedPrice: 120 });
+    await service.upsertChannelListing(product.id, { channel: "loja_propria", listedPrice: 90, isActive: true });
+
+    await service.upsertChannelListing(product.id, { channel: "loja_propria", listedPrice: 90, isActive: false });
+
+    expect(await service.listProductIdsPublishedOnStore()).toEqual([]);
+    const shopee = (await productChannelListings.findByProductId(product.id)).find((l) => l.channel === "shopee");
+    expect(shopee?.isActive).toBe(true);
+    expect(shopee?.listedPrice).toBe(120);
+  });
+
+  it("lista o que falta sem bloquear a leitura da prontidão", async () => {
+    const { service } = makeService();
+    const product = await service.createProduct({
+      name: "Incompleta",
+      description: null,
+      category: "utilitario",
+      createdBy: null,
+    });
+
+    const readiness = await service.getStorePublishReadiness(product.id);
+
+    expect(readiness.ready).toBe(false);
+    expect(readiness.missing).toEqual(["status ativo", "foto de capa", "preço do site"]);
+  });
+});
+
 describe("CatalogService.addComponent", () => {
   async function makeComposedFixture() {
     const helpers = makeService();
@@ -522,6 +677,41 @@ describe("CatalogService.addComponent", () => {
     // Adicionar decagono como componente de mandala fecharia o ciclo
     // mandala → decagono → mandala.
     await expect(service.addComponent(mandala.id, decagono.id, 1, null)).rejects.toThrow(/ciclo/);
+  });
+});
+
+describe("CatalogService.addMedia", () => {
+  async function makeProduct(helpers: ReturnType<typeof makeService>) {
+    return helpers.products.create({
+      name: "Miniatura teste",
+      description: null,
+      category: "miniatura_colecionavel",
+      createdBy: null,
+    });
+  }
+
+  it("marca a primeira foto da peça como capa", async () => {
+    const helpers = makeService();
+    const product = await makeProduct(helpers);
+
+    const first = await helpers.service.addMedia({ productId: product.id, storagePath: "a.jpg", displayOrder: 0 });
+
+    expect(first.isCover).toBe(true);
+    const media = await helpers.productMedia.findByProductId(product.id);
+    expect(media.find((item) => item.id === first.id)?.isCover).toBe(true);
+  });
+
+  it("não troca a capa quando a peça já tem uma", async () => {
+    const helpers = makeService();
+    const product = await makeProduct(helpers);
+    const first = await helpers.service.addMedia({ productId: product.id, storagePath: "a.jpg", displayOrder: 0 });
+
+    const second = await helpers.service.addMedia({ productId: product.id, storagePath: "b.jpg", displayOrder: 1 });
+
+    expect(second.isCover).toBe(false);
+    const media = await helpers.productMedia.findByProductId(product.id);
+    expect(media.find((item) => item.id === first.id)?.isCover).toBe(true);
+    expect(media.filter((item) => item.isCover)).toHaveLength(1);
   });
 });
 

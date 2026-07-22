@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import type { ProductChannelListing } from "@/types/catalog";
-import type { MarketplaceChannel } from "@/types/pricing";
+import type { SalesChannel } from "@/types/pricing";
 import type {
   CreateProductChannelListingInput,
   IProductChannelListingRepository,
@@ -14,7 +14,7 @@ function toProductChannelListing(
   return {
     id: row.id,
     productId: row.product_id,
-    channel: row.channel as MarketplaceChannel,
+    channel: row.channel as SalesChannel,
     listedPrice: row.listed_price,
     isActive: row.is_active,
     priceOverrideReason: row.price_override_reason,
@@ -31,6 +31,15 @@ export class SupabaseProductChannelListingRepository implements IProductChannelL
       .from("product_channel_listings")
       .select("*")
       .eq("product_id", productId);
+    if (error) throw error;
+    return (data ?? []).map(toProductChannelListing);
+  }
+
+  async findByChannel(channel: SalesChannel): Promise<ProductChannelListing[]> {
+    const { data, error } = await this.supabase
+      .from("product_channel_listings")
+      .select("*")
+      .eq("channel", channel);
     if (error) throw error;
     return (data ?? []).map(toProductChannelListing);
   }

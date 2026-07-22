@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { CHANNEL_LABEL } from "@/components/precificacao/canal-fee-form";
+import { CHANNEL_LABEL } from "@/lib/pricing/channel-label";
 import { ResultadoCalculo } from "@/components/shared/resultado-calculo";
 import type { PriceCalculation, SizeTier, SizeTierDefinition } from "@/types/pricing";
 

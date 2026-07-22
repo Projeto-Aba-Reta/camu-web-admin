@@ -1272,7 +1272,10 @@ export type Database = {
           name: string
           price_calculation_id: string | null
           product_type: string
+          production_lead_days_max: number | null
+          production_lead_days_min: number | null
           size_tier: string | null
+          slug: string
           status: string
           updated_at: string
         }
@@ -1285,7 +1288,10 @@ export type Database = {
           name: string
           price_calculation_id?: string | null
           product_type?: string
+          production_lead_days_max?: number | null
+          production_lead_days_min?: number | null
           size_tier?: string | null
+          slug: string
           status?: string
           updated_at?: string
         }
@@ -1298,7 +1304,10 @@ export type Database = {
           name?: string
           price_calculation_id?: string | null
           product_type?: string
+          production_lead_days_max?: number | null
+          production_lead_days_min?: number | null
           size_tier?: string | null
+          slug?: string
           status?: string
           updated_at?: string
         }

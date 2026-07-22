@@ -12,11 +12,14 @@ function toProduct(row: Database["public"]["Tables"]["products"]["Row"]): Produc
   return {
     id: row.id,
     name: row.name,
+    slug: row.slug,
     description: row.description,
     category: row.category as ProductCategory,
     sizeTier: row.size_tier as SizeTier | null,
     status: row.status as ProductStatus,
     productType: row.product_type as ProductType,
+    productionLeadDaysMin: row.production_lead_days_min,
+    productionLeadDaysMax: row.production_lead_days_max,
     priceCalculationId: row.price_calculation_id,
     createdBy: row.created_by,
     createdAt: row.created_at,
@@ -29,6 +32,12 @@ export class SupabaseProductRepository implements IProductRepository {
 
   async findById(id: string): Promise<Product | null> {
     const { data, error } = await this.supabase.from("products").select("*").eq("id", id).maybeSingle();
+    if (error) throw error;
+    return data ? toProduct(data) : null;
+  }
+
+  async findBySlug(slug: string): Promise<Product | null> {
+    const { data, error } = await this.supabase.from("products").select("*").eq("slug", slug).maybeSingle();
     if (error) throw error;
     return data ? toProduct(data) : null;
   }
@@ -47,9 +56,12 @@ export class SupabaseProductRepository implements IProductRepository {
       .from("products")
       .insert({
         name: input.name,
+        slug: input.slug,
         description: input.description,
         category: input.category,
         ...(input.productType !== undefined && { product_type: input.productType }),
+        ...(input.productionLeadDaysMin !== undefined && { production_lead_days_min: input.productionLeadDaysMin }),
+        ...(input.productionLeadDaysMax !== undefined && { production_lead_days_max: input.productionLeadDaysMax }),
         created_by: input.createdBy,
       })
       .select("*")
@@ -63,7 +75,10 @@ export class SupabaseProductRepository implements IProductRepository {
       .from("products")
       .update({
         ...(input.name !== undefined && { name: input.name }),
+        ...(input.slug !== undefined && { slug: input.slug }),
         ...(input.description !== undefined && { description: input.description }),
+        ...(input.productionLeadDaysMin !== undefined && { production_lead_days_min: input.productionLeadDaysMin }),
+        ...(input.productionLeadDaysMax !== undefined && { production_lead_days_max: input.productionLeadDaysMax }),
         ...(input.category !== undefined && { category: input.category }),
         ...(input.sizeTier !== undefined && { size_tier: input.sizeTier }),
         ...(input.status !== undefined && { status: input.status }),

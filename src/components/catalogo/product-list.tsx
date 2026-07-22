@@ -34,11 +34,14 @@ interface ProductListProps {
   // Portes cadastrados, para o rótulo e o filtro de porte (não mais fixo
   // P/M/G).
   tiers: SizeTierDefinition[];
+  // Peças com listagem `loja_propria` ativa — as que estão no ar no site.
+  publishedOnStoreIds: string[];
   canWrite: boolean;
 }
 
-export function ProductList({ products, tiers, canWrite }: ProductListProps) {
+export function ProductList({ products, tiers, publishedOnStoreIds, canWrite }: ProductListProps) {
   const router = useRouter();
+  const publishedOnStore = useMemo(() => new Set(publishedOnStoreIds), [publishedOnStoreIds]);
   const [categoryFilter, setCategoryFilter] = useState("");
   const [tierFilter, setTierFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -89,6 +92,16 @@ export function ProductList({ products, tiers, canWrite }: ProductListProps) {
         cell: ({ row }) => <Badge variant={STATUS_VARIANT[row.original.status]}>{STATUS_LABEL[row.original.status]}</Badge>,
       },
       {
+        id: "loja",
+        header: "Site",
+        cell: ({ row }) =>
+          publishedOnStore.has(row.original.id) ? (
+            <Badge variant="secondary">No site</Badge>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
         id: "actions",
         header: "",
         cell: ({ row }) => {
@@ -129,7 +142,7 @@ export function ProductList({ products, tiers, canWrite }: ProductListProps) {
         },
       },
     ],
-    [canWrite, router, tiers],
+    [canWrite, publishedOnStore, router, tiers],
   );
 
   const table = useReactTable({

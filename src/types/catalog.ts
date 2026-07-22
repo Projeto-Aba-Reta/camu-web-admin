@@ -1,4 +1,4 @@
-import type { MarketplaceChannel, SizeTier } from "@/types/pricing";
+import type { SalesChannel, SizeTier } from "@/types/pricing";
 
 export type ProductCategory = "miniatura_colecionavel" | "personalizado" | "utilitario" | "linha_leon";
 
@@ -12,11 +12,18 @@ export type ProductType = "simples" | "composta";
 export interface Product {
   id: string;
   name: string;
+  // Identificador da peça na URL da loja do site. Único e estável — trocar
+  // quebra links já publicados (ver capability catalogo-de-pecas).
+  slug: string;
   description: string | null;
   category: ProductCategory;
   sizeTier: SizeTier | null;
   status: ProductStatus;
   productType: ProductType;
+  // Prazo de produção estimado exibido na loja como "feito sob encomenda ·
+  // X-Y dias". Nulos => a loja mostra só "feito sob encomenda".
+  productionLeadDaysMin: number | null;
+  productionLeadDaysMax: number | null;
   priceCalculationId: string | null;
   createdBy: string | null;
   createdAt: string;
@@ -65,7 +72,7 @@ export interface ProductMedia {
 export interface ProductChannelListing {
   id: string;
   productId: string;
-  channel: MarketplaceChannel;
+  channel: SalesChannel;
   listedPrice: number;
   isActive: boolean;
   priceOverrideReason: string | null;

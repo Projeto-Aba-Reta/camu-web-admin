@@ -8,7 +8,7 @@ import { CatalogService, type ProductDeletionCheck } from "@/lib/services/catalo
 import { SlicingSheetService } from "@/lib/services/slicing-sheet-service";
 import { requireCatalogWrite, requireChannelListingWrite } from "@/lib/auth/catalog-access";
 import type { PiecePart, ProductCategory, ProductComponent, ProductMedia, ProductStatus, ProductType } from "@/types/catalog";
-import type { MarketplaceChannel } from "@/types/pricing";
+import type { SalesChannel } from "@/types/pricing";
 
 export interface ActionResult {
   ok: boolean;
@@ -43,10 +43,14 @@ function isForeignKeyViolation(error: unknown): boolean {
 
 export interface ProductFormInput {
   name: string;
+  // Vazio no cadastro = deixa o service gerar a partir do nome.
+  slug: string | null;
   description: string | null;
   category: ProductCategory;
   status: ProductStatus;
   productType: ProductType;
+  productionLeadDaysMin: number | null;
+  productionLeadDaysMax: number | null;
 }
 
 export interface SaveProductActionResult extends ActionResult {
@@ -67,9 +71,12 @@ export async function createProductAction(
 
     const product = await catalogService.createProduct({
       name: input.name,
+      ...(input.slug && { slug: input.slug }),
       description: input.description,
       category: input.category,
       productType: input.productType,
+      productionLeadDaysMin: input.productionLeadDaysMin,
+      productionLeadDaysMax: input.productionLeadDaysMax,
       createdBy: user.id,
     });
 
@@ -100,10 +107,13 @@ export async function updateProductAction(
 
     await catalogService.updateProduct(productId, {
       name: input.name,
+      ...(input.slug && { slug: input.slug }),
       description: input.description,
       category: input.category,
       status: input.status,
       productType: input.productType,
+      productionLeadDaysMin: input.productionLeadDaysMin,
+      productionLeadDaysMax: input.productionLeadDaysMax,
     });
 
     if (priceCalculationId) {
@@ -289,7 +299,7 @@ export async function removeMediaAction(
 // =============================================================================
 
 export interface ChannelListingActionInput {
-  channel: MarketplaceChannel;
+  channel: SalesChannel;
   listedPrice: number;
   isActive: boolean;
   priceOverrideReason: string | null;
@@ -304,32 +314,9 @@ export async function upsertChannelListingAction(
     const repositories = await getRepositories();
     const catalogService = new CatalogService(repositories);
 
-    const existingListings = await repositories.productChannelListings.findByProductId(productId);
-    const current = existingListings.find((listing) => listing.channel === input.channel);
+    await catalogService.upsertChannelListing(productId, input);
 
-    if (current) {
-      await catalogService.updateChannelListingPrice(
-        productId,
-        current.id,
-        input.channel,
-        input.listedPrice,
-        input.priceOverrideReason,
-      );
-      if (input.isActive !== current.isActive) {
-        await repositories.productChannelListings.update(current.id, { isActive: input.isActive });
-      }
-    } else {
-      const created = await catalogService.createChannelListing({
-        productId,
-        channel: input.channel,
-        listedPrice: input.listedPrice,
-        priceOverrideReason: input.priceOverrideReason,
-      });
-      if (!input.isActive) {
-        await repositories.productChannelListings.update(created.id, { isActive: false });
-      }
-    }
-
+    revalidatePath(CATALOGO_PATH);
     revalidatePath(productPath(productId));
     return { ok: true };
   } catch (error) {

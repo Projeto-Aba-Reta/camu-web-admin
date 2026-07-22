@@ -19,17 +19,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { channelFeeFormSchema, type ChannelFeeFormValues } from "@/lib/validation/pricing-schemas";
+import { CHANNEL_LABEL } from "@/lib/pricing/channel-label";
 import { createChannelFeeAction } from "@/app/(dashboard)/financeiro/precificacao/actions";
 import { useChannelFeeDraft } from "@/components/precificacao/pricing-draft-context";
-import type { ChannelFee, MarketplaceChannel } from "@/types/pricing";
-
-export const CHANNEL_LABEL: Record<MarketplaceChannel, string> = {
-  mercado_livre: "Mercado Livre",
-  shopee: "Shopee",
-  tiktok_shop: "TikTok Shop",
-  amazon: "Amazon",
-  shein: "SHEIN",
-};
+import type { ChannelFee } from "@/types/pricing";
 
 interface CanalFeeFormProps {
   current: ChannelFee[];

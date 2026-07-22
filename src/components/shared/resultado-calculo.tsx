@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { CHANNEL_LABEL } from "@/components/precificacao/canal-fee-form";
+import { CHANNEL_LABEL } from "@/lib/pricing/channel-label";
 import { isPartBreakdownEntry } from "@/lib/services/pricing-formula";
 import { tierLabel } from "@/lib/pricing/tier-label";
 import type {

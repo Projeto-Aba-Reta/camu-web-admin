@@ -140,6 +140,15 @@ export function MediaManager({ productId, initialMedia, canWrite }: MediaManager
         )}
       </div>
 
+      {/* Fotos enviadas antes da capa automática podem ter ficado sem capa, e
+          sem capa a peça não vai ao ar na loja — o aviso diz onde resolver. */}
+      {media.length > 0 && !media.some((item) => item.isCover) && (
+        <p className="text-xs text-destructive">
+          Nenhuma foto está marcada como capa, e sem capa a peça não pode ser publicada na loja do site. Passe o mouse
+          sobre uma foto e clique na estrela para definir a capa.
+        </p>
+      )}
+
       {media.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nenhuma foto cadastrada ainda.</p>
       ) : (

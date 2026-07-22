@@ -11,7 +11,10 @@ import { SlicingSheetSection } from "@/components/catalogo/slicing-sheet-section
 import { ProductComponentsManager } from "@/components/catalogo/product-components-manager";
 import { ProductPartsManager } from "@/components/catalogo/product-parts-manager";
 import { ProductDetailActions } from "@/components/catalogo/product-detail-actions";
+import { ProductSaveBar, ProductSaveBarProvider } from "@/components/catalogo/product-save-bar";
+import { CatalogService } from "@/lib/services/catalog-service";
 import { SlicingSheetService } from "@/lib/services/slicing-sheet-service";
+import { LOJA_PROPRIA_CHANNEL } from "@/types/pricing";
 import type { HistoricoRow } from "@/components/precificacao/historico-tabela";
 
 interface ProductPageProps {
@@ -44,6 +47,12 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
   const slicingSheetService = new SlicingSheetService(repositories);
   const slicingSheetRows = await slicingSheetService.listByProduct(productId);
+
+  const catalogService = new CatalogService(repositories);
+  const storeReadiness = await catalogService.getStorePublishReadiness(productId);
+  const publishedOnStore = channelListings.some(
+    (listing) => listing.channel === LOJA_PROPRIA_CHANNEL && listing.isActive,
+  );
   const filamentMaterials = materials.filter((material) => material.type === "filamento");
 
   const printerNameById = new Map(allPrinters.map((printer) => [printer.id, printer.name]));
@@ -59,58 +68,69 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     .map((candidate) => ({ id: candidate.id, name: candidate.name, hasKnownCost: Boolean(candidate.priceCalculationId) }));
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={product.name}
-        description="Cadastro, precificação, fotos e disponibilidade por canal desta peça."
-        action={canWrite && <ProductDetailActions product={product} />}
-      />
+    <ProductSaveBarProvider>
+      <div className="space-y-6">
+        <PageHeader
+          title={product.name}
+          description="Cadastro, precificação, fotos e disponibilidade por canal desta peça."
+          action={canWrite && <ProductDetailActions product={product} />}
+        />
 
-      <ProductForm
-        product={product}
-        printers={printers}
-        recentCalculations={recentCalculationRows}
-        initialLinkedCalculation={linkedCalculation}
-        tiers={tiers}
-        canWrite={canWrite}
-      />
+        <ProductForm
+          product={product}
+          printers={printers}
+          recentCalculations={recentCalculationRows}
+          initialLinkedCalculation={linkedCalculation}
+          tiers={tiers}
+          publishedOnStore={publishedOnStore}
+          canWrite={canWrite}
+        />
 
-      {product.productType === "composta" && (
-        <>
-          <ProductPartsManager
-            productId={product.id}
-            initialParts={parts}
-            printers={printers}
-            filamentMaterials={filamentMaterials}
-            canWrite={canWrite}
+        {product.productType === "composta" && (
+          <>
+            <ProductPartsManager
+              productId={product.id}
+              initialParts={parts}
+              printers={printers}
+              filamentMaterials={filamentMaterials}
+              canWrite={canWrite}
+            />
+            <ProductComponentsManager
+              parentProductId={product.id}
+              initialComponents={components}
+              initialPartsCount={parts.length}
+              candidateProducts={candidateComponents}
+              tiers={tiers}
+              canWrite={canWrite}
+            />
+          </>
+        )}
+
+        <MediaManager productId={product.id} initialMedia={media} canWrite={canWrite} />
+
+        <SlicingSheetSection
+          productId={product.id}
+          rows={slicingSheetRows}
+          printers={printers}
+          materials={filamentMaterials}
+          canWrite={canWrite}
+        />
+
+        <ChannelListingForm
+          productId={product.id}
+          channelListings={channelListings}
+          linkedCalculation={linkedCalculation}
+          storeReadiness={storeReadiness}
+          canWrite={canManageChannels}
+        />
+
+        {(canWrite || canManageChannels) && (
+          <ProductSaveBar
+            label="Salvar alterações"
+            hint="Tudo salvo. Fotos, partes, componentes e fichas de fatiamento são gravados assim que você os edita."
           />
-          <ProductComponentsManager
-            parentProductId={product.id}
-            initialComponents={components}
-            initialPartsCount={parts.length}
-            candidateProducts={candidateComponents}
-            tiers={tiers}
-            canWrite={canWrite}
-          />
-        </>
-      )}
-
-      <MediaManager productId={product.id} initialMedia={media} canWrite={canWrite} />
-
-      <SlicingSheetSection
-        productId={product.id}
-        rows={slicingSheetRows}
-        printers={printers}
-        materials={filamentMaterials}
-        canWrite={canWrite}
-      />
-
-      <ChannelListingForm
-        productId={product.id}
-        channelListings={channelListings}
-        linkedCalculation={linkedCalculation}
-        canWrite={canManageChannels}
-      />
-    </div>
+        )}
+      </div>
+    </ProductSaveBarProvider>
   );
 }

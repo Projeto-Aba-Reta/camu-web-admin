@@ -255,6 +255,9 @@ class FakeProductRepository implements IProductRepository {
   async findById(id: string) {
     return this.products.find((p) => p.id === id) ?? null;
   }
+  async findBySlug(slug: string) {
+    return this.products.find((p) => p.slug === slug) ?? null;
+  }
   async findAll() {
     return this.products;
   }
@@ -677,11 +680,14 @@ describe("PricingService.calculateCompositePrice", () => {
   const DECAGONO: Product = {
     id: "decagono",
     name: "Base branca (decágono central)",
+    slug: "base-branca-decagono-central",
     description: null,
     category: "linha_leon",
     sizeTier: "M",
     status: "ativo",
     productType: "simples",
+    productionLeadDaysMin: null,
+    productionLeadDaysMax: null,
     priceCalculationId: "calc-decagono",
     createdBy: null,
     createdAt: "2026-01-01T00:00:00.000Z",

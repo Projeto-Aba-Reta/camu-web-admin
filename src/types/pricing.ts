@@ -1,5 +1,14 @@
 export type MarketplaceChannel = "mercado_livre" | "shopee" | "tiktok_shop" | "amazon" | "shein";
 
+// Canal de venda da peça. Além dos marketplaces, a loja própria do site
+// (`loja_propria`): a peça é publicada nela tendo uma listagem ativa desse
+// canal, cujo listed_price é o preço do site. Fica de fora de
+// MarketplaceChannel de propósito — não tem taxa de canal cadastrada nem
+// preço sugerido emitido pelo motor.
+export type SalesChannel = MarketplaceChannel | "loja_propria";
+
+export const LOJA_PROPRIA_CHANNEL = "loja_propria" satisfies SalesChannel;
+
 // Código de um porte de tamanho. Deixou de ser a união fechada "P" | "M" | "G"
 // quando os portes passaram a ser cadastráveis (ver change
 // faixas-de-porte-personalizadas): agora é um código livre (P/M/G ou
