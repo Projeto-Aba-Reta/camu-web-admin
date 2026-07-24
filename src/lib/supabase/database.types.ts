@@ -269,6 +269,36 @@ export type Database = {
           },
         ]
       }
+      custom_orders: {
+        Row: {
+          budget_range: string | null
+          created_at: string
+          description: string
+          id: string
+          name: string
+          phone: string
+          reference_image_url: string | null
+        }
+        Insert: {
+          budget_range?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          name: string
+          phone: string
+          reference_image_url?: string | null
+        }
+        Update: {
+          budget_range?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          phone?: string
+          reference_image_url?: string | null
+        }
+        Relationships: []
+      }
       decision_log_entries: {
         Row: {
           alternatives_considered: string | null
@@ -582,6 +612,395 @@ export type Database = {
           {
             foreignKeyName: "mei_ceiling_parameters_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_costs: {
+        Row: {
+          amount_cents: number
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          order_id: string
+        }
+        Insert: {
+          amount_cents: number
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          order_id: string
+        }
+        Update: {
+          amount_cents?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_costs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_costs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_financials"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_costs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_events: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          order_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          order_id: string
+          status: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          order_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_financials"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          product_id: string | null
+          product_name: string
+          qty: number
+          unit_price_cents: number
+          variant: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          product_id?: string | null
+          product_name: string
+          qty: number
+          unit_price_cents: number
+          variant?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          product_id?: string | null
+          product_name?: string
+          qty?: number
+          unit_price_cents?: number
+          variant?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_financials"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_balances"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_pipeline_stages: {
+        Row: {
+          color: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          is_final: boolean
+          is_initial: boolean
+          name: string
+          requires_printer: boolean
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_final?: boolean
+          is_initial?: boolean
+          name: string
+          requires_printer?: boolean
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_final?: boolean
+          is_initial?: boolean
+          name?: string
+          requires_printer?: boolean
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_pipeline_stages_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_stage_events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          from_stage_id: string | null
+          id: string
+          note: string | null
+          order_id: string
+          printer_id: string | null
+          to_stage_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          from_stage_id?: string | null
+          id?: string
+          note?: string | null
+          order_id: string
+          printer_id?: string | null
+          to_stage_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          from_stage_id?: string | null
+          id?: string
+          note?: string | null
+          order_id?: string
+          printer_id?: string | null
+          to_stage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_stage_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_stage_events_from_stage_id_fkey"
+            columns: ["from_stage_id"]
+            isOneToOne: false
+            referencedRelation: "order_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_stage_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_financials"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_stage_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_stage_events_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_stage_events_to_stage_id_fkey"
+            columns: ["to_stage_id"]
+            isOneToOne: false
+            referencedRelation: "order_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          address_cep: string | null
+          address_city: string | null
+          address_line: string | null
+          address_uf: string | null
+          created_at: string
+          current_printer_id: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          mp_payment_id: string | null
+          mp_preference_id: string | null
+          order_code: string
+          payment_method: string | null
+          payment_status: string
+          pipeline_stage_id: string | null
+          sale_origin_id: string | null
+          shipping_cents: number
+          sold_by_profile_id: string | null
+          status: string
+          subtotal_cents: number
+          total_cents: number
+          updated_at: string
+        }
+        Insert: {
+          address_cep?: string | null
+          address_city?: string | null
+          address_line?: string | null
+          address_uf?: string | null
+          created_at?: string
+          current_printer_id?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          mp_payment_id?: string | null
+          mp_preference_id?: string | null
+          order_code?: string
+          payment_method?: string | null
+          payment_status?: string
+          pipeline_stage_id?: string | null
+          sale_origin_id?: string | null
+          shipping_cents?: number
+          sold_by_profile_id?: string | null
+          status?: string
+          subtotal_cents?: number
+          total_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          address_cep?: string | null
+          address_city?: string | null
+          address_line?: string | null
+          address_uf?: string | null
+          created_at?: string
+          current_printer_id?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          mp_payment_id?: string | null
+          mp_preference_id?: string | null
+          order_code?: string
+          payment_method?: string | null
+          payment_status?: string
+          pipeline_stage_id?: string | null
+          sale_origin_id?: string | null
+          shipping_cents?: number
+          sold_by_profile_id?: string | null
+          status?: string
+          subtotal_cents?: number
+          total_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_current_printer_id_fkey"
+            columns: ["current_printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_pipeline_stage_id_fkey"
+            columns: ["pipeline_stage_id"]
+            isOneToOne: false
+            referencedRelation: "order_pipeline_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_sale_origin_id_fkey"
+            columns: ["sale_origin_id"]
+            isOneToOne: false
+            referencedRelation: "sale_origins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_sold_by_profile_id_fkey"
+            columns: ["sold_by_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -983,6 +1402,48 @@ export type Database = {
           },
         ]
       }
+      product_media: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_cover: boolean
+          product_id: string
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_cover?: boolean
+          product_id: string
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_cover?: boolean
+          product_id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_media_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_stock_balances"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_media_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_parts: {
         Row: {
           created_at: string
@@ -1031,6 +1492,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "product_parts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_parts_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "material_stock_balances"
+            referencedColumns: ["material_id"]
+          },
+          {
             foreignKeyName: "product_parts_material_id_fkey"
             columns: ["material_id"]
             isOneToOne: false
@@ -1048,46 +1523,11 @@ export type Database = {
             foreignKeyName: "product_parts_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      product_media: {
-        Row: {
-          created_at: string
-          display_order: number
-          id: string
-          is_cover: boolean
-          product_id: string
-          storage_path: string
-        }
-        Insert: {
-          created_at?: string
-          display_order?: number
-          id?: string
-          is_cover?: boolean
-          product_id: string
-          storage_path: string
-        }
-        Update: {
-          created_at?: string
-          display_order?: number
-          id?: string
-          is_cover?: boolean
-          product_id?: string
-          storage_path?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_media_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
             referencedRelation: "product_stock_balances"
             referencedColumns: ["product_id"]
           },
           {
-            foreignKeyName: "product_media_product_id_fkey"
+            foreignKeyName: "product_parts_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
@@ -1434,6 +1874,50 @@ export type Database = {
           },
         ]
       }
+      sale_origins: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+          requires_seller: boolean
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          requires_seller?: boolean
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          requires_seller?: boolean
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_origins_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       size_tier_ranges: {
         Row: {
           b2b_margin_mode: string
@@ -1509,7 +1993,15 @@ export type Database = {
           label?: string
           sort_order?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "size_tiers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       social_content_plan_item_channels: {
         Row: {
@@ -1805,12 +2297,41 @@ export type Database = {
         }
         Relationships: []
       }
+      order_financials: {
+        Row: {
+          cost_cents: number | null
+          cost_entries: number | null
+          order_id: string | null
+          profit_cents: number | null
+          revenue_cents: number | null
+        }
+        Relationships: []
+      }
       product_stock_balances: {
         Row: {
           balance: number | null
           product_id: string | null
         }
         Relationships: []
+      }
+      sales_monthly_results: {
+        Row: {
+          cost_cents: number | null
+          month: string | null
+          order_count: number | null
+          profit_cents: number | null
+          revenue_cents: number | null
+          sale_origin_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_sale_origin_id_fkey"
+            columns: ["sale_origin_id"]
+            isOneToOne: false
+            referencedRelation: "sale_origins"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {

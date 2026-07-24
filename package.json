@@ -18,7 +18,8 @@
     "seed-inventory": "tsx --conditions=react-server scripts/seed-inventory.ts",
     "seed-catalog": "tsx --conditions=react-server scripts/seed-catalog.ts",
     "seed-slicing-sheets": "tsx --conditions=react-server scripts/seed-slicing-sheets.ts",
-    "seed-all": "npm run seed-roles && npm run seed-pricing && npm run seed-inventory && npm run seed-catalog && npm run seed-slicing-sheets && npm run seed-governance",
+    "seed-vendas": "tsx --conditions=react-server scripts/seed-vendas.ts",
+    "seed-all": "npm run seed-roles && npm run seed-vendas && npm run seed-pricing && npm run seed-inventory && npm run seed-catalog && npm run seed-slicing-sheets && npm run seed-governance",
     "dev:cron": "tsx --conditions=react-server scripts/run-print-queue-cron.ts",
     "test": "vitest",
     "test:db": "supabase test db"
@@ -37,6 +38,7 @@
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-hook-form": "^7.81.0",
+    "recharts": "^3.10.0",
     "server-only": "^0.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",

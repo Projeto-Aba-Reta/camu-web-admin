@@ -41,6 +41,20 @@
   --ring: var(--brand-teal);
   --radius: 0.375rem;
 
+  /* Séries de gráfico (Vendas > Resultado). Trio categórico validado contra a
+     superfície branca do card: separação para daltonismo ΔE 9.2 no pior par
+     (deutan), acima do piso 8. Não trocar por "cor de marca" sem revalidar —
+     teal e coral juntos colapsam para quem tem deuteranopia.
+     O aqua fica em 2.82:1 de contraste, abaixo de 3:1, o que exige o alívio
+     que a tela já dá: legenda, tooltip e a tabela mensal com os números
+     exatos embaixo do gráfico.
+     Sem par escuro porque o app ainda não tem dark mode ligado (não há bloco
+     .dark nem ThemeProvider) — quando tiver, estes três precisam de passos
+     próprios revalidados contra a superfície escura, não de uma inversão. */
+  --chart-receita: #2a78d6;
+  --chart-gasto: #eb6834;
+  --chart-lucro: #1baf7a;
+
   /* Sidebar tokens (dark panel — charcoal bg, light text) */
   --sidebar: var(--brand-charcoal);
   --sidebar-foreground: var(--neutral-100);

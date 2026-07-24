@@ -32,6 +32,12 @@ import type { IProductComponentRepository } from "./interfaces/product-component
 import type { IProductPartRepository } from "./interfaces/product-part-repository.interface";
 import type { ICommemorativeDateRepository } from "./interfaces/commemorative-date-repository.interface";
 import type { ISocialContentPlanRepository } from "./interfaces/social-content-plan-repository.interface";
+import type { ISaleOriginRepository } from "./interfaces/sale-origin-repository.interface";
+import type { IOrderPipelineStageRepository } from "./interfaces/order-pipeline-stage-repository.interface";
+import type { ISalesOrderRepository } from "./interfaces/sales-order-repository.interface";
+import type { IOrderCostRepository } from "./interfaces/order-cost-repository.interface";
+import type { IOrderStageEventRepository } from "./interfaces/order-stage-event-repository.interface";
+import type { ISalesResultRepository } from "./interfaces/sales-result-repository.interface";
 import { SupabaseRoleRepository } from "./supabase/supabase-role-repository";
 import { SupabaseSubRoleRepository } from "./supabase/supabase-sub-role-repository";
 import { SupabaseUserRepository } from "./supabase/supabase-user-repository";
@@ -64,6 +70,12 @@ import { SupabaseProductComponentRepository } from "./supabase/supabase-product-
 import { SupabaseProductPartRepository } from "./supabase/supabase-product-part-repository";
 import { SupabaseCommemorativeDateRepository } from "./supabase/supabase-commemorative-date-repository";
 import { SupabaseSocialContentPlanRepository } from "./supabase/supabase-social-content-plan-repository";
+import { SupabaseSaleOriginRepository } from "./supabase/supabase-sale-origin-repository";
+import { SupabaseOrderPipelineStageRepository } from "./supabase/supabase-order-pipeline-stage-repository";
+import { SupabaseSalesOrderRepository } from "./supabase/supabase-sales-order-repository";
+import { SupabaseOrderCostRepository } from "./supabase/supabase-order-cost-repository";
+import { SupabaseOrderStageEventRepository } from "./supabase/supabase-order-stage-event-repository";
+import { SupabaseSalesResultRepository } from "./supabase/supabase-sales-result-repository";
 
 export interface Repositories {
   roles: IRoleRepository;
@@ -98,6 +110,12 @@ export interface Repositories {
   productParts: IProductPartRepository;
   commemorativeDates: ICommemorativeDateRepository;
   socialContentPlanItems: ISocialContentPlanRepository;
+  saleOrigins: ISaleOriginRepository;
+  orderPipelineStages: IOrderPipelineStageRepository;
+  salesOrders: ISalesOrderRepository;
+  orderCosts: IOrderCostRepository;
+  orderStageEvents: IOrderStageEventRepository;
+  salesResults: ISalesResultRepository;
 }
 
 // Composition root: único ponto que muda para trocar de provedor de dados.
@@ -135,5 +153,11 @@ export function createRepositories(supabaseClient: SupabaseClient<Database>): Re
     productParts: new SupabaseProductPartRepository(supabaseClient),
     commemorativeDates: new SupabaseCommemorativeDateRepository(supabaseClient),
     socialContentPlanItems: new SupabaseSocialContentPlanRepository(supabaseClient),
+    saleOrigins: new SupabaseSaleOriginRepository(supabaseClient),
+    orderPipelineStages: new SupabaseOrderPipelineStageRepository(supabaseClient),
+    salesOrders: new SupabaseSalesOrderRepository(supabaseClient),
+    orderCosts: new SupabaseOrderCostRepository(supabaseClient),
+    orderStageEvents: new SupabaseOrderStageEventRepository(supabaseClient),
+    salesResults: new SupabaseSalesResultRepository(supabaseClient),
   };
 }

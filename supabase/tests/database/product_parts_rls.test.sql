@@ -41,8 +41,8 @@ insert into public.user_roles (user_id, role_id) values
 insert into public.printers (id, name, model, depreciation_per_hour)
 values ('00000000-0000-0000-0000-0000000000c1', 'Ender 3', 'Ender 3 V2', 0.8);
 
-insert into public.products (id, name, category, product_type, status)
-values ('00000000-0000-0000-0000-0000000000d1', 'Caixa Mandala', 'utilitario', 'composta', 'ativo');
+insert into public.products (id, name, slug, category, product_type, status)
+values ('00000000-0000-0000-0000-0000000000d1', 'Caixa Mandala', 'caixa-mandala', 'utilitario', 'composta', 'ativo');
 
 insert into public.product_parts (id, product_id, name, quantity, piece_grams, printer_id, print_hours)
 values ('00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000d1', 'Decágono', 1, 40, '00000000-0000-0000-0000-0000000000c1', 3);

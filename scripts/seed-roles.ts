@@ -33,9 +33,10 @@ const SEED_PASSWORD = "socio123456";
 const ROLE_DEFS = [
   { name: "Produção", slug: "producao" },
   { name: "Marketing", slug: "marketing" },
-  // Reserva de nome: o domínio de vendas por canal ainda não tem tela. Sem
-  // policy e sem rota em areaRoutes, a sidebar a renderiza como item
-  // não-clicável (ver navegacao-por-area).
+  // Deixou de ser reserva de nome: a área tem tela (/vendas/pedidos), rota
+  // em areaRoutes e policies próprias desde a migration
+  // vendas_funil_e_resultado — a sidebar a renderiza como item clicável.
+  // Etapas do funil e origens de venda vêm do `npm run seed-vendas`.
   { name: "Vendas/Marketplace", slug: "vendas" },
   { name: "Site", slug: "site" },
   { name: "Assinatura", slug: "assinatura" },
