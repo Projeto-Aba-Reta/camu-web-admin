@@ -75,4 +75,4 @@
 - [x] 9.1 Rodar `npm run lint`, `npm test` e `npm run build` e corrigir o que aparecer
 - [x] 9.2 Verificar manualmente o fluxo ponta a ponta: cadastrar venda boca-a-boca com vendedor → mover pelas 7 etapas escolhendo impressora em "Imprimindo" → lançar custo → conferir o lucro na listagem e o mês no gráfico
 - [x] 9.3 Rodar `openspec validate --changes tela-de-vendas-e-funil-de-pedidos`
-- [ ] 9.4 Commitar seguindo a convenção (`Feat(vendas): ...`) — aguardando confirmação
+- [x] 9.4 Commitar seguindo a convenção (`Feat(vendas): ...`) — commit 22dbe30
