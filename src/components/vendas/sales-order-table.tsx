@@ -19,14 +19,15 @@ import {
 import { cn } from "@/lib/utils";
 import type { OrderPipelineStage, SaleOrigin, SalesOrderWithFinancials } from "@/types/vendas";
 import type { Product } from "@/types/catalog";
-import type { Profile } from "@/lib/repositories/interfaces/user-repository.interface";
+import type { SimplePricingInputs } from "@/components/vendas/item-pricing-dialog";
 
 interface SalesOrderTableProps {
   orders: SalesOrderWithFinancials[];
   origins: SaleOrigin[];
   stages: OrderPipelineStage[];
   products: Product[];
-  profiles: Profile[];
+  sellerNames: string[];
+  pricing: SimplePricingInputs;
   canWrite: boolean;
   canSeeMoney: boolean;
 }
@@ -36,13 +37,13 @@ export function SalesOrderTable({
   origins,
   stages,
   products,
-  profiles,
+  sellerNames,
+  pricing,
   canWrite,
   canSeeMoney,
 }: SalesOrderTableProps) {
   const originById = new Map(origins.map((origin) => [origin.id, origin]));
   const stageById = new Map(stages.map((stage) => [stage.id, stage]));
-  const profileById = new Map(profiles.map((profile) => [profile.id, profile]));
 
   if (orders.length === 0) {
     return (
@@ -72,9 +73,6 @@ export function SalesOrderTable({
           {orders.map((order) => {
             const origin = order.saleOriginId ? originById.get(order.saleOriginId) : undefined;
             const stage = order.stageId ? stageById.get(order.stageId) : undefined;
-            const seller = order.soldByProfileId
-              ? profileById.get(order.soldByProfileId)
-              : undefined;
             const noCost = order.financials.costEntries === 0;
 
             return (
@@ -100,7 +98,7 @@ export function SalesOrderTable({
                     </Badge>
                   )}
                 </TableCell>
-                <TableCell>{seller?.fullName ?? seller?.email ?? "—"}</TableCell>
+                <TableCell>{order.soldByName ?? "—"}</TableCell>
                 <TableCell>
                   {stage ? (
                     <Badge className={cn("font-normal", stageColorClass(stage.color))}>
@@ -140,7 +138,8 @@ export function SalesOrderTable({
                         origins={origins.filter((candidate) => candidate.isActive)}
                         stages={stages}
                         products={products}
-                        profiles={profiles}
+                        sellerNames={sellerNames}
+                        pricing={pricing}
                         order={order}
                       />
                       <DeleteSalesOrderDialog order={order} />

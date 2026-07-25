@@ -1,11 +1,6 @@
 import { z } from "zod";
 import { ORDER_COST_CATEGORIES, STAGE_COLORS } from "@/types/vendas";
 
-// "Nenhum" no Select — o Radix Select não aceita item com value vazio, então
-// a ausência de vendedor responsável viaja como sentinela e vira null no
-// submit. Mesmo padrão de marketing-schemas.
-export const NONE_OPTION = "__none__";
-
 // Valores monetários chegam do formulário como texto em reais ("42,90") e
 // viram centavos inteiros. Fazer a conversão aqui, e não no componente,
 // mantém o arredondamento em um lugar só.
@@ -27,15 +22,35 @@ const currencyField = (message: string) =>
     .trim()
     .refine((value) => parseCurrencyToCents(value) !== null, { message });
 
-export const salesOrderItemSchema = z.object({
-  productId: z.string().min(1, "Escolha a peça."),
-  quantity: z.coerce
-    .number()
-    .int("A quantidade precisa ser um número inteiro.")
-    .positive("A quantidade precisa ser maior que zero."),
-  unitPrice: currencyField("Informe o preço praticado."),
-  variant: z.string(),
-});
+// Sentinela do Select de peça: o item não sai do catálogo, o nome é digitado.
+// O Radix Select não aceita item com value vazio, daí a sentinela.
+export const OFF_CATALOG_OPTION = "__fora_do_catalogo__";
+
+export const salesOrderItemSchema = z
+  .object({
+    // A sentinela é um valor válido aqui — quem exige o nome no lugar da peça
+    // é o superRefine abaixo.
+    productId: z.string().min(1, "Escolha a peça."),
+    // Só é lido quando productId é a sentinela.
+    productName: z.string(),
+    quantity: z.coerce
+      .number()
+      .int("A quantidade precisa ser um número inteiro.")
+      .positive("A quantidade precisa ser maior que zero."),
+    unitPrice: currencyField("Informe o preço praticado."),
+    // Centavos vindos da precificação simples; vazio = item não precificado.
+    unitCostCents: z.number().int().nonnegative().nullable(),
+    variant: z.string(),
+  })
+  .superRefine((item, ctx) => {
+    if (item.productId === OFF_CATALOG_OPTION && item.productName.trim() === "") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["productName"],
+        message: "Informe o nome do item fora do catálogo.",
+      });
+    }
+  });
 
 export const salesOrderFormSchema = z.object({
   customerName: z.string().trim().min(1, "Informe o nome do comprador."),
@@ -46,10 +61,11 @@ export const salesOrderFormSchema = z.object({
   addressCity: z.string(),
   addressUf: z.string(),
   saleOriginId: z.string().min(1, "Selecione a origem da venda."),
-  // A obrigatoriedade depende de requires_seller da origem escolhida, que o
-  // formulário só conhece em tempo de execução — o refinamento é aplicado no
-  // componente com superRefine sobre a lista de origens.
-  soldByProfileId: z.string(),
+  // Texto livre: quem vendeu pode não ter conta no ERP. A obrigatoriedade
+  // depende de requires_seller da origem escolhida, que o formulário só conhece
+  // em tempo de execução — o refinamento é aplicado no componente sobre a lista
+  // de origens.
+  soldByName: z.string(),
   stageId: z.string(),
   shipping: currencyField("Informe o frete (use 0 se não houver)."),
   items: z.array(salesOrderItemSchema).min(1, "O pedido precisa de pelo menos um item."),

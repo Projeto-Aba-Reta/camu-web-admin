@@ -1,10 +1,12 @@
-import type { OrderCost, OrderCostCategory } from "@/types/vendas";
+import type { OrderCost, OrderCostCategory, OrderCostSource } from "@/types/vendas";
 
 export interface CreateOrderCostInput {
   orderId: string;
   amountCents: number;
   category: OrderCostCategory;
   description: string | null;
+  // Ausente = "manual", o caso do lançamento feito na tela de custo real.
+  source?: OrderCostSource;
   createdBy: string | null;
 }
 

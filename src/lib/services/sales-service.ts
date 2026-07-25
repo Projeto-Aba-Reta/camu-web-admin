@@ -14,10 +14,17 @@ import type {
 } from "@/lib/repositories/interfaces/sales-order-repository.interface";
 
 export interface SalesOrderItemServiceInput {
-  productId: string;
+  // Nulo = item fora do catálogo (encomenda sob medida, brinde, peça de
+  // teste). Aí quem identifica a peça é `productName`.
+  productId: string | null;
+  // Só é lido quando productId é nulo — item de catálogo tira o nome da peça.
+  productName: string | null;
   // Quando ausente, o serviço usa o preço de tabela? Não: o preço praticado
   // é sempre explícito (a venda de feira raramente sai pelo preço do site).
   unitPriceCents: number;
+  // Custo unitário estimado pela precificação simples, quando o usuário a
+  // usou. Vira lançamento de custo do pedido — ver syncPricingCost.
+  unitCostCents: number | null;
   qty: number;
   variant: string | null;
 }
@@ -31,7 +38,8 @@ export interface CreateSalesOrderServiceInput {
   addressCity: string | null;
   addressUf: string | null;
   saleOriginId: string;
-  soldByProfileId: string | null;
+  // Texto livre: quem vendeu pode não ter conta no ERP.
+  soldByName: string | null;
   stageId: string | null;
   shippingCents: number;
   items: SalesOrderItemServiceInput[];
@@ -77,6 +85,20 @@ function assertItemValues(item: SalesOrderItemServiceInput): void {
   if (!Number.isInteger(item.unitPriceCents) || item.unitPriceCents < 0) {
     throw new Error("O preço unitário não pode ser negativo.");
   }
+  if (
+    item.unitCostCents !== null &&
+    (!Number.isInteger(item.unitCostCents) || item.unitCostCents < 0)
+  ) {
+    throw new Error("O custo unitário estimado não pode ser negativo.");
+  }
+}
+
+// Vendedor em branco é "ninguém em específico", não um nome vazio — sem esta
+// normalização, espaço em branco passaria pela exigência de requires_seller e
+// viraria uma linha que o banco recusa.
+function normalizeSellerName(value: string | null): string | null {
+  const trimmed = value?.trim() ?? "";
+  return trimmed === "" ? null : trimmed;
 }
 
 function assertShipping(shippingCents: number): void {
@@ -111,12 +133,17 @@ export class SalesService {
     return this.repositories.salesOrders.findById(id);
   }
 
+  // Sugestões do campo "quem vendeu": nomes já usados em outros pedidos.
+  listSellerNames(): Promise<string[]> {
+    return this.repositories.salesOrders.listSellerNames();
+  }
+
   // A origem manda em duas coisas: existir/estar ativa e exigir ou não o
   // vendedor responsável. Quem valida é o serviço, não o banco — a exigência
   // depende de uma flag de outra tabela que o time alterna a qualquer hora.
   private async assertOrigin(
     saleOriginId: string,
-    soldByProfileId: string | null,
+    soldByName: string | null,
   ): Promise<SaleOrigin> {
     const origin = await this.repositories.saleOrigins.findById(saleOriginId);
     if (!origin) {
@@ -125,20 +152,39 @@ export class SalesService {
     if (!origin.isActive) {
       throw new Error(`A origem "${origin.name}" está arquivada e não aceita novos pedidos.`);
     }
-    if (origin.requiresSeller && !soldByProfileId) {
+    if (origin.requiresSeller && !soldByName) {
       throw new Error(`A origem "${origin.name}" exige informar quem vendeu.`);
     }
     return origin;
   }
 
   // Nome e preço do item são snapshot: renomear ou reprecificar a peça depois
-  // não pode mexer em pedido já registrado.
+  // não pode mexer em pedido já registrado. Item sem peça do catálogo carrega
+  // o nome digitado — é o que permite vender encomenda sob medida sem ter que
+  // cadastrar uma peça só para fechar o pedido.
   private async resolveItems(
     items: SalesOrderItemServiceInput[],
   ): Promise<SalesOrderItemInput[]> {
     const resolved: SalesOrderItemInput[] = [];
     for (const item of items) {
       assertItemValues(item);
+
+      if (!item.productId) {
+        const name = item.productName?.trim() ?? "";
+        if (!name) {
+          throw new Error("Item fora do catálogo precisa de um nome.");
+        }
+        resolved.push({
+          productId: null,
+          productName: name,
+          variant: item.variant,
+          unitPriceCents: item.unitPriceCents,
+          unitCostCents: item.unitCostCents,
+          qty: item.qty,
+        });
+        continue;
+      }
+
       const product = await this.repositories.products.findById(item.productId);
       if (!product) {
         throw new Error("Uma das peças escolhidas não existe mais no catálogo.");
@@ -148,10 +194,51 @@ export class SalesService {
         productName: product.name,
         variant: item.variant,
         unitPriceCents: item.unitPriceCents,
+        unitCostCents: item.unitCostCents,
         qty: item.qty,
       });
     }
     return resolved;
+  }
+
+  // O custo estimado dos itens só fecha as telas de custo real e de resultado
+  // se virar lançamento em order_costs — é de lá que as views tiram o custo do
+  // pedido. Um único lançamento por pedido, reescrito a cada gravação: somar
+  // um novo a cada salvamento dobraria o custo, e mexer nos lançamentos
+  // manuais apagaria o que o time anotou à mão.
+  private async syncPricingCost(
+    orderId: string,
+    items: SalesOrderItemInput[],
+    createdBy: string | null,
+  ): Promise<void> {
+    const amountCents = items.reduce((sum, item) => sum + (item.unitCostCents ?? 0) * item.qty, 0);
+
+    const costs = await this.repositories.orderCosts.listByOrder(orderId);
+    const existing = costs.find((cost) => cost.source === "precificacao");
+
+    if (amountCents <= 0) {
+      // Itens precificados foram removidos ou zerados: o lançamento derivado
+      // some junto, senão sobraria custo sem origem.
+      if (existing) await this.repositories.orderCosts.delete(existing.id);
+      return;
+    }
+
+    const description = "Custo estimado na precificação dos itens";
+    if (existing) {
+      await this.repositories.orderCosts.update(existing.id, { amountCents, description });
+      return;
+    }
+
+    await this.repositories.orderCosts.create({
+      orderId,
+      amountCents,
+      // "outros" porque o valor é a soma de filamento, energia, depreciação,
+      // reserva de falha e embalagem — nenhuma categoria isolada o descreve.
+      category: "outros",
+      description,
+      source: "precificacao",
+      createdBy,
+    });
   }
 
   async createOrder(
@@ -161,7 +248,8 @@ export class SalesService {
     assertCustomerName(input.customerName);
     assertHasItems(input.items);
     assertShipping(input.shippingCents);
-    await this.assertOrigin(input.saleOriginId, input.soldByProfileId);
+    const soldByName = normalizeSellerName(input.soldByName);
+    await this.assertOrigin(input.saleOriginId, soldByName);
 
     const items = await this.resolveItems(input.items);
     const { subtotalCents, totalCents } = computeTotals(input.items, input.shippingCents);
@@ -175,7 +263,7 @@ export class SalesService {
       addressCity: input.addressCity,
       addressUf: input.addressUf,
       saleOriginId: input.saleOriginId,
-      soldByProfileId: input.soldByProfileId,
+      soldByName,
       stageId: input.stageId,
       shippingCents: input.shippingCents,
       subtotalCents,
@@ -197,6 +285,8 @@ export class SalesService {
       });
     }
 
+    await this.syncPricingCost(order.id, items, createdBy);
+
     return order;
   }
 
@@ -204,12 +294,13 @@ export class SalesService {
     assertCustomerName(input.customerName);
     assertHasItems(input.items);
     assertShipping(input.shippingCents);
-    await this.assertOrigin(input.saleOriginId, input.soldByProfileId);
+    const soldByName = normalizeSellerName(input.soldByName);
+    await this.assertOrigin(input.saleOriginId, soldByName);
 
     const items = await this.resolveItems(input.items);
     const { subtotalCents, totalCents } = computeTotals(input.items, input.shippingCents);
 
-    return this.repositories.salesOrders.update(id, {
+    const updated = await this.repositories.salesOrders.update(id, {
       customerName: input.customerName.trim(),
       customerEmail: input.customerEmail,
       customerPhone: input.customerPhone,
@@ -218,12 +309,16 @@ export class SalesService {
       addressCity: input.addressCity,
       addressUf: input.addressUf,
       saleOriginId: input.saleOriginId,
-      soldByProfileId: input.soldByProfileId,
+      soldByName,
       shippingCents: input.shippingCents,
       subtotalCents,
       totalCents,
       items,
     });
+
+    await this.syncPricingCost(id, items, null);
+
+    return updated;
   }
 
   deleteOrder(id: string): Promise<void> {
@@ -323,11 +418,25 @@ export class SalesService {
   ): Promise<OrderCost> {
     if (input.amountCents !== undefined) assertCostAmount(input.amountCents);
     if (input.category !== undefined) assertCostCategory(input.category);
+    await this.assertCostIsManual(id);
     return this.repositories.orderCosts.update(id, input);
   }
 
-  deleteCost(id: string): Promise<void> {
+  async deleteCost(id: string): Promise<void> {
+    await this.assertCostIsManual(id);
     return this.repositories.orderCosts.delete(id);
+  }
+
+  // O lançamento derivado da precificação é reescrito a cada gravação do
+  // pedido: editá-lo à mão daria a impressão de correção que o próximo
+  // salvamento desfaria em silêncio.
+  private async assertCostIsManual(id: string): Promise<void> {
+    const cost = await this.repositories.orderCosts.findById(id);
+    if (cost?.source === "precificacao") {
+      throw new Error(
+        "Este lançamento vem da precificação dos itens do pedido. Ajuste o custo no item, editando o pedido.",
+      );
+    }
   }
 }
 

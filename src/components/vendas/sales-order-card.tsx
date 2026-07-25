@@ -4,12 +4,10 @@ import { MoveOrderDialog } from "@/components/vendas/move-order-dialog";
 import { DEFAULT_ORIGIN_LABEL, NO_COST_WARNING, formatCents } from "@/components/vendas/labels";
 import type { OrderPipelineStage, SaleOrigin, SalesOrderWithFinancials } from "@/types/vendas";
 import type { Printer } from "@/types/pricing";
-import type { Profile } from "@/lib/repositories/interfaces/user-repository.interface";
 
 interface SalesOrderCardProps {
   order: SalesOrderWithFinancials;
   origin: SaleOrigin | undefined;
-  seller: Profile | undefined;
   currentPrinter: Printer | undefined;
   activeStages: OrderPipelineStage[];
   activePrinters: Printer[];
@@ -20,13 +18,21 @@ interface SalesOrderCardProps {
 export function SalesOrderCard({
   order,
   origin,
-  seller,
   currentPrinter,
   activeStages,
   activePrinters,
   canMove,
   canSeeMoney,
 }: SalesOrderCardProps) {
+  // As etapas chegam na ordem cadastrada do funil, então "adjacente" é
+  // vizinho de índice — não há campo de etapa anterior/seguinte no dado.
+  const currentIndex = activeStages.findIndex((stage) => stage.id === order.stageId);
+  const previousStage = currentIndex > 0 ? activeStages[currentIndex - 1] : undefined;
+  const nextStage =
+    currentIndex >= 0 && currentIndex < activeStages.length - 1
+      ? activeStages[currentIndex + 1]
+      : undefined;
+
   return (
     <div className="space-y-2 rounded border bg-background p-2">
       <div className="flex items-start justify-between gap-2">
@@ -55,14 +61,37 @@ export function SalesOrderCard({
       </div>
 
       <p className="text-xs text-muted-foreground">
-        {seller ? `Vendeu: ${seller.fullName ?? seller.email}` : "Sem vendedor atribuído"}
+        {order.soldByName ? `Vendeu: ${order.soldByName}` : "Sem vendedor atribuído"}
         {canSeeMoney && order.financials.costEntries > 0 && (
           <> · Lucro: {formatCents(order.financials.profitCents)}</>
         )}
       </p>
 
       {canMove && (
-        <MoveOrderDialog order={order} stages={activeStages} activePrinters={activePrinters} />
+        <div className="flex flex-wrap items-center gap-1">
+          {/* Uma etapa para trás e uma para frente, na ordem cadastrada do
+              funil — o caminho comum do dia a dia. Nas pontas o botão some:
+              não há etapa adjacente para onde ir. */}
+          {previousStage && (
+            <MoveOrderDialog
+              order={order}
+              stages={activeStages}
+              activePrinters={activePrinters}
+              fixedStage={previousStage}
+              direction="voltar"
+            />
+          )}
+          {nextStage && (
+            <MoveOrderDialog
+              order={order}
+              stages={activeStages}
+              activePrinters={activePrinters}
+              fixedStage={nextStage}
+              direction="avancar"
+            />
+          )}
+          <MoveOrderDialog order={order} stages={activeStages} activePrinters={activePrinters} />
+        </div>
       )}
     </div>
   );

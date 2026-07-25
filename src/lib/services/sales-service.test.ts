@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { SalesService } from "./sales-service";
+import { SalesService, type SalesOrderItemServiceInput } from "./sales-service";
 import {
   FakeOrderCostRepository,
   FakeOrderStageEventRepository,
@@ -58,6 +58,20 @@ describe("SalesService", () => {
     });
   });
 
+  // Item padrão do catálogo. Os casos sobrescrevem só o que testam — assim o
+  // acréscimo de um campo no serviço não reescreve a suíte inteira.
+  const item = (
+    overrides: Partial<SalesOrderItemServiceInput> = {},
+  ): SalesOrderItemServiceInput => ({
+    productId: "product-leon",
+    productName: null,
+    unitPriceCents: 4000,
+    unitCostCents: null,
+    qty: 1,
+    variant: null,
+    ...overrides,
+  });
+
   const baseOrder = {
     customerName: "Ana",
     customerEmail: null,
@@ -66,10 +80,10 @@ describe("SalesService", () => {
     addressLine: null,
     addressCity: null,
     addressUf: null,
-    soldByProfileId: null,
+    soldByName: null,
     stageId: "stage-inicial",
     shippingCents: 0,
-    items: [{ productId: "product-leon", unitPriceCents: 4000, qty: 1, variant: null }],
+    items: [item()],
   };
 
   it("recusa cadastro sem comprador", async () => {
@@ -90,7 +104,7 @@ describe("SalesService", () => {
         {
           ...baseOrder,
           saleOriginId: "origin-ml",
-          items: [{ productId: "product-leon", unitPriceCents: 4000, qty: 0, variant: null }],
+          items: [item({ qty: 0 })],
         },
         null,
       ),
@@ -103,7 +117,7 @@ describe("SalesService", () => {
         {
           ...baseOrder,
           saleOriginId: "origin-ml",
-          items: [{ productId: "product-leon", unitPriceCents: -1, qty: 1, variant: null }],
+          items: [item({ unitPriceCents: -1 })],
         },
         null,
       ),
@@ -116,9 +130,23 @@ describe("SalesService", () => {
     ).rejects.toThrow(/quem vendeu/i);
   });
 
+  it("trata vendedor só com espaços como vendedor ausente", async () => {
+    await expect(
+      service.createOrder({ ...baseOrder, saleOriginId: "origin-boca", soldByName: "   " }, null),
+    ).rejects.toThrow(/quem vendeu/i);
+  });
+
+  it("aceita vendedor que não é usuário da plataforma", async () => {
+    const order = await service.createOrder(
+      { ...baseOrder, saleOriginId: "origin-boca", soldByName: "  Tia Cleide  " },
+      null,
+    );
+    expect(order.soldByName).toBe("Tia Cleide");
+  });
+
   it("aceita marketplace sem vendedor responsável", async () => {
     const order = await service.createOrder({ ...baseOrder, saleOriginId: "origin-ml" }, null);
-    expect(order.soldByProfileId).toBeNull();
+    expect(order.soldByName).toBeNull();
   });
 
   it("recusa origem arquivada em novo pedido", async () => {
@@ -134,7 +162,7 @@ describe("SalesService", () => {
         saleOriginId: "origin-ml",
         shippingCents: 1200,
         items: [
-          { productId: "product-leon", unitPriceCents: 4000, qty: 2, variant: null },
+          item({ qty: 2 }),
         ],
       },
       null,
@@ -162,6 +190,114 @@ describe("SalesService", () => {
     expect(history[0].toStageId).toBe("stage-inicial");
   });
 
+  describe("item fora do catálogo", () => {
+    const offCatalog = (overrides: Partial<SalesOrderItemServiceInput> = {}) =>
+      item({ productId: null, productName: "Chaveiro sob medida", ...overrides });
+
+    it("aceita item sem peça do catálogo, guardando o nome digitado", async () => {
+      const order = await service.createOrder(
+        { ...baseOrder, saleOriginId: "origin-ml", items: [offCatalog()] },
+        null,
+      );
+
+      expect(order.items[0].productId).toBeNull();
+      expect(order.items[0].productName).toBe("Chaveiro sob medida");
+    });
+
+    it("recusa item fora do catálogo sem nome", async () => {
+      await expect(
+        service.createOrder(
+          { ...baseOrder, saleOriginId: "origin-ml", items: [offCatalog({ productName: "  " })] },
+          null,
+        ),
+      ).rejects.toThrow(/nome/i);
+    });
+
+    it("lança o custo estimado da precificação como custo do pedido", async () => {
+      const order = await service.createOrder(
+        {
+          ...baseOrder,
+          saleOriginId: "origin-ml",
+          items: [offCatalog({ unitCostCents: 900, qty: 2 })],
+        },
+        "user-1",
+      );
+
+      const launched = await service.listCosts(order.id);
+      expect(launched).toHaveLength(1);
+      expect(launched[0].amountCents).toBe(1800);
+      expect(launched[0].source).toBe("precificacao");
+    });
+
+    it("reescreve o lançamento derivado em vez de somar outro na edição", async () => {
+      const order = await service.createOrder(
+        { ...baseOrder, saleOriginId: "origin-ml", items: [offCatalog({ unitCostCents: 900 })] },
+        null,
+      );
+
+      await service.updateOrder(order.id, {
+        ...baseOrder,
+        saleOriginId: "origin-ml",
+        items: [offCatalog({ unitCostCents: 1500 })],
+      });
+
+      const launched = await service.listCosts(order.id);
+      expect(launched).toHaveLength(1);
+      expect(launched[0].amountCents).toBe(1500);
+    });
+
+    it("remove o lançamento derivado quando o custo estimado sai do pedido", async () => {
+      const order = await service.createOrder(
+        { ...baseOrder, saleOriginId: "origin-ml", items: [offCatalog({ unitCostCents: 900 })] },
+        null,
+      );
+
+      await service.updateOrder(order.id, {
+        ...baseOrder,
+        saleOriginId: "origin-ml",
+        items: [offCatalog({ unitCostCents: null })],
+      });
+
+      expect(await service.listCosts(order.id)).toHaveLength(0);
+    });
+
+    it("não encosta nos lançamentos manuais do pedido", async () => {
+      const order = await service.createOrder(
+        { ...baseOrder, saleOriginId: "origin-ml", items: [offCatalog({ unitCostCents: 900 })] },
+        null,
+      );
+      await service.createCost({
+        orderId: order.id,
+        amountCents: 500,
+        category: "frete",
+        description: "Correios",
+        createdBy: null,
+      });
+
+      await service.updateOrder(order.id, {
+        ...baseOrder,
+        saleOriginId: "origin-ml",
+        items: [offCatalog({ unitCostCents: 1200 })],
+      });
+
+      const launched = await service.listCosts(order.id);
+      expect(launched.map((cost) => cost.amountCents).sort((a, b) => a - b)).toEqual([500, 1200]);
+    });
+
+    it("recusa editar à mão o lançamento vindo da precificação", async () => {
+      const order = await service.createOrder(
+        { ...baseOrder, saleOriginId: "origin-ml", items: [offCatalog({ unitCostCents: 900 })] },
+        null,
+      );
+      const [derived] = await service.listCosts(order.id);
+
+      await expect(service.updateCost(derived.id, { amountCents: 100 })).rejects.toThrow(
+        /precificação/i,
+      );
+      await expect(service.deleteCost(derived.id)).rejects.toThrow(/precificação/i);
+    });
+  });
+
   it("recalcula o total ao adicionar item na edição", async () => {
     const order = await service.createOrder({ ...baseOrder, saleOriginId: "origin-ml" }, null);
 
@@ -169,8 +305,8 @@ describe("SalesService", () => {
       ...baseOrder,
       saleOriginId: "origin-ml",
       items: [
-        { productId: "product-leon", unitPriceCents: 4000, qty: 1, variant: null },
-        { productId: "product-leon", unitPriceCents: 2500, qty: 2, variant: null },
+        item(),
+        item({ unitPriceCents: 2500, qty: 2 }),
       ],
     });
 

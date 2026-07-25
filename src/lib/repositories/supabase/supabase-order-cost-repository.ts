@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import type { OrderCost, OrderCostCategory } from "@/types/vendas";
+import type { OrderCost, OrderCostCategory, OrderCostSource } from "@/types/vendas";
 import type {
   CreateOrderCostInput,
   IOrderCostRepository,
@@ -14,6 +14,7 @@ function toCost(row: Database["public"]["Tables"]["order_costs"]["Row"]): OrderC
     amountCents: row.amount_cents,
     category: row.category as OrderCostCategory,
     description: row.description,
+    source: row.source as OrderCostSource,
     createdBy: row.created_by,
     createdAt: row.created_at,
   };
@@ -50,6 +51,7 @@ export class SupabaseOrderCostRepository implements IOrderCostRepository {
         amount_cents: input.amountCents,
         category: input.category,
         description: input.description,
+        source: input.source ?? "manual",
         created_by: input.createdBy,
       })
       .select("*")

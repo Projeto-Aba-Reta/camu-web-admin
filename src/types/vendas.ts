@@ -9,7 +9,7 @@ export interface SaleOrigin {
   name: string;
   sortOrder: number;
   isActive: boolean;
-  // "Boca-a-boca de quem?" — origens marcadas assim exigem sellerId no
+  // "Boca-a-boca de quem?" — origens marcadas assim exigem soldByName no
   // pedido. Marketplace não tem vendedor nomeado.
   requiresSeller: boolean;
   createdBy: string | null;
@@ -55,6 +55,12 @@ export const ORDER_COST_CATEGORIES = [
 
 export type OrderCostCategory = (typeof ORDER_COST_CATEGORIES)[number];
 
+// De onde veio o lançamento de custo. O derivado da precificação é reescrito
+// a cada gravação do pedido; o manual é do time e ninguém o toca.
+export const ORDER_COST_SOURCES = ["manual", "precificacao"] as const;
+
+export type OrderCostSource = (typeof ORDER_COST_SOURCES)[number];
+
 export interface OrderCost {
   id: string;
   orderId: string;
@@ -63,6 +69,7 @@ export interface OrderCost {
   amountCents: number;
   category: OrderCostCategory;
   description: string | null;
+  source: OrderCostSource;
   createdBy: string | null;
   createdAt: string;
 }
@@ -70,12 +77,16 @@ export interface OrderCost {
 export interface SalesOrderItem {
   id: string;
   orderId: string;
-  // Nulo quando a peça foi excluída do catálogo depois da venda — o snapshot
+  // Nulo em duas situações: item fora do catálogo (encomenda sob medida,
+  // brinde) e peça excluída do catálogo depois da venda. Nas duas, o snapshot
   // de nome e preço abaixo é o que preserva o histórico.
   productId: string | null;
   productName: string;
   variant: string | null;
   unitPriceCents: number;
+  // Custo unitário estimado pela precificação simples feita na venda. Nulo
+  // quando o item não passou pela precificação.
+  unitCostCents: number | null;
   qty: number;
 }
 
@@ -108,7 +119,9 @@ export interface SalesOrder {
   // Nulo em pedidos vindos da loja do site; a tela os exibe como "Loja
   // própria" sem gravar (design, decisão 1).
   saleOriginId: string | null;
-  soldByProfileId: string | null;
+  // Texto livre, não referência a perfil: quem fecha a venda nem sempre tem
+  // conta no ERP (amiga que revendeu na feira, parente que indicou).
+  soldByName: string | null;
   stageId: string | null;
   currentPrinterId: string | null;
   subtotalCents: number;

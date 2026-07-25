@@ -30,19 +30,41 @@ export default async function PedidosPage({ searchParams }: PedidosPageProps) {
   const repositories = createRepositories(supabase);
   const service = new SalesService(repositories);
 
-  const [orders, origins, stages, products, profiles] = await Promise.all([
+  const [
+    orders,
+    origins,
+    stages,
+    products,
+    sellerNames,
+    costParameters,
+    printers,
+    channelFees,
+    sizeTierRanges,
+    sizeTiers,
+  ] = await Promise.all([
     service.list({
       createdFrom: de,
       createdTo: ate,
       saleOriginId: origem,
-      soldByProfileId: vendedor,
+      soldByName: vendedor,
       stageId: etapa,
     }),
     service.listOrigins(),
     repositories.orderPipelineStages.listAll(true),
     repositories.products.findAll(),
-    repositories.users.listAll(),
+    // Nomes de todos os pedidos, não só dos filtrados: a sugestão tem que
+    // continuar completa mesmo com a listagem recortada.
+    service.listSellerNames(),
+    // Parâmetros vigentes de precificação: alimentam o cálculo do item fora
+    // do catálogo, feito na própria tela de venda.
+    repositories.costParameters.findCurrent(),
+    repositories.printers.findActive(),
+    repositories.channelFees.findAllCurrent(),
+    repositories.sizeTierRanges.findAllCurrent(),
+    repositories.sizeTiers.findAll(),
   ]);
+
+  const pricing = { costParameters, printers, channelFees, sizeTierRanges, sizeTiers };
 
   const canWrite = Boolean(currentUser && canWriteSalesOrder(currentUser));
   // Custo e lucro por pedido têm a mesma regra de quem pode lançar custo.
@@ -59,7 +81,8 @@ export default async function PedidosPage({ searchParams }: PedidosPageProps) {
               origins={origins.filter((origin) => origin.isActive)}
               stages={stages}
               products={products}
-              profiles={profiles}
+              sellerNames={sellerNames}
+              pricing={pricing}
             />
           )
         }
@@ -67,14 +90,15 @@ export default async function PedidosPage({ searchParams }: PedidosPageProps) {
 
       <VendasNav activeTab="pedidos" visibleTabs={visibleSalesTabs(currentUser)} />
 
-      <SalesOrderFilters origins={origins} stages={stages} profiles={profiles} />
+      <SalesOrderFilters origins={origins} stages={stages} sellerNames={sellerNames} />
 
       <SalesOrderTable
         orders={orders}
         origins={origins}
         stages={stages}
         products={products}
-        profiles={profiles}
+        sellerNames={sellerNames}
+        pricing={pricing}
         canWrite={canWrite}
         canSeeMoney={canSeeMoney}
       />

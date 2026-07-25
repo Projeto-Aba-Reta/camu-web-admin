@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { OrderPipelineStage, SaleOrigin } from "@/types/vendas";
-import type { Profile } from "@/lib/repositories/interfaces/user-repository.interface";
 
 // "Todos" precisa de um value não-vazio (o Radix Select recusa string vazia);
 // ao aplicar, ele vira ausência do parâmetro na URL.
@@ -15,10 +14,10 @@ const ALL = "__all__";
 interface SalesOrderFiltersProps {
   origins: SaleOrigin[];
   stages: OrderPipelineStage[];
-  profiles: Profile[];
+  sellerNames: string[];
 }
 
-export function SalesOrderFilters({ origins, stages, profiles }: SalesOrderFiltersProps) {
+export function SalesOrderFilters({ origins, stages, sellerNames }: SalesOrderFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -83,23 +82,29 @@ export function SalesOrderFilters({ origins, stages, profiles }: SalesOrderFilte
       </div>
 
       <div className="space-y-1">
-        <Label>Vendedor</Label>
-        <Select
-          value={searchParams.get("vendedor") ?? ALL}
-          onValueChange={(value) => setParam("vendedor", value)}
-        >
-          <SelectTrigger className="w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Todos</SelectItem>
-            {profiles.map((profile) => (
-              <SelectItem key={profile.id} value={profile.id}>
-                {profile.fullName ?? profile.email}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Label htmlFor="filtro-vendedor">Vendedor</Label>
+        {/* Texto, não lista de usuários: o vendedor pode ser alguém sem conta
+            no ERP. Casa por trecho do nome, então "Ana" acha "Ana Paula".
+            Aplica ao sair do campo ou no Enter — a cada tecla trocaria de rota
+            no meio da digitação. A `key` remonta o campo quando o filtro muda
+            por fora (ex.: "Limpar filtros"). */}
+        <Input
+          id="filtro-vendedor"
+          key={searchParams.get("vendedor") ?? ""}
+          list="vendedores-filtro"
+          className="w-44"
+          placeholder="Todos"
+          defaultValue={searchParams.get("vendedor") ?? ""}
+          onBlur={(event) => setParam("vendedor", event.target.value.trim())}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") setParam("vendedor", event.currentTarget.value.trim());
+          }}
+        />
+        <datalist id="vendedores-filtro">
+          {sellerNames.map((name) => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
       </div>
 
       <div className="space-y-1">

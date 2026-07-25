@@ -27,18 +27,46 @@ export default async function PedidoDetalhePage({ params }: PedidoDetalhePagePro
   const order = await service.findById(orderId);
   if (!order) notFound();
 
-  const [origins, stages, printers, profiles, costs, events, products] = await Promise.all([
+  const [
+    origins,
+    stages,
+    printers,
+    profiles,
+    costs,
+    events,
+    products,
+    sellerNames,
+    costParameters,
+    channelFees,
+    sizeTierRanges,
+    sizeTiers,
+  ] = await Promise.all([
     service.listOrigins(),
     pipeline.listStages(),
     repositories.printers.findAll(),
+    // Só para nomear o autor de cada movimentação no histórico do funil —
+    // quem vendeu é texto livre, não perfil.
     repositories.users.listAll(),
     service.listCosts(order.id),
     pipeline.listStageEvents(order.id),
     repositories.products.findAll(),
+    service.listSellerNames(),
+    repositories.costParameters.findCurrent(),
+    repositories.channelFees.findAllCurrent(),
+    repositories.sizeTierRanges.findAllCurrent(),
+    repositories.sizeTiers.findAll(),
   ]);
 
   const canWrite = Boolean(currentUser && canWriteSalesOrder(currentUser));
   const canWriteCost = Boolean(currentUser && canWriteOrderCost(currentUser));
+
+  const pricing = {
+    costParameters,
+    printers: printers.filter((printer) => printer.isActive),
+    channelFees,
+    sizeTierRanges,
+    sizeTiers,
+  };
 
   return (
     <div className="space-y-6">
@@ -59,7 +87,8 @@ export default async function PedidoDetalhePage({ params }: PedidoDetalhePagePro
               origins={origins.filter((origin) => origin.isActive)}
               stages={stages.filter((stage) => stage.isActive)}
               products={products}
-              profiles={profiles}
+              sellerNames={sellerNames}
+              pricing={pricing}
               order={order}
             />
           )

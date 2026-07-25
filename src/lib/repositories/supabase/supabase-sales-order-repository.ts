@@ -29,6 +29,7 @@ function toItem(row: ItemRow): SalesOrderItem {
     productName: row.product_name,
     variant: row.variant,
     unitPriceCents: row.unit_price_cents,
+    unitCostCents: row.unit_cost_cents,
     qty: row.qty,
   };
 }
@@ -47,7 +48,7 @@ function toOrder(row: OrderRow, itemRows: ItemRow[]): SalesOrder {
     addressCity: row.address_city,
     addressUf: row.address_uf,
     saleOriginId: row.sale_origin_id,
-    soldByProfileId: row.sold_by_profile_id,
+    soldByName: row.sold_by_name,
     stageId: row.pipeline_stage_id,
     currentPrinterId: row.current_printer_id,
     subtotalCents: row.subtotal_cents,
@@ -79,6 +80,7 @@ function toItemInsert(orderId: string, item: SalesOrderItemInput) {
     product_name: item.productName,
     variant: item.variant,
     unit_price_cents: item.unitPriceCents,
+    unit_cost_cents: item.unitCostCents,
     qty: item.qty,
   };
 }
@@ -147,7 +149,7 @@ export class SupabaseSalesOrderRepository implements ISalesOrderRepository {
     // cobrir o dia inteiro — created_at é timestamptz.
     if (filters.createdTo) query = query.lte("created_at", `${filters.createdTo}T23:59:59.999Z`);
     if (filters.saleOriginId) query = query.eq("sale_origin_id", filters.saleOriginId);
-    if (filters.soldByProfileId) query = query.eq("sold_by_profile_id", filters.soldByProfileId);
+    if (filters.soldByName) query = query.ilike("sold_by_name", `%${filters.soldByName}%`);
     if (filters.stageId) query = query.eq("pipeline_stage_id", filters.stageId);
 
     const { data, error } = await query;
@@ -200,6 +202,22 @@ export class SupabaseSalesOrderRepository implements ISalesOrderRepository {
     return hydrated ?? null;
   }
 
+  // Distinct feito aqui e não no banco: o PostgREST não expõe `distinct`, e a
+  // lista de vendedores é curta o bastante para deduplicar em memória.
+  async listSellerNames(): Promise<string[]> {
+    const { data, error } = await this.supabase
+      .from("orders")
+      .select("sold_by_name")
+      .not("sold_by_name", "is", null);
+    if (error) throw error;
+
+    const names = new Set<string>();
+    for (const row of data ?? []) {
+      if (row.sold_by_name) names.add(row.sold_by_name);
+    }
+    return [...names].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }
+
   async create(input: CreateSalesOrderInput): Promise<SalesOrder> {
     const { data, error } = await this.supabase
       .from("orders")
@@ -212,7 +230,7 @@ export class SupabaseSalesOrderRepository implements ISalesOrderRepository {
         address_city: input.addressCity,
         address_uf: input.addressUf,
         sale_origin_id: input.saleOriginId,
-        sold_by_profile_id: input.soldByProfileId,
+        sold_by_name: input.soldByName,
         pipeline_stage_id: input.stageId,
         subtotal_cents: input.subtotalCents,
         shipping_cents: input.shippingCents,
@@ -240,7 +258,7 @@ export class SupabaseSalesOrderRepository implements ISalesOrderRepository {
     if (input.addressCity !== undefined) patch.address_city = input.addressCity;
     if (input.addressUf !== undefined) patch.address_uf = input.addressUf;
     if (input.saleOriginId !== undefined) patch.sale_origin_id = input.saleOriginId;
-    if (input.soldByProfileId !== undefined) patch.sold_by_profile_id = input.soldByProfileId;
+    if (input.soldByName !== undefined) patch.sold_by_name = input.soldByName;
     if (input.shippingCents !== undefined) patch.shipping_cents = input.shippingCents;
     if (input.subtotalCents !== undefined) patch.subtotal_cents = input.subtotalCents;
     if (input.totalCents !== undefined) patch.total_cents = input.totalCents;

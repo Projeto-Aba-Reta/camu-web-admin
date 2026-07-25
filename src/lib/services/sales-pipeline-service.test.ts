@@ -55,7 +55,7 @@ describe("SalesPipelineService", () => {
       addressCity: null,
       addressUf: null,
       saleOriginId: "origin-ml",
-      soldByProfileId: null,
+      soldByName: null,
       stageId: "stage-aguardando",
       shippingCents: 0,
       subtotalCents: 4000,

@@ -58,10 +58,18 @@ export interface SalesOrderActionInput {
   addressCity: string | null;
   addressUf: string | null;
   saleOriginId: string;
-  soldByProfileId: string | null;
+  soldByName: string | null;
   stageId: string | null;
   shippingCents: number;
-  items: { productId: string; unitPriceCents: number; qty: number; variant: string | null }[];
+  items: {
+    // Nulo = item fora do catálogo, identificado por productName.
+    productId: string | null;
+    productName: string | null;
+    unitPriceCents: number;
+    unitCostCents: number | null;
+    qty: number;
+    variant: string | null;
+  }[];
 }
 
 export async function createSalesOrderAction(input: SalesOrderActionInput): Promise<ActionResult> {

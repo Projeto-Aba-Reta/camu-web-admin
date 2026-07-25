@@ -1,10 +1,12 @@
 import type { SalesOrder, SalesOrderWithFinancials } from "@/types/vendas";
 
 export interface SalesOrderItemInput {
+  // Nulo em item fora do catálogo — o nome digitado é o que identifica a peça.
   productId: string | null;
   productName: string;
   variant: string | null;
   unitPriceCents: number;
+  unitCostCents: number | null;
   qty: number;
 }
 
@@ -17,7 +19,7 @@ export interface CreateSalesOrderInput {
   addressCity: string | null;
   addressUf: string | null;
   saleOriginId: string;
-  soldByProfileId: string | null;
+  soldByName: string | null;
   // Nulo deixa o trigger do banco posicionar na etapa inicial.
   stageId: string | null;
   shippingCents: number;
@@ -37,7 +39,7 @@ export interface UpdateSalesOrderInput {
   addressCity?: string | null;
   addressUf?: string | null;
   saleOriginId?: string;
-  soldByProfileId?: string | null;
+  soldByName?: string | null;
   shippingCents?: number;
   subtotalCents?: number;
   totalCents?: number;
@@ -57,7 +59,9 @@ export interface SalesOrderFilters {
   createdFrom?: string;
   createdTo?: string;
   saleOriginId?: string;
-  soldByProfileId?: string;
+  // Casa por trecho do nome, sem diferenciar maiúsculas: o vendedor é texto
+  // livre e "Ana" tem que achar "Ana Paula".
+  soldByName?: string;
   stageId?: string;
 }
 
@@ -69,6 +73,10 @@ export interface ISalesOrderRepository {
   // estão na etapa final há mais de 30 dias (design, decisão 10).
   listForBoard(includeArchivedFinal: boolean): Promise<SalesOrderWithFinancials[]>;
   findById(id: string): Promise<SalesOrderWithFinancials | null>;
+  // Nomes de vendedor já usados, sem repetição. Alimenta a sugestão do campo
+  // de texto — quem digita "Ana" na segunda venda tem que reaproveitar a
+  // grafia da primeira, senão o filtro e o histórico se partem em dois.
+  listSellerNames(): Promise<string[]>;
   create(input: CreateSalesOrderInput): Promise<SalesOrder>;
   update(id: string, input: UpdateSalesOrderInput): Promise<SalesOrder>;
   move(id: string, input: MoveSalesOrderInput): Promise<SalesOrder>;

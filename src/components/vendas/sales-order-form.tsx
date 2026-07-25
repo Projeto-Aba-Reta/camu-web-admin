@@ -22,7 +22,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCents } from "@/components/vendas/labels";
 import {
-  NONE_OPTION,
+  ItemPricingDialog,
+  type SimplePricingInputs,
+} from "@/components/vendas/item-pricing-dialog";
+import {
+  OFF_CATALOG_OPTION,
   formatCentsToInput,
   parseCurrencyToCents,
   salesOrderFormSchema,
@@ -35,13 +39,17 @@ import {
 } from "@/app/(dashboard)/vendas/actions";
 import type { OrderPipelineStage, SaleOrigin, SalesOrder } from "@/types/vendas";
 import type { Product } from "@/types/catalog";
-import type { Profile } from "@/lib/repositories/interfaces/user-repository.interface";
 
 interface SalesOrderFormProps {
   origins: SaleOrigin[];
   stages: OrderPipelineStage[];
   products: Product[];
-  profiles: Profile[];
+  // Nomes de vendedor já usados, para sugerir enquanto o usuário digita — o
+  // campo é livre, a lista só evita que a mesma pessoa vire duas grafias.
+  sellerNames: string[];
+  // Parâmetros vigentes de precificação, para calcular o preço de um item que
+  // não está no catálogo sem sair da tela de venda.
+  pricing: SimplePricingInputs;
   // Ausente = cadastro. Presente = edição.
   order?: SalesOrder;
 }
@@ -63,18 +71,30 @@ function toFormValues(order: SalesOrder | undefined, stages: OrderPipelineStage[
     addressCity: order?.addressCity ?? "",
     addressUf: order?.addressUf ?? "",
     saleOriginId: order?.saleOriginId ?? "",
-    soldByProfileId: order?.soldByProfileId ?? NONE_OPTION,
+    soldByName: order?.soldByName ?? "",
     stageId: order?.stageId ?? initialStage?.id ?? "",
     shipping: formatCentsToInput(order?.shippingCents ?? 0),
     items:
       order?.items.map((item) => ({
-        productId: item.productId ?? "",
+        // Item sem peça é o fora do catálogo; o nome gravado volta editável.
+        productId: item.productId ?? OFF_CATALOG_OPTION,
+        productName: item.productId ? "" : item.productName,
         quantity: item.qty,
         unitPrice: formatCentsToInput(item.unitPriceCents),
+        unitCostCents: item.unitCostCents,
         variant: item.variant ?? "",
       })) ?? [],
   };
 }
+
+const EMPTY_ITEM = {
+  productId: "",
+  productName: "",
+  quantity: 1,
+  unitPrice: "0,00",
+  unitCostCents: null,
+  variant: "",
+};
 
 function emptyOrNull(value: string): string | null {
   const trimmed = value.trim();
@@ -91,19 +111,31 @@ function toActionInput(values: SalesOrderFormValues): SalesOrderActionInput {
     addressCity: emptyOrNull(values.addressCity),
     addressUf: emptyOrNull(values.addressUf),
     saleOriginId: values.saleOriginId,
-    soldByProfileId: values.soldByProfileId === NONE_OPTION ? null : values.soldByProfileId,
+    soldByName: emptyOrNull(values.soldByName),
     stageId: values.stageId === "" ? null : values.stageId,
     shippingCents: parseCurrencyToCents(values.shipping) ?? 0,
-    items: values.items.map((item) => ({
-      productId: item.productId,
-      unitPriceCents: parseCurrencyToCents(item.unitPrice) ?? 0,
-      qty: item.quantity,
-      variant: emptyOrNull(item.variant),
-    })),
+    items: values.items.map((item) => {
+      const offCatalog = item.productId === OFF_CATALOG_OPTION;
+      return {
+        productId: offCatalog ? null : item.productId,
+        productName: offCatalog ? item.productName.trim() : null,
+        unitPriceCents: parseCurrencyToCents(item.unitPrice) ?? 0,
+        unitCostCents: item.unitCostCents,
+        qty: item.quantity,
+        variant: emptyOrNull(item.variant),
+      };
+    }),
   };
 }
 
-export function SalesOrderForm({ origins, stages, products, profiles, order }: SalesOrderFormProps) {
+export function SalesOrderForm({
+  origins,
+  stages,
+  products,
+  sellerNames,
+  pricing,
+  order,
+}: SalesOrderFormProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const isEditing = order !== undefined;
@@ -127,6 +159,13 @@ export function SalesOrderForm({ origins, stages, products, profiles, order }: S
   );
   const totalCents = subtotalCents + (parseCurrencyToCents(form.watch("shipping")) ?? 0);
 
+  // Custo que a precificação dos itens vai lançar no pedido ao salvar — o
+  // usuário vê aqui o mesmo número que aparecerá em "custo real".
+  const estimatedCostCents = items.reduce(
+    (sum, item) => sum + (item.unitCostCents ?? 0) * (Number(item.quantity) || 0),
+    0,
+  );
+
   function handleOpenChange(nextOpen: boolean) {
     if (nextOpen) form.reset(toFormValues(order, stages));
     setOpen(nextOpen);
@@ -136,8 +175,8 @@ export function SalesOrderForm({ origins, stages, products, profiles, order }: S
     // A exigência de vendedor vem da origem escolhida, que o schema estático
     // não conhece — o servidor recusa de qualquer forma, isto é só o aviso
     // antes do round-trip.
-    if (selectedOrigin?.requiresSeller && values.soldByProfileId === NONE_OPTION) {
-      form.setError("soldByProfileId", {
+    if (selectedOrigin?.requiresSeller && values.soldByName.trim() === "") {
+      form.setError("soldByName", {
         message: `A origem "${selectedOrigin.name}" exige informar quem vendeu.`,
       });
       return;
@@ -268,29 +307,30 @@ export function SalesOrderForm({ origins, stages, products, profiles, order }: S
                 )}
               />
 
+              {/* Texto livre, não lista de usuários: boca-a-boca costuma ser
+                  fechado por alguém de fora do ERP (amiga que revendeu, parente
+                  que indicou). A datalist só sugere nomes já usados para a
+                  mesma pessoa não virar duas grafias. */}
               <FormField
                 control={form.control}
-                name="soldByProfileId"
+                name="soldByName"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
                       Quem vendeu{selectedOrigin?.requiresSeller ? "" : " (opcional)"}
                     </FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o vendedor" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value={NONE_OPTION}>Ninguém em específico</SelectItem>
-                        {profiles.map((profile) => (
-                          <SelectItem key={profile.id} value={profile.id}>
-                            {profile.fullName ?? profile.email}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input
+                        list="vendedores-conhecidos"
+                        placeholder="Nome de quem fechou a venda"
+                        {...field}
+                      />
+                    </FormControl>
+                    <datalist id="vendedores-conhecidos">
+                      {sellerNames.map((name) => (
+                        <option key={name} value={name} />
+                      ))}
+                    </datalist>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -335,7 +375,7 @@ export function SalesOrderForm({ origins, stages, products, profiles, order }: S
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => append({ productId: "", quantity: 1, unitPrice: "0,00", variant: "" })}
+                  onClick={() => append({ ...EMPTY_ITEM })}
                 >
                   <Plus className="size-4" />
                   Adicionar item
@@ -346,70 +386,133 @@ export function SalesOrderForm({ origins, stages, products, profiles, order }: S
                 <p className="py-2 text-sm text-muted-foreground">Nenhum item ainda.</p>
               )}
 
-              {fields.map((fieldItem, index) => (
-                <div key={fieldItem.id} className="grid gap-2 sm:grid-cols-[1fr_5rem_7rem_auto]">
-                  <FormField
-                    control={form.control}
-                    name={`items.${index}.productId`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Peça do catálogo" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {products.map((product) => (
-                              <SelectItem key={product.id} value={product.id}>
-                                {product.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              {fields.map((fieldItem, index) => {
+                const offCatalog = items[index]?.productId === OFF_CATALOG_OPTION;
+                const unitCostCents = items[index]?.unitCostCents ?? null;
 
-                  <FormField
-                    control={form.control}
-                    name={`items.${index}.quantity`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min={1}
-                            step={1}
-                            placeholder="Qtd"
-                            {...field}
-                            value={field.value as number | string}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                return (
+                  <div key={fieldItem.id} className="space-y-2 rounded-md border p-2">
+                    <div className="grid gap-2 sm:grid-cols-[1fr_5rem_7rem_auto]">
+                      <FormField
+                        control={form.control}
+                        name={`items.${index}.productId`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <Select
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                // Trocar de peça invalida o custo calculado
+                                // para a peça anterior.
+                                form.setValue(`items.${index}.unitCostCents`, null);
+                              }}
+                              value={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Peça do catálogo" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {/* Encomenda sob medida, brinde, peça de teste:
+                                    vende-se sem ter que cadastrar no catálogo. */}
+                                <SelectItem value={OFF_CATALOG_OPTION}>
+                                  Item fora do catálogo
+                                </SelectItem>
+                                {products.map((product) => (
+                                  <SelectItem key={product.id} value={product.id}>
+                                    {product.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name={`items.${index}.unitPrice`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input inputMode="decimal" placeholder="Preço" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      <FormField
+                        control={form.control}
+                        name={`items.${index}.quantity`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={1}
+                                step={1}
+                                placeholder="Qtd"
+                                {...field}
+                                value={field.value as number | string}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)}>
-                    <Trash2 className="size-4" />
-                  </Button>
-                </div>
-              ))}
+                      <FormField
+                        control={form.control}
+                        name={`items.${index}.unitPrice`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input inputMode="decimal" placeholder="Preço" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)}>
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+
+                    {offCatalog && (
+                      <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                        <FormField
+                          control={form.control}
+                          name={`items.${index}.productName`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input placeholder="Nome do item vendido" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <ItemPricingDialog
+                          pricing={pricing}
+                          itemName={items[index]?.productName ?? ""}
+                          onApply={({ unitPriceCents, unitCostCents: cost }) => {
+                            form.setValue(
+                              `items.${index}.unitPrice`,
+                              formatCentsToInput(unitPriceCents),
+                            );
+                            form.setValue(`items.${index}.unitCostCents`, cost);
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {unitCostCents !== null && (
+                      <p className="text-xs text-muted-foreground">
+                        Custo estimado: {formatCents(unitCostCents)}/un. — entra no custo real do
+                        pedido ao salvar.{" "}
+                        <button
+                          type="button"
+                          className="underline underline-offset-2"
+                          onClick={() => form.setValue(`items.${index}.unitCostCents`, null)}
+                        >
+                          descartar
+                        </button>
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
 
               {form.formState.errors.items?.message && (
                 <p className="text-sm text-destructive">{form.formState.errors.items.message}</p>
@@ -438,6 +541,12 @@ export function SalesOrderForm({ origins, stages, products, profiles, order }: S
                 <span className="font-medium text-foreground">
                   Total: {formatCents(totalCents)}
                 </span>
+                {estimatedCostCents > 0 && (
+                  <span className="text-muted-foreground">
+                    Custo estimado: {formatCents(estimatedCostCents)} · lucro previsto:{" "}
+                    {formatCents(totalCents - estimatedCostCents)}
+                  </span>
+                )}
               </div>
             </div>
 

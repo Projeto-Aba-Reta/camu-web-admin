@@ -3,7 +3,6 @@ import { stageColorClass } from "@/components/vendas/labels";
 import { cn } from "@/lib/utils";
 import type { OrderPipelineStage, SaleOrigin, SalesOrderWithFinancials } from "@/types/vendas";
 import type { Printer } from "@/types/pricing";
-import type { Profile } from "@/lib/repositories/interfaces/user-repository.interface";
 
 interface SalesPipelineBoardProps {
   stages: OrderPipelineStage[];
@@ -11,7 +10,6 @@ interface SalesPipelineBoardProps {
   origins: SaleOrigin[];
   printers: Printer[];
   activePrinters: Printer[];
-  profiles: Profile[];
   canMove: boolean;
   canSeeMoney: boolean;
 }
@@ -22,13 +20,11 @@ export function SalesPipelineBoard({
   origins,
   printers,
   activePrinters,
-  profiles,
   canMove,
   canSeeMoney,
 }: SalesPipelineBoardProps) {
   const originById = new Map(origins.map((origin) => [origin.id, origin]));
   const printerById = new Map(printers.map((printer) => [printer.id, printer]));
-  const profileById = new Map(profiles.map((profile) => [profile.id, profile]));
 
   return (
     // Colunas cadastráveis: o número varia, então o quadro rola na horizontal
@@ -65,9 +61,6 @@ export function SalesPipelineBoard({
                     key={order.id}
                     order={order}
                     origin={order.saleOriginId ? originById.get(order.saleOriginId) : undefined}
-                    seller={
-                      order.soldByProfileId ? profileById.get(order.soldByProfileId) : undefined
-                    }
                     currentPrinter={
                       order.currentPrinterId ? printerById.get(order.currentPrinterId) : undefined
                     }

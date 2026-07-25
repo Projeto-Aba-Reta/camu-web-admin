@@ -237,9 +237,19 @@ export class FakeSalesOrderRepository implements ISalesOrderRepository {
       .filter((order) => !filters.saleOriginId || order.saleOriginId === filters.saleOriginId)
       .filter((order) => !filters.stageId || order.stageId === filters.stageId)
       .filter(
-        (order) => !filters.soldByProfileId || order.soldByProfileId === filters.soldByProfileId,
+        (order) =>
+          !filters.soldByName ||
+          (order.soldByName ?? "").toLowerCase().includes(filters.soldByName.toLowerCase()),
       )
       .map((order) => this.hydrate(order));
+  }
+
+  async listSellerNames(): Promise<string[]> {
+    const names = new Set<string>();
+    for (const order of this.orders) {
+      if (order.soldByName) names.add(order.soldByName);
+    }
+    return [...names].sort((a, b) => a.localeCompare(b, "pt-BR"));
   }
 
   async listForBoard(): Promise<SalesOrderWithFinancials[]> {
@@ -267,7 +277,7 @@ export class FakeSalesOrderRepository implements ISalesOrderRepository {
       addressCity: input.addressCity,
       addressUf: input.addressUf,
       saleOriginId: input.saleOriginId,
-      soldByProfileId: input.soldByProfileId,
+      soldByName: input.soldByName,
       stageId: input.stageId,
       currentPrinterId: null,
       subtotalCents: input.subtotalCents,
@@ -282,6 +292,7 @@ export class FakeSalesOrderRepository implements ISalesOrderRepository {
         productName: item.productName,
         variant: item.variant,
         unitPriceCents: item.unitPriceCents,
+        unitCostCents: item.unitCostCents,
         qty: item.qty,
       })),
     };
@@ -294,7 +305,7 @@ export class FakeSalesOrderRepository implements ISalesOrderRepository {
     if (!order) throw new Error("pedido não encontrado");
     if (input.customerName !== undefined) order.customerName = input.customerName;
     if (input.saleOriginId !== undefined) order.saleOriginId = input.saleOriginId;
-    if (input.soldByProfileId !== undefined) order.soldByProfileId = input.soldByProfileId;
+    if (input.soldByName !== undefined) order.soldByName = input.soldByName;
     if (input.shippingCents !== undefined) order.shippingCents = input.shippingCents;
     if (input.subtotalCents !== undefined) order.subtotalCents = input.subtotalCents;
     if (input.totalCents !== undefined) order.totalCents = input.totalCents;
@@ -306,6 +317,7 @@ export class FakeSalesOrderRepository implements ISalesOrderRepository {
         productName: item.productName,
         variant: item.variant,
         unitPriceCents: item.unitPriceCents,
+        unitCostCents: item.unitCostCents,
         qty: item.qty,
       }));
     }
@@ -345,6 +357,7 @@ export class FakeOrderCostRepository implements IOrderCostRepository {
       amountCents: input.amountCents,
       category: input.category,
       description: input.description,
+      source: input.source ?? "manual",
       createdBy: input.createdBy,
       createdAt: new Date().toISOString(),
     };

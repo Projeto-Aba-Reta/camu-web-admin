@@ -627,6 +627,7 @@ export type Database = {
           description: string | null
           id: string
           order_id: string
+          source: string
         }
         Insert: {
           amount_cents: number
@@ -636,6 +637,7 @@ export type Database = {
           description?: string | null
           id?: string
           order_id: string
+          source?: string
         }
         Update: {
           amount_cents?: number
@@ -645,6 +647,7 @@ export type Database = {
           description?: string | null
           id?: string
           order_id?: string
+          source?: string
         }
         Relationships: [
           {
@@ -717,6 +720,7 @@ export type Database = {
           product_id: string | null
           product_name: string
           qty: number
+          unit_cost_cents: number | null
           unit_price_cents: number
           variant: string | null
         }
@@ -727,6 +731,7 @@ export type Database = {
           product_id?: string | null
           product_name: string
           qty: number
+          unit_cost_cents?: number | null
           unit_price_cents: number
           variant?: string | null
         }
@@ -737,6 +742,7 @@ export type Database = {
           product_id?: string | null
           product_name?: string
           qty?: number
+          unit_cost_cents?: number | null
           unit_price_cents?: number
           variant?: string | null
         }
@@ -920,7 +926,7 @@ export type Database = {
           pipeline_stage_id: string | null
           sale_origin_id: string | null
           shipping_cents: number
-          sold_by_profile_id: string | null
+          sold_by_name: string | null
           status: string
           subtotal_cents: number
           total_cents: number
@@ -945,7 +951,7 @@ export type Database = {
           pipeline_stage_id?: string | null
           sale_origin_id?: string | null
           shipping_cents?: number
-          sold_by_profile_id?: string | null
+          sold_by_name?: string | null
           status?: string
           subtotal_cents?: number
           total_cents?: number
@@ -970,7 +976,7 @@ export type Database = {
           pipeline_stage_id?: string | null
           sale_origin_id?: string | null
           shipping_cents?: number
-          sold_by_profile_id?: string | null
+          sold_by_name?: string | null
           status?: string
           subtotal_cents?: number
           total_cents?: number
@@ -996,13 +1002,6 @@ export type Database = {
             columns: ["sale_origin_id"]
             isOneToOne: false
             referencedRelation: "sale_origins"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "orders_sold_by_profile_id_fkey"
-            columns: ["sold_by_profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

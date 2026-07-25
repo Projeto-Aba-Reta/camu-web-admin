@@ -25,13 +25,12 @@ export default async function FunilPage({ searchParams }: FunilPageProps) {
   const repositories = createRepositories(supabase);
   const pipeline = new SalesPipelineService(repositories);
 
-  const [stages, orders, origins, printers, activePrinters, profiles] = await Promise.all([
+  const [stages, orders, origins, printers, activePrinters] = await Promise.all([
     pipeline.listStages(true),
     pipeline.listBoardOrders(showHistory),
     repositories.saleOrigins.listAll(),
     repositories.printers.findAll(),
     repositories.printers.findActive(),
-    repositories.users.listAll(),
   ]);
 
   const canMove = Boolean(currentUser && canMoveSalesOrder(currentUser));
@@ -64,7 +63,6 @@ export default async function FunilPage({ searchParams }: FunilPageProps) {
           origins={origins}
           printers={printers}
           activePrinters={activePrinters}
-          profiles={profiles}
           canMove={canMove}
           canSeeMoney={canSeeMoney}
         />

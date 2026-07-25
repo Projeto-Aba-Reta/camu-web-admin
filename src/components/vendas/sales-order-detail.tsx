@@ -50,7 +50,6 @@ export function SalesOrderDetail({
 
   const origin = order.saleOriginId ? originById.get(order.saleOriginId) : undefined;
   const stage = order.stageId ? stageById.get(order.stageId) : undefined;
-  const seller = order.soldByProfileId ? profileById.get(order.soldByProfileId) : undefined;
   const currentPrinter = order.currentPrinterId
     ? printerById.get(order.currentPrinterId)
     : undefined;
@@ -78,7 +77,7 @@ export function SalesOrderDetail({
             </div>
             <div>
               <dt className="text-muted-foreground">Quem vendeu</dt>
-              <dd className="text-foreground">{seller?.fullName ?? seller?.email ?? "—"}</dd>
+              <dd className="text-foreground">{order.soldByName ?? "—"}</dd>
             </div>
             <div>
               <dt className="text-muted-foreground">Contato</dt>
@@ -113,9 +112,15 @@ export function SalesOrderDetail({
                   {item.variant && (
                     <p className="text-xs text-muted-foreground">{item.variant}</p>
                   )}
+                  {/* Sem peça associada: ou o item nasceu fora do catálogo,
+                      ou a peça foi excluída depois da venda. O dado não
+                      distingue os dois casos, então o rótulo não afirma qual é. */}
                   {!item.productId && (
+                    <p className="text-xs text-muted-foreground">sem peça do catálogo</p>
+                  )}
+                  {item.unitCostCents !== null && (
                     <p className="text-xs text-muted-foreground">
-                      peça não está mais no catálogo
+                      custo estimado: {formatCents(item.unitCostCents)}/un.
                     </p>
                   )}
                 </div>

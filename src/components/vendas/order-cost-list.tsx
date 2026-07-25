@@ -59,18 +59,27 @@ export function OrderCostList({ orderId, costs, canWrite }: OrderCostListProps) 
                   )}
                 </div>
 
-                {canWrite && (
-                  <div className="flex shrink-0 gap-1">
-                    <OrderCostForm orderId={orderId} cost={cost} />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(cost.id)}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
+                {/* O lançamento derivado da precificação é reescrito a cada
+                    gravação do pedido — editá-lo aqui seria desfeito sozinho.
+                    Para mudá-lo, edita-se o item do pedido. */}
+                {cost.source === "precificacao" ? (
+                  <Badge variant="outline" className="shrink-0">
+                    da precificação
+                  </Badge>
+                ) : (
+                  canWrite && (
+                    <div className="flex shrink-0 gap-1">
+                      <OrderCostForm orderId={orderId} cost={cost} />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(cost.id)}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  )
                 )}
               </li>
             ))}
