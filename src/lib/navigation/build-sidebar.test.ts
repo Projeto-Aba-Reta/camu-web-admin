@@ -39,13 +39,22 @@ const societario: Role = {
   icon: null,
 };
 
-// Reserva de nome: o domínio de vendas por canal ainda não tem tela, então
-// `vendas` não tem entrada em areaRoutes. É hoje a única role nessa situação
-// — e por isso o caso de teste do item não-clicável.
+// Vendas ganhou tela (/vendas/pedidos) e portanto entrada em areaRoutes —
+// serve ao caso do item clicável.
 const vendas: Role = {
   id: "r4",
   name: "Vendas/Marketplace",
   slug: "vendas",
+  description: null,
+  icon: null,
+};
+
+// `site` é uma das roles semeadas que ainda não tem tela construída, e por
+// isso nenhuma entrada em areaRoutes — é o caso do item não-clicável.
+const site: Role = {
+  id: "r5",
+  name: "Site",
+  slug: "site",
   description: null,
   icon: null,
 };
@@ -77,6 +86,18 @@ describe("buildSidebar", () => {
   });
 
   it("Role sem rota implementada aparece sem href", () => {
+    const member = makeUser({ userType: "member", roles: [site] });
+    const sections = buildSidebar(member, "own", [site]);
+
+    const item = sections
+      .find((s) => s.id === "areas")!
+      .items.find((i) => i.slug === "site")!;
+
+    // site não tem entrada em areaRoutes → sem href
+    expect(item.href).toBeUndefined();
+  });
+
+  it("Role vendas é clicável e aponta para a listagem de pedidos", () => {
     const member = makeUser({ userType: "member", roles: [vendas] });
     const sections = buildSidebar(member, "own", [vendas]);
 
@@ -84,8 +105,7 @@ describe("buildSidebar", () => {
       .find((s) => s.id === "areas")!
       .items.find((i) => i.slug === "vendas")!;
 
-    // vendas não tem entrada em areaRoutes → sem href
-    expect(item.href).toBeUndefined();
+    expect(item.href).toBe("/vendas/pedidos");
   });
 
   it("Sócio com scope=all vê todas as roles do sistema", () => {
