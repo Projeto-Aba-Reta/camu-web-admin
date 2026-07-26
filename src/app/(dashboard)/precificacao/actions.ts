@@ -27,9 +27,9 @@ function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
-const CONFIGURACAO_PATH = "/financeiro/precificacao/configuracao";
-const CALCULAR_PATH = "/financeiro/precificacao/calcular";
-const HISTORICO_PATH = "/financeiro/precificacao/historico";
+const CONFIGURACAO_PATH = "/precificacao/configuracao";
+const CALCULAR_PATH = "/precificacao/calcular";
+const HISTORICO_PATH = "/precificacao/historico";
 
 export interface CostParametersFormInput {
   filamentCostPerKg: number;

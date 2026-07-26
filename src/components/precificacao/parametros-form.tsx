@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { costParametersFormSchema, type CostParametersFormValues } from "@/lib/validation/pricing-schemas";
-import { createCostParametersAction } from "@/app/(dashboard)/financeiro/precificacao/actions";
+import { createCostParametersAction } from "@/app/(dashboard)/precificacao/actions";
 import { useCostParametersDraft } from "@/components/precificacao/pricing-draft-context";
 import type { CostParameters } from "@/types/pricing";
 

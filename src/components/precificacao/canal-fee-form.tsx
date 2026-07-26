@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { channelFeeFormSchema, type ChannelFeeFormValues } from "@/lib/validation/pricing-schemas";
 import { CHANNEL_LABEL } from "@/lib/pricing/channel-label";
-import { createChannelFeeAction } from "@/app/(dashboard)/financeiro/precificacao/actions";
+import { createChannelFeeAction } from "@/app/(dashboard)/precificacao/actions";
 import { useChannelFeeDraft } from "@/components/precificacao/pricing-draft-context";
 import type { ChannelFee } from "@/types/pricing";
 

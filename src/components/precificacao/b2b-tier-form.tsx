@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { b2bPricingTierFormSchema, type B2bPricingTierFormValues } from "@/lib/validation/pricing-schemas";
-import { createB2bPricingTierAction } from "@/app/(dashboard)/financeiro/precificacao/actions";
+import { createB2bPricingTierAction } from "@/app/(dashboard)/precificacao/actions";
 import { useB2bTierDraft } from "@/components/precificacao/pricing-draft-context";
 import type { B2bPricingTier } from "@/types/pricing";
 

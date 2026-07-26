@@ -13,7 +13,7 @@ import {
   addComponentAction,
   removeComponentAction,
 } from "@/app/(dashboard)/producao/catalogo/actions";
-import { calculateCompositePriceAction } from "@/app/(dashboard)/financeiro/precificacao/actions";
+import { calculateCompositePriceAction } from "@/app/(dashboard)/precificacao/actions";
 import type { Product, ProductComponent } from "@/types/catalog";
 import type { PriceCalculation, PriceCalculationResult, SizeTier, SizeTierDefinition } from "@/types/pricing";
 
