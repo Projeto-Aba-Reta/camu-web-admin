@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Limite mínimo configurável por insumo, usado para sinalizar quando o saldo de estoque (derivado das movimentações) cair abaixo do esperado. Configuração restrita a Owner/Sócio e à role `producao`; sinalização visível também a `financeiro`.
+Limite mínimo configurável por insumo, usado para sinalizar quando o saldo de estoque (derivado das movimentações) cair abaixo do esperado. Configuração restrita a Owner/Sócio e à role `producao`; sinalização visível também a `precificacao`.
 
 ## Requirements
 
@@ -28,8 +28,8 @@ O sistema SHALL considerar que um insumo sem limite mínimo configurado nunca es
 - **THEN** o sistema não o sinaliza como em estoque baixo, mesmo com saldo próximo de zero
 
 ### Requirement: Configuração restrita a Produção
-O sistema SHALL permitir configurar o limite mínimo apenas a usuários `owner`/`socio` ou com a role `producao`, com a sinalização de estoque baixo visível a `producao`/`financeiro`.
+O sistema SHALL permitir configurar o limite mínimo apenas a usuários `owner`/`socio` ou com a role `producao`, com a sinalização de estoque baixo visível a `producao`/`precificacao`.
 
-#### Scenario: Usuário de Financeiro visualiza alerta
-- **WHEN** um usuário com apenas a role `financeiro` consulta os insumos
+#### Scenario: Usuário de Precificação visualiza alerta
+- **WHEN** um usuário com apenas a role `precificacao` consulta os insumos
 - **THEN** o sistema exibe quais insumos estão em estoque baixo, sem permitir alterar o limite configurado

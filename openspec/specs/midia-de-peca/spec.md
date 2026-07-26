@@ -30,6 +30,6 @@ Ao remover uma peça, o sistema SHALL remover em cascata todos os registros de m
 ### Requirement: Acesso de escrita restrito a Produção
 O sistema SHALL permitir adicionar, reordenar ou remover mídia de uma peça apenas a usuários `owner`/`socio` ou com a role `producao`, com leitura ampla equivalente à leitura de peças.
 
-#### Scenario: Usuário de Financeiro tenta remover uma foto
-- **WHEN** um usuário com apenas a role `financeiro` tenta remover uma foto de uma peça
+#### Scenario: Usuário de Precificação tenta remover uma foto
+- **WHEN** um usuário com apenas a role `precificacao` tenta remover uma foto de uma peça
 - **THEN** o sistema rejeita a escrita por Row Level Security

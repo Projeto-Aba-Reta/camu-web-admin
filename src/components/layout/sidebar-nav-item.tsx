@@ -22,7 +22,7 @@ import type { SidebarItem } from "@/lib/navigation/build-sidebar";
 const ICON_MAP: Record<string, LucideIcon> = {
   home: Home,
   settings: Settings,
-  financeiro: DollarSign,
+  precificacao: DollarSign,
   producao: Package,
   vendas: Users,
   assinatura: BarChart2,

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createRepositories, type Repositories } from "@/lib/repositories";
 import { PricingService } from "@/lib/services/pricing-service";
-import { requireFinanceiroWrite, requirePrecificacaoAccess, requirePrinterWrite } from "@/lib/auth/pricing-access";
+import { requirePrecificacaoWrite, requirePrecificacaoAccess, requirePrinterWrite } from "@/lib/auth/pricing-access";
 import type {
   MarginMode,
   MarketplaceChannel,
@@ -44,7 +44,7 @@ export async function createCostParametersAction(
   input: CostParametersFormInput,
 ): Promise<ActionResult> {
   try {
-    const user = await requireFinanceiroWrite();
+    const user = await requirePrecificacaoWrite();
     const repositories = await getRepositories();
     await repositories.costParameters.create({ ...input, createdBy: user.id });
     revalidatePath(CONFIGURACAO_PATH);
@@ -95,7 +95,7 @@ export interface ChannelFeeFormInput {
 
 export async function createChannelFeeAction(input: ChannelFeeFormInput): Promise<ActionResult> {
   try {
-    const user = await requireFinanceiroWrite();
+    const user = await requirePrecificacaoWrite();
     const repositories = await getRepositories();
     await repositories.channelFees.create({ ...input, createdBy: user.id });
     revalidatePath(CONFIGURACAO_PATH);
@@ -121,7 +121,7 @@ export interface SizeTierRangeFormInput {
 
 export async function createSizeTierRangeAction(input: SizeTierRangeFormInput): Promise<ActionResult> {
   try {
-    await requireFinanceiroWrite();
+    await requirePrecificacaoWrite();
     const repositories = await getRepositories();
     await repositories.sizeTierRanges.create(input);
     revalidatePath(CONFIGURACAO_PATH);
@@ -145,7 +145,7 @@ export interface SizeTierFormInput {
 
 export async function createSizeTierAction(input: SizeTierFormInput): Promise<ActionResult> {
   try {
-    const user = await requireFinanceiroWrite();
+    const user = await requirePrecificacaoWrite();
     const repositories = await getRepositories();
 
     const code = input.code.trim().toUpperCase();
@@ -174,7 +174,7 @@ export async function createSizeTierAction(input: SizeTierFormInput): Promise<Ac
 // têm nome/ordem editáveis (o trigger do banco só barra alterar código/flag).
 export async function updateSizeTierAction(code: string, input: { label: string; sortOrder: number }): Promise<ActionResult> {
   try {
-    await requireFinanceiroWrite();
+    await requirePrecificacaoWrite();
     const repositories = await getRepositories();
     await repositories.sizeTiers.update(code, { label: input.label.trim(), sortOrder: input.sortOrder });
     revalidatePath(CONFIGURACAO_PATH);
@@ -187,7 +187,7 @@ export async function updateSizeTierAction(code: string, input: { label: string;
 
 export async function removeSizeTierAction(code: string): Promise<ActionResult> {
   try {
-    await requireFinanceiroWrite();
+    await requirePrecificacaoWrite();
     const repositories = await getRepositories();
 
     const tier = await repositories.sizeTiers.findByCode(code);
@@ -274,7 +274,7 @@ export interface B2bPricingTierFormInput {
 
 export async function createB2bPricingTierAction(input: B2bPricingTierFormInput): Promise<ActionResult> {
   try {
-    const user = await requireFinanceiroWrite();
+    const user = await requirePrecificacaoWrite();
     const repositories = await getRepositories();
     await repositories.b2bPricingTiers.create({ ...input, createdBy: user.id });
     revalidatePath(CONFIGURACAO_PATH);

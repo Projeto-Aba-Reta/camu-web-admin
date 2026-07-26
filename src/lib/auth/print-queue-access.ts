@@ -9,11 +9,11 @@ function isSocioOrOwner(user: CurrentUser): boolean {
   return user.userType === "owner" || user.userType === "socio";
 }
 
-// Leitura da fila: Owner/Sócio ou role producao/financeiro (ver migration
+// Leitura da fila: Owner/Sócio ou role producao/precificacao (ver migration
 // fila_de_impressao, policy de select em print_queue_items — ver
 // Requirement "Acesso à fila de impressão").
 export function canAccessPrintQueue(user: CurrentUser): boolean {
-  return isSocioOrOwner(user) || hasRole(user, "producao") || hasRole(user, "financeiro");
+  return isSocioOrOwner(user) || hasRole(user, "producao") || hasRole(user, "precificacao");
 }
 
 // Escrita (adicionar, iniciar, concluir, cancelar): Owner/Sócio ou role

@@ -11,7 +11,7 @@ export default async function FilaDeImpressaoLayout({
 
   // producao/layout.tsx já garante acesso ao domínio Produção/Catálogo.
   // Fila de impressão tem regra mais restrita — apenas Owner/Sócio/
-  // producao/financeiro (ver migration fila_de_impressao) — por isso este
+  // producao/precificacao (ver migration fila_de_impressao) — por isso este
   // guard aninhado, mesmo padrão de producao/estoque/layout.tsx.
   if (!currentUser || !canAccessPrintQueue(currentUser)) {
     redirect("/producao/catalogo");

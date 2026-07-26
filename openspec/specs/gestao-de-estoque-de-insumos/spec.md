@@ -42,8 +42,8 @@ O sistema SHALL não oferecer edição ou exclusão de uma movimentação já re
 - **THEN** a interface não oferece opção de editar essa movimentação, apenas de registrar um ajuste manual com nota explicando a correção
 
 ### Requirement: Acesso conforme regra de domínio do estoque
-O sistema SHALL restringir o registro de movimentações e a configuração de limite a usuários `owner`/`socio` ou com a role `producao`, permitindo leitura da listagem e do saldo a `producao` e `financeiro`.
+O sistema SHALL restringir o registro de movimentações e a configuração de limite a usuários `owner`/`socio` ou com a role `producao`, permitindo leitura da listagem e do saldo a `producao` e `precificacao`.
 
-#### Scenario: Usuário de Financeiro acessa a tela de insumos
-- **WHEN** um usuário com apenas a role `financeiro` acessa a tela de estoque de insumos
+#### Scenario: Usuário de Precificação acessa a tela de insumos
+- **WHEN** um usuário com apenas a role `precificacao` acessa a tela de estoque de insumos
 - **THEN** o sistema exibe saldo e alertas em modo somente leitura, sem ações de movimentação disponíveis

@@ -49,8 +49,8 @@ O sistema SHALL registrar, para cada atribuição de role ou sub-role a um usuá
 Ao atribuir uma sub-role a um usuário, o sistema SHALL garantir que esse usuário também possua a role correspondente em `user_roles`, criando-a automaticamente se ainda não existir.
 
 #### Scenario: Sub-role atribuída sem a role pai previamente concedida
-- **WHEN** uma sub-role da role "Financeiro" é atribuída a um usuário que ainda não tem a role "Financeiro" em `user_roles`
-- **THEN** o sistema cria automaticamente o registro correspondente em `user_roles` para a role "Financeiro"
+- **WHEN** uma sub-role da role "Precificação" é atribuída a um usuário que ainda não tem a role "Precificação" em `user_roles`
+- **THEN** o sistema cria automaticamente o registro correspondente em `user_roles` para a role "Precificação"
 
 ### Requirement: Row Level Security habilitado por padrão
 Todas as tabelas de identidade e acesso (`profiles`, `roles`, `sub_roles`, `user_roles`, `user_sub_roles`) SHALL ter Row Level Security habilitado desde a criação, sem política de acesso irrestrito por padrão.

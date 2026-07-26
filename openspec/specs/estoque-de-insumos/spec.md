@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Catálogo de insumos (filamento por tipo/cor, embalagem) usado na produção das peças, com custo de referência próprio por insumo — complementar aos parâmetros globais de precificação, permitindo variação de custo por cor/fornecedor sem exigir um novo parâmetro global a cada compra. Leitura ampla para Owner/Sócio e roles `producao`/`financeiro`; escrita restrita a Produção.
+Catálogo de insumos (filamento por tipo/cor, embalagem) usado na produção das peças, com custo de referência próprio por insumo — complementar aos parâmetros globais de precificação, permitindo variação de custo por cor/fornecedor sem exigir um novo parâmetro global a cada compra. Leitura ampla para Owner/Sócio e roles `producao`/`precificacao`; escrita restrita a Produção.
 
 ## Requirements
 
@@ -21,18 +21,18 @@ O sistema SHALL permitir cadastrar um insumo (filamento ou embalagem) com nome, 
 - **WHEN** um usuário cadastra um insumo do tipo embalagem com unidade `unidade`
 - **THEN** o sistema aceita normalmente, pois a restrição de unidade vale apenas para filamento
 
-### Requirement: Leitura ampla por Produção e Financeiro
-O sistema SHALL permitir leitura do catálogo de insumos a usuários `owner`/`socio` ou com role `producao`/`financeiro`.
+### Requirement: Leitura ampla por Produção e Precificação
+O sistema SHALL permitir leitura do catálogo de insumos a usuários `owner`/`socio` ou com role `producao`/`precificacao`.
 
-#### Scenario: Usuário de Financeiro consulta insumos
-- **WHEN** um usuário com apenas a role `financeiro` consulta o catálogo de insumos
+#### Scenario: Usuário de Precificação consulta insumos
+- **WHEN** um usuário com apenas a role `precificacao` consulta o catálogo de insumos
 - **THEN** o sistema retorna a lista de insumos e seus custos de referência
 
 ### Requirement: Escrita restrita a Produção
 O sistema SHALL permitir cadastrar e editar insumos apenas a usuários `owner`/`socio` ou com a role `producao`.
 
-#### Scenario: Usuário de Financeiro tenta cadastrar insumo
-- **WHEN** um usuário com apenas a role `financeiro` tenta cadastrar um novo insumo
+#### Scenario: Usuário de Precificação tenta cadastrar insumo
+- **WHEN** um usuário com apenas a role `precificacao` tenta cadastrar um novo insumo
 - **THEN** o sistema rejeita a escrita por Row Level Security
 
 ### Requirement: Custo por kg de filamento disponível para o motor de cálculo

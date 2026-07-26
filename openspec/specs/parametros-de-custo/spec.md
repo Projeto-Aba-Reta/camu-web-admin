@@ -35,13 +35,13 @@ O sistema SHALL permitir consultar todos os registros históricos de parâmetros
 - **WHEN** um usuário autorizado solicita o histórico do custo de energia por kWh
 - **THEN** o sistema retorna todos os registros de parâmetros ordenados por `valid_from` decrescente
 
-### Requirement: Acesso restrito a Owner, Sócio e role Financeiro
-O sistema SHALL permitir leitura dos parâmetros de custo a usuários com `user_type` `owner`/`socio` ou com a role `financeiro`/`producao`, e permitir escrita apenas a `owner`/`socio` ou role `financeiro`.
+### Requirement: Acesso restrito a Owner, Sócio e role Precificação
+O sistema SHALL permitir leitura dos parâmetros de custo a usuários com `user_type` `owner`/`socio` ou com a role `precificacao`/`producao`, e permitir escrita apenas a `owner`/`socio` ou role `precificacao`.
 
 #### Scenario: Usuário de Produção tenta alterar parâmetro
 - **WHEN** um usuário com apenas a role `producao` tenta inserir um novo registro de parâmetros de custo
 - **THEN** o sistema rejeita a escrita por Row Level Security, pois `producao` tem só leitura sobre parâmetros financeiros
 
 #### Scenario: Usuário sem role de domínio tenta ler parâmetros
-- **WHEN** um usuário `member` sem role `financeiro` ou `producao` tenta consultar os parâmetros de custo
+- **WHEN** um usuário `member` sem role `precificacao` ou `producao` tenta consultar os parâmetros de custo
 - **THEN** o sistema nega a leitura por não haver policy que autorize esse usuário

@@ -73,7 +73,7 @@ O sistema SHALL permitir marcar qualquer etapa como exigindo impressora, o que f
 - **THEN** movimentações posteriores para essa etapa não solicitam mais impressora, e as impressoras já registradas em pedidos permanecem
 
 ### Requirement: Acesso ao cadastro de etapas do funil
-O sistema SHALL permitir leitura das etapas a `owner`/`socio` ou às roles `vendas`, `producao` e `financeiro`, e escrita (criar, editar, reordenar, arquivar) apenas a `owner`/`socio` ou à role `vendas`.
+O sistema SHALL permitir leitura das etapas a `owner`/`socio` ou às roles `vendas`, `producao` e `precificacao`, e escrita (criar, editar, reordenar, arquivar) apenas a `owner`/`socio` ou à role `vendas`.
 
 #### Scenario: Produção tenta criar etapa
 - **WHEN** um usuário com apenas a role `producao` tenta criar uma etapa do funil

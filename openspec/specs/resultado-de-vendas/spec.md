@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Agregação mensal de receita, gasto e lucro dos pedidos de venda, com gráfico de lucros e gastos, totais e margem do período consultado e quebra por origem de venda. Define o que entra e o que fica de fora do resultado (cancelados e excluídos), o período padrão e sua persistência na URL, e restringe a leitura a Owner/Sócio e às roles de vendas e financeiro.
+Agregação mensal de receita, gasto e lucro dos pedidos de venda, com gráfico de lucros e gastos, totais e margem do período consultado e quebra por origem de venda. Define o que entra e o que fica de fora do resultado (cancelados e excluídos), o período padrão e sua persistência na URL, e restringe a leitura a Owner/Sócio e às roles de vendas e precificação.
 
 ## Requirements
 
@@ -81,7 +81,7 @@ O sistema SHALL exibir a quebra do período por origem de venda, com receita, ga
 - **THEN** ela aparece na quebra, identificada como arquivada
 
 ### Requirement: Acesso ao resultado de vendas
-O sistema SHALL permitir leitura do resultado de vendas apenas a `owner`/`socio` ou às roles `vendas` e `financeiro`.
+O sistema SHALL permitir leitura do resultado de vendas apenas a `owner`/`socio` ou às roles `vendas` e `precificacao`.
 
 #### Scenario: Produção tenta abrir o resultado
 - **WHEN** um usuário com apenas a role `producao` acessa a rota de resultado de vendas

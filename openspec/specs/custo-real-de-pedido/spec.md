@@ -81,7 +81,7 @@ O sistema SHALL calcular o lucro de um pedido como o total de venda menos o cust
 - **THEN** o sistema exibe lucro igual ao total de venda, acompanhado do aviso de que o custo ainda não foi informado
 
 ### Requirement: Acesso ao custo real de pedido
-O sistema SHALL permitir leitura dos custos e do lucro por pedido, bem como escrita (lançar, editar, excluir custo), a `owner`/`socio` ou às roles `vendas`, `financeiro` e `producao` — quem pode lançar custo precisa enxergar o que lançou. A agregação do período permanece restrita conforme `resultado-de-vendas`.
+O sistema SHALL permitir leitura dos custos e do lucro por pedido, bem como escrita (lançar, editar, excluir custo), a `owner`/`socio` ou às roles `vendas`, `precificacao` e `producao` — quem pode lançar custo precisa enxergar o que lançou. A agregação do período permanece restrita conforme `resultado-de-vendas`.
 
 #### Scenario: Produção lança custo de filamento
 - **WHEN** um usuário com a role `producao` lança o custo de filamento gasto em um pedido

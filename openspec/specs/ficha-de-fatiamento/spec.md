@@ -44,7 +44,7 @@ O sistema SHALL calcular o peso da peça, para uma ficha de fatiamento, como a s
 - **THEN** o sistema exibe o peso da peça como 40g, sem incluir as gramas de suporte de nenhuma das linhas
 
 ### Requirement: Acesso à ficha de fatiamento
-O sistema SHALL permitir leitura da ficha de fatiamento a usuários `owner`/`socio` ou com role `producao`, `financeiro` ou `marketing`, e escrita (cadastrar, reeditar) apenas a usuários `owner`/`socio` ou com role `producao` — mesma regra de acesso já usada no cadastro do catálogo.
+O sistema SHALL permitir leitura da ficha de fatiamento a usuários `owner`/`socio` ou com role `producao`, `precificacao` ou `marketing`, e escrita (cadastrar, reeditar) apenas a usuários `owner`/`socio` ou com role `producao` — mesma regra de acesso já usada no cadastro do catálogo.
 
 #### Scenario: Usuário de Marketing consulta a ficha de fatiamento
 - **WHEN** um usuário com apenas a role `marketing` consulta a ficha de fatiamento de uma peça

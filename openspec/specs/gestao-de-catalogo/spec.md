@@ -88,14 +88,14 @@ A tela de detalhe de uma peça SHALL oferecer, para usuários com permissão de 
 ### Requirement: Conjunto de ações condicionado à permissão
 O sistema SHALL exibir apenas as ações permitidas ao usuário: Editar e Excluir SHALL aparecer somente para usuários com permissão de escrita no catálogo (`owner`/`socio` ou role `producao`); os demais usuários com acesso de leitura SHALL ver apenas Ver detalhes.
 
-#### Scenario: Usuário de Financeiro abre o menu de ações
-- **WHEN** um usuário com apenas a role `financeiro` abre o menu de ações de uma peça na listagem
+#### Scenario: Usuário de Precificação abre o menu de ações
+- **WHEN** um usuário com apenas a role `precificacao` abre o menu de ações de uma peça na listagem
 - **THEN** a tela exibe somente a opção Ver detalhes, sem Editar nem Excluir
 
 ### Requirement: Acesso conforme regra de domínio do catálogo
-O sistema SHALL restringir a criação, edição e exclusão de peças a usuários `owner`/`socio` ou com a role `producao`, permitindo leitura da listagem e do detalhe a `producao`, `financeiro` e `marketing`.
+O sistema SHALL restringir a criação, edição e exclusão de peças a usuários `owner`/`socio` ou com a role `producao`, permitindo leitura da listagem e do detalhe a `producao`, `precificacao` e `marketing`.
 
-#### Scenario: Usuário de Financeiro acessa a listagem
-- **WHEN** um usuário com apenas a role `financeiro` acessa a listagem do catálogo
+#### Scenario: Usuário de Precificação acessa a listagem
+- **WHEN** um usuário com apenas a role `precificacao` acessa a listagem do catálogo
 - **THEN** o sistema exibe a listagem em modo somente leitura, sem ações de criação, edição ou exclusão disponíveis
 

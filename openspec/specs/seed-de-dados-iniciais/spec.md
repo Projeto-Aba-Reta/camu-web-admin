@@ -13,7 +13,7 @@ A área antes chamada "Marketplace/Vendas" é semeada como **Marketing** (slug `
 
 #### Scenario: Execução em banco vazio
 - **WHEN** o comando `seed-roles` é executado contra um banco sem nenhuma role cadastrada
-- **THEN** o sistema cria as roles Produção, Marketing, Vendas/Marketplace, Site, Assinatura, Infra/Automação, Financeiro e Societário, e os 3 usuários de exemplo com suas atribuições correspondentes
+- **THEN** o sistema cria as roles Produção, Marketing, Vendas/Marketplace, Site, Assinatura, Infra/Automação, Precificação e Societário, e os 3 usuários de exemplo com suas atribuições correspondentes
 
 #### Scenario: Role de vendas com tela implementada
 - **WHEN** um usuário com a role `vendas` e nenhuma outra role acessa o dashboard

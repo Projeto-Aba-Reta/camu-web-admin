@@ -38,6 +38,6 @@ Ao registrar uma saída de insumo do tipo `consumo_producao` vinculada a uma pe�
 ### Requirement: Escrita restrita a Produção
 O sistema SHALL permitir registrar movimentações de insumo apenas a usuários `owner`/`socio` ou com a role `producao`, com leitura ampla equivalente à leitura de insumos.
 
-#### Scenario: Usuário de Financeiro tenta registrar uma movimentação
-- **WHEN** um usuário com apenas a role `financeiro` tenta registrar uma movimentação de insumo
+#### Scenario: Usuário de Precificação tenta registrar uma movimentação
+- **WHEN** um usuário com apenas a role `precificacao` tenta registrar uma movimentação de insumo
 - **THEN** o sistema rejeita a escrita por Row Level Security

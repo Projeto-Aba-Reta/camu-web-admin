@@ -18,7 +18,7 @@ export function canAccessSales(user: CurrentUser): boolean {
   return (
     isSocioOrOwner(user) ||
     hasRole(user, "vendas") ||
-    hasRole(user, "financeiro") ||
+    hasRole(user, "precificacao") ||
     hasRole(user, "producao")
   );
 }
@@ -39,7 +39,7 @@ export function canWriteOrderCost(user: CurrentUser): boolean {
   return (
     isSocioOrOwner(user) ||
     hasRole(user, "vendas") ||
-    hasRole(user, "financeiro") ||
+    hasRole(user, "precificacao") ||
     hasRole(user, "producao")
   );
 }
@@ -47,7 +47,7 @@ export function canWriteOrderCost(user: CurrentUser): boolean {
 // A agregação do período é mais restrita que o custo por pedido: produção
 // lança custo mas não vê o resultado do mês.
 export function canReadSalesResult(user: CurrentUser): boolean {
-  return isSocioOrOwner(user) || hasRole(user, "vendas") || hasRole(user, "financeiro");
+  return isSocioOrOwner(user) || hasRole(user, "vendas") || hasRole(user, "precificacao");
 }
 
 // Etapas do funil e origens de venda.
@@ -90,14 +90,14 @@ export function requireSalesOrderMove(): Promise<CurrentUser> {
 export function requireOrderCostWrite(): Promise<CurrentUser> {
   return requireWith(
     canWriteOrderCost,
-    "Apenas Owner, Sócio, Vendas, Financeiro ou Produção podem lançar custos.",
+    "Apenas Owner, Sócio, Vendas, Precificação ou Produção podem lançar custos.",
   );
 }
 
 export function requireSalesResultRead(): Promise<CurrentUser> {
   return requireWith(
     canReadSalesResult,
-    "Apenas Owner, Sócio, Vendas ou Financeiro podem ver o resultado de vendas.",
+    "Apenas Owner, Sócio, Vendas ou Precificação podem ver o resultado de vendas.",
   );
 }
 

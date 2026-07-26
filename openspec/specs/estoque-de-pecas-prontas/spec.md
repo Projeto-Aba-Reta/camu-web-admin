@@ -34,6 +34,6 @@ Uma movimentação de entrada de peça pronta do tipo `producao` SHALL poder ref
 ### Requirement: Escrita restrita a Produção
 O sistema SHALL permitir registrar movimentações de peça pronta apenas a usuários `owner`/`socio` ou com a role `producao`, com leitura ampla equivalente à leitura do catálogo de peças.
 
-#### Scenario: Usuário de Financeiro tenta registrar uma movimentação de peça pronta
-- **WHEN** um usuário com apenas a role `financeiro` tenta registrar uma movimentação de peça pronta
+#### Scenario: Usuário de Precificação tenta registrar uma movimentação de peça pronta
+- **WHEN** um usuário com apenas a role `precificacao` tenta registrar uma movimentação de peça pronta
 - **THEN** o sistema rejeita a escrita por Row Level Security

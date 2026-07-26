@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Faixas de precificação B2B por quantidade mínima, versionadas por vigência, e cálculo do preço B2B (margem-alvo por faixa sobre o custo total, sem taxa de canal), aplicável a peças simples ou compostas, com escrita restrita ao Financeiro.
+Faixas de precificação B2B por quantidade mínima, versionadas por vigência, e cálculo do preço B2B (margem-alvo por faixa sobre o custo total, sem taxa de canal), aplicável a peças simples ou compostas, com escrita restrita ao Precificação.
 
 ## Requirements
 
@@ -46,9 +46,9 @@ O sistema SHALL tratar a margem-alvo cadastrada em uma faixa de volume B2B como 
 - **WHEN** o sistema calcula o preço B2B de uma peça P e de uma peça G para a mesma faixa de quantidade mínima 20, com portes que têm margens B2B distintas
 - **THEN** as duas peças resultam em margens efetivas diferentes para a mesma faixa de volume
 
-### Requirement: Acesso restrito a Owner, Sócio e role Financeiro
-O sistema SHALL permitir leitura das faixas de precificação B2B a `owner`/`socio` ou role `financeiro`/`producao`, e escrita apenas a `owner`/`socio` ou role `financeiro` — mesma regra de acesso já usada para taxas por canal.
+### Requirement: Acesso restrito a Owner, Sócio e role Precificação
+O sistema SHALL permitir leitura das faixas de precificação B2B a `owner`/`socio` ou role `precificacao`/`producao`, e escrita apenas a `owner`/`socio` ou role `precificacao` — mesma regra de acesso já usada para taxas por canal.
 
 #### Scenario: Usuário de Produção tenta alterar uma faixa B2B
 - **WHEN** um usuário com apenas a role `producao` tenta inserir ou alterar uma faixa de precificação B2B
-- **THEN** o sistema rejeita a escrita, pois faixas B2B são responsabilidade financeira
+- **THEN** o sistema rejeita a escrita, pois faixas B2B são responsabilidade de Precificação

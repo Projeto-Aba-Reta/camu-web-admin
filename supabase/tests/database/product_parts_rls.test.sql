@@ -1,5 +1,5 @@
 -- RLS de product_parts — ver Requirement "Leitura ampla por Produção,
--- Financeiro e Marketing; escrita restrita a Produção" em
+-- Precificação e Marketing; escrita restrita a Produção" em
 -- openspec/changes/precificacao-de-pecas-em-partes/specs/partes-de-peca-composta/spec.md
 --
 -- Rodar com: npx supabase test db
@@ -22,14 +22,14 @@ select plan(12);
 -- seed em migration — ver fundacao-schema-auth).
 insert into public.roles (id, name, slug) values
   ('00000000-0000-0000-0000-0000000000a1', 'Produção', 'producao'),
-  ('00000000-0000-0000-0000-0000000000a2', 'Financeiro', 'financeiro'),
+  ('00000000-0000-0000-0000-0000000000a2', 'Precificação', 'precificacao'),
   ('00000000-0000-0000-0000-0000000000a3', 'Marketing', 'marketing');
 
 -- profiles é criado pelo trigger on_auth_user_created a partir de auth.users.
 insert into auth.users (instance_id, id, aud, role, email, created_at, updated_at)
 values
   ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-0000000000b1', 'authenticated', 'authenticated', 'producao@camu.test', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-0000000000b2', 'authenticated', 'authenticated', 'financeiro@camu.test', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-0000000000b2', 'authenticated', 'authenticated', 'precificacao@camu.test', now(), now()),
   ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-0000000000b3', 'authenticated', 'authenticated', 'marketing@camu.test', now(), now()),
   ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-0000000000b4', 'authenticated', 'authenticated', 'estranho@camu.test', now(), now());
 
@@ -88,7 +88,7 @@ select lives_ok(
 reset role;
 
 -- =============================================================================
--- Financeiro: lê, não escreve
+-- Precificação: lê, não escreve
 -- =============================================================================
 
 set local role authenticated;
@@ -97,7 +97,7 @@ set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b2","r
 select is(
   (select count(*)::int from public.product_parts),
   1,
-  'financeiro lê as partes'
+  'precificacao lê as partes'
 );
 
 select throws_ok(
@@ -105,7 +105,7 @@ select throws_ok(
     values ('00000000-0000-0000-0000-0000000000d1', 'Proibida', 1, 5, '00000000-0000-0000-0000-0000000000c1', 1)$$,
   '42501',
   null,
-  'financeiro não insere parte'
+  'precificacao não insere parte'
 );
 
 reset role;

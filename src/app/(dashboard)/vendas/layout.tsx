@@ -11,7 +11,7 @@ export default async function VendasLayout({
 
   // getCurrentProfile() já garante sessão válida (o layout do dashboard
   // redireciona para /login antes de chegar aqui); resta restringir por
-  // acesso ao domínio Vendas — Owner/Sócio ou role vendas/financeiro/
+  // acesso ao domínio Vendas — Owner/Sócio ou role vendas/precificacao/
   // producao, mesma regra das policies de orders.
   //
   // As abas Resultado e Configurações são mais restritas que a área e

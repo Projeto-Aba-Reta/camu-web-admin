@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createRepositories } from "@/lib/repositories";
 import { getCurrentProfile } from "@/lib/auth/get-current-profile";
-import { canWriteFinanceiroParams, canWritePrinters } from "@/lib/auth/pricing-access";
+import { canWritePrecificacaoParams, canWritePrinters } from "@/lib/auth/pricing-access";
 import { PageHeader } from "@/components/layout/page-header";
 import { PrecificacaoNav } from "@/components/precificacao/precificacao-nav";
 import { ConfigSection } from "@/components/precificacao/config-section";
@@ -49,7 +49,7 @@ export default async function PrecificacaoConfiguracaoPage() {
     repositories.slicingSheets.findAll(),
   ]);
 
-  const canWriteFinanceiro = canWriteFinanceiroParams(currentUser);
+  const canWritePrecificacao = canWritePrecificacaoParams(currentUser);
   const canWritePrinter = canWritePrinters(currentUser);
 
   const activePrinters = allPrinterVersions.filter((printer) => printer.isActive);
@@ -81,7 +81,7 @@ export default async function PrecificacaoConfiguracaoPage() {
         <ConfigSection
           title="Parâmetros de custo"
           description="Filamento, energia, consumo médio, reserva de falha e embalagem."
-          form={<ParametrosForm current={currentCostParameters} canWrite={canWriteFinanceiro} />}
+          form={<ParametrosForm current={currentCostParameters} canWrite={canWritePrecificacao} />}
           history={<ParametrosHistoryTable history={costParametersHistory} />}
         />
 
@@ -95,21 +95,21 @@ export default async function PrecificacaoConfiguracaoPage() {
         <ConfigSection
           title="Taxas por canal"
           description="Taxa percentual e fixa de cada canal de venda suportado."
-          form={<CanalFeeForm current={currentChannelFees} canWrite={canWriteFinanceiro} />}
+          form={<CanalFeeForm current={currentChannelFees} canWrite={canWritePrecificacao} />}
           history={<CanalFeeHistoryTable history={channelFeesHistory} />}
         />
 
         <ConfigSection
           title="Faixas de porte (P/M/G)"
           description="Faixas de referência de peso e tempo de impressão usadas na classificação automática de porte, e a margem de lucro própria de cada porte."
-          form={<SizeTierForm current={currentSizeTiers} tiers={sizeTierDefinitions} canWrite={canWriteFinanceiro} />}
+          form={<SizeTierForm current={currentSizeTiers} tiers={sizeTierDefinitions} canWrite={canWritePrecificacao} />}
           history={<SizeTierHistoryTable history={sizeTiersHistory} tiers={sizeTierDefinitions} />}
         />
 
         <ConfigSection
           title="Faixas de precificação B2B"
           description="Preço por volume (quantidade mínima + margem-alvo), sem taxa de canal — usado por canais de atacado (ex.: academias)."
-          form={<B2bTierForm current={currentB2bTiers} canWrite={canWriteFinanceiro} />}
+          form={<B2bTierForm current={currentB2bTiers} canWrite={canWritePrecificacao} />}
           history={<B2bTierHistoryTable history={b2bTiersHistory} />}
         />
 

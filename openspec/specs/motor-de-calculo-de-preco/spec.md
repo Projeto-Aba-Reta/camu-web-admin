@@ -62,8 +62,8 @@ O sistema SHALL registrar cada cálculo executado, incluindo os inputs (peso, te
 - **WHEN** um usuário consulta um cálculo de preço registrado anteriormente
 - **THEN** o sistema retorna exatamente o resultado apurado no momento do cálculo, mesmo que os parâmetros de custo tenham mudado depois
 
-### Requirement: Acesso ao motor de cálculo por Financeiro e Produção
-O sistema SHALL permitir que usuários `owner`/`socio` ou com role `financeiro`/`producao` executem e consultem cálculos de preço, registrando o autor de cada execução.
+### Requirement: Acesso ao motor de cálculo por Precificação e Produção
+O sistema SHALL permitir que usuários `owner`/`socio` ou com role `precificacao`/`producao` executem e consultem cálculos de preço, registrando o autor de cada execução.
 
 #### Scenario: Execução de cálculo por usuário de Produção
 - **WHEN** um usuário com role `producao` executa um cálculo de preço

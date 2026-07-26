@@ -86,7 +86,7 @@ export function ItemPricingDialog({ pricing, itemName, onApply }: ItemPricingDia
   const hours = parseNumber(printHours);
 
   const missing: string | null = !costParameters
-    ? "Cadastre os parâmetros de custo em Financeiro › Precificação antes de precificar aqui."
+    ? "Cadastre os parâmetros de custo em Precificação › Configuração antes de precificar aqui."
     : !printer
       ? "Cadastre ao menos uma impressora ativa para precificar."
       : null;

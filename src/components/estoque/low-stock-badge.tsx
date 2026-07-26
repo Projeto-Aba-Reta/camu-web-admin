@@ -8,7 +8,7 @@ import { canWriteInventory } from "@/lib/auth/inventory-access";
 
 // Visível a Owner/Sócio/producao — mesmo critério de canWriteInventory (ver
 // Requirement "Indicador não visível a usuários sem acesso ao domínio de
-// Produção" em indicador-de-estoque-baixo). Financeiro lê a tela de estoque
+// Produção" em indicador-de-estoque-baixo). Precificação lê a tela de estoque
 // mas não vê este badge.
 export async function LowStockBadge() {
   const currentUser = await getCurrentProfile();

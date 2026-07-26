@@ -104,12 +104,12 @@ O sistema SHALL, por padrão, ocultar do quadro os pedidos que estão na etapa f
 - **THEN** ele continua aparecendo na coluna "Enviado" do quadro
 
 ### Requirement: Acesso ao funil de pedidos
-O sistema SHALL permitir leitura do funil a `owner`/`socio` ou às roles `vendas`, `producao` e `financeiro`, e movimentação de pedidos entre etapas a `owner`/`socio` ou às roles `vendas` e `producao`.
+O sistema SHALL permitir leitura do funil a `owner`/`socio` ou às roles `vendas`, `producao` e `precificacao`, e movimentação de pedidos entre etapas a `owner`/`socio` ou às roles `vendas` e `producao`.
 
 #### Scenario: Produção move pedido
 - **WHEN** um usuário com a role `producao` move um pedido de "Aguardando impressão" para "Imprimindo" escolhendo uma impressora
 - **THEN** o sistema aceita a movimentação, pois o andamento da produção é responsabilidade dessa área
 
-#### Scenario: Financeiro tenta mover pedido
-- **WHEN** um usuário com apenas a role `financeiro` tenta mover um pedido entre etapas
+#### Scenario: Precificação tenta mover pedido
+- **WHEN** um usuário com apenas a role `precificacao` tenta mover um pedido entre etapas
 - **THEN** o sistema rejeita a operação, permitindo-lhe apenas visualizar o quadro

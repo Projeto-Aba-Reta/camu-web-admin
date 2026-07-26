@@ -27,9 +27,9 @@ O sistema SHALL considerar vigente, para cada canal, a taxa cujo `valid_from` se
 - **WHEN** o motor de cálculo precisa da taxa vigente da Shopee
 - **THEN** o sistema retorna o registro de `channel_fees` com canal `shopee` e maior `valid_from` menor ou igual ao momento atual, independentemente da vigência de outros canais
 
-### Requirement: Acesso restrito a Owner, Sócio e role Financeiro
-O sistema SHALL permitir leitura das taxas por canal a `owner`/`socio` ou role `financeiro`/`producao`, e escrita apenas a `owner`/`socio` ou role `financeiro`.
+### Requirement: Acesso restrito a Owner, Sócio e role Precificação
+O sistema SHALL permitir leitura das taxas por canal a `owner`/`socio` ou role `precificacao`/`producao`, e escrita apenas a `owner`/`socio` ou role `precificacao`.
 
 #### Scenario: Usuário de Produção tenta alterar taxa de canal
 - **WHEN** um usuário com apenas a role `producao` tenta inserir uma nova taxa para um canal
-- **THEN** o sistema rejeita a escrita, pois taxas de canal são responsabilidade financeira
+- **THEN** o sistema rejeita a escrita, pois taxas de canal são responsabilidade de Precificação

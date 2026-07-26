@@ -148,7 +148,7 @@ O sistema SHALL exibir os pedidos em uma listagem com código, comprador, origem
 - **THEN** o sistema exibe a listagem vazia com uma mensagem indicando que não há pedidos no período
 
 ### Requirement: Acesso ao registro de pedidos de venda
-O sistema SHALL permitir leitura dos pedidos a `owner`/`socio` ou às roles `vendas`, `financeiro` e `producao`, e escrita (cadastrar, editar, excluir) apenas a `owner`/`socio` ou à role `vendas`.
+O sistema SHALL permitir leitura dos pedidos a `owner`/`socio` ou às roles `vendas`, `precificacao` e `producao`, e escrita (cadastrar, editar, excluir) apenas a `owner`/`socio` ou à role `vendas`.
 
 #### Scenario: Usuário de Produção tenta cadastrar venda
 - **WHEN** um usuário com apenas a role `producao` tenta cadastrar um pedido de venda

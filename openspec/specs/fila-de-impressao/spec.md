@@ -92,8 +92,8 @@ O sistema SHALL permitir cancelar um item que ainda não foi concluído (em stat
 - **THEN** o sistema muda o status do item para `cancelado`, libera a impressora associada (deixa de contá-la como ocupada) e não gera nenhuma movimentação de estoque
 
 ### Requirement: Acesso à fila de impressão
-O sistema SHALL permitir escrita (adicionar, iniciar, concluir, cancelar) na fila de impressão a usuários `owner`/`socio` ou com role `producao`, e leitura adicional a usuários com role `financeiro`.
+O sistema SHALL permitir escrita (adicionar, iniciar, concluir, cancelar) na fila de impressão a usuários `owner`/`socio` ou com role `producao`, e leitura adicional a usuários com role `precificacao`.
 
-#### Scenario: Usuário de Financeiro tenta iniciar uma impressão
-- **WHEN** um usuário com apenas a role `financeiro` tenta iniciar (play) um item da fila
+#### Scenario: Usuário de Precificação tenta iniciar uma impressão
+- **WHEN** um usuário com apenas a role `precificacao` tenta iniciar (play) um item da fila
 - **THEN** o sistema rejeita a ação, permitindo apenas a leitura da fila para esse usuário

@@ -9,17 +9,17 @@ function isSocioOrOwner(user: CurrentUser): boolean {
   return user.userType === "owner" || user.userType === "socio";
 }
 
-// Leitura + execução de cálculo: Owner/Sócio ou role financeiro/producao
+// Leitura + execução de cálculo: Owner/Sócio ou role precificacao/producao
 // (ver migration precificacao_parametros_e_motor, policies de select/insert
 // em price_calculations).
 export function canAccessPrecificacao(user: CurrentUser): boolean {
-  return isSocioOrOwner(user) || hasRole(user, "financeiro") || hasRole(user, "producao");
+  return isSocioOrOwner(user) || hasRole(user, "precificacao") || hasRole(user, "producao");
 }
 
 // Escrita de parâmetros de custo, taxas de canal e faixas de porte: Owner/Sócio
-// ou role financeiro (mesma regra das policies de insert dessas tabelas).
-export function canWriteFinanceiroParams(user: CurrentUser): boolean {
-  return isSocioOrOwner(user) || hasRole(user, "financeiro");
+// ou role precificacao (mesma regra das policies de insert dessas tabelas).
+export function canWritePrecificacaoParams(user: CurrentUser): boolean {
+  return isSocioOrOwner(user) || hasRole(user, "precificacao");
 }
 
 // Cadastro/atualização de impressoras: Owner/Sócio ou role producao (parque
@@ -30,7 +30,7 @@ export function canWritePrinters(user: CurrentUser): boolean {
 }
 
 // Server Actions são endpoints independentes da página — o guard do layout
-// (`financeiro/layout.tsx`) não os protege se forem invocados diretamente.
+// (`precificacao/layout.tsx`) não os protege se forem invocados diretamente.
 export async function requirePrecificacaoAccess(): Promise<CurrentUser> {
   const currentUser = await getCurrentProfile();
   if (!currentUser || !canAccessPrecificacao(currentUser)) {
@@ -39,10 +39,10 @@ export async function requirePrecificacaoAccess(): Promise<CurrentUser> {
   return currentUser;
 }
 
-export async function requireFinanceiroWrite(): Promise<CurrentUser> {
+export async function requirePrecificacaoWrite(): Promise<CurrentUser> {
   const currentUser = await getCurrentProfile();
-  if (!currentUser || !canWriteFinanceiroParams(currentUser)) {
-    throw new Error("Apenas Owner, Sócio ou Financeiro podem alterar estes parâmetros.");
+  if (!currentUser || !canWritePrecificacaoParams(currentUser)) {
+    throw new Error("Apenas Owner, Sócio ou Precificação podem alterar estes parâmetros.");
   }
   return currentUser;
 }

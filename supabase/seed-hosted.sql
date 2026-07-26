@@ -135,7 +135,7 @@ values
   ('Site',               'site',            v_owner_id),
   ('Assinatura',         'assinatura',      v_owner_id),
   ('Infra/Automação',    'infra-automacao', v_owner_id),
-  ('Financeiro',         'financeiro',      v_owner_id),
+  ('Precificação',       'precificacao',    v_owner_id),
   ('Societário',         'societario',      v_owner_id)
 on conflict (slug) do nothing;
 

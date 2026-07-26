@@ -15,10 +15,10 @@ const makeUser = (overrides: Partial<CurrentUser>): CurrentUser => ({
   ...overrides,
 });
 
-const financeiro: Role = {
+const precificacao: Role = {
   id: "r1",
-  name: "Financeiro",
-  slug: "financeiro",
+  name: "Precificação",
+  slug: "precificacao",
   description: null,
   icon: null,
 };
@@ -62,25 +62,25 @@ const site: Role = {
 describe("buildSidebar", () => {
   it("Owner sem roles vê todas as roles do sistema + seção Administração", () => {
     const owner = makeUser({ userType: "owner", roles: [] });
-    const sections = buildSidebar(owner, "own", [financeiro, producao]);
+    const sections = buildSidebar(owner, "own", [precificacao, producao]);
 
     const areaSection = sections.find((s) => s.id === "areas");
     expect(areaSection).toBeDefined();
     expect(areaSection!.items).toHaveLength(2);
-    expect(areaSection!.items.map((i) => i.slug)).toContain("financeiro");
+    expect(areaSection!.items.map((i) => i.slug)).toContain("precificacao");
 
     const adminSection = sections.find((s) => s.id === "admin");
     expect(adminSection).toBeDefined();
   });
 
   it("Member com uma role vê só essa area, sem seção Administração", () => {
-    const member = makeUser({ userType: "member", roles: [financeiro] });
-    const sections = buildSidebar(member, "own", [financeiro, producao]);
+    const member = makeUser({ userType: "member", roles: [precificacao] });
+    const sections = buildSidebar(member, "own", [precificacao, producao]);
 
     const areaSection = sections.find((s) => s.id === "areas");
     expect(areaSection).toBeDefined();
     expect(areaSection!.items).toHaveLength(1);
-    expect(areaSection!.items[0].slug).toBe("financeiro");
+    expect(areaSection!.items[0].slug).toBe("precificacao");
 
     expect(sections.find((s) => s.id === "admin")).toBeUndefined();
   });
@@ -109,20 +109,20 @@ describe("buildSidebar", () => {
   });
 
   it("Sócio com scope=all vê todas as roles do sistema", () => {
-    const socio = makeUser({ userType: "socio", roles: [financeiro] });
-    const sections = buildSidebar(socio, "all", [financeiro, producao]);
+    const socio = makeUser({ userType: "socio", roles: [precificacao] });
+    const sections = buildSidebar(socio, "all", [precificacao, producao]);
 
     const areaSection = sections.find((s) => s.id === "areas");
     expect(areaSection!.items).toHaveLength(2);
   });
 
   it("Sócio com scope=own vê apenas suas roles", () => {
-    const socio = makeUser({ userType: "socio", roles: [financeiro] });
-    const sections = buildSidebar(socio, "own", [financeiro, producao]);
+    const socio = makeUser({ userType: "socio", roles: [precificacao] });
+    const sections = buildSidebar(socio, "own", [precificacao, producao]);
 
     const areaSection = sections.find((s) => s.id === "areas");
     expect(areaSection!.items).toHaveLength(1);
-    expect(areaSection!.items[0].slug).toBe("financeiro");
+    expect(areaSection!.items[0].slug).toBe("precificacao");
     expect(sections.find((s) => s.id === "admin")).toBeUndefined();
   });
 

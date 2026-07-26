@@ -28,8 +28,8 @@ O sistema SHALL não oferecer edição ou exclusão de uma movimentação de pe�
 - **THEN** a interface não oferece edição dessa movimentação, apenas o registro de um ajuste manual com nota explicando a correção
 
 ### Requirement: Acesso conforme regra de domínio do estoque
-O sistema SHALL restringir o registro de movimentações de peça pronta a usuários `owner`/`socio` ou com a role `producao`, permitindo leitura da listagem e do saldo a `producao` e `financeiro`.
+O sistema SHALL restringir o registro de movimentações de peça pronta a usuários `owner`/`socio` ou com a role `producao`, permitindo leitura da listagem e do saldo a `producao` e `precificacao`.
 
-#### Scenario: Usuário de Financeiro acessa a tela de peças prontas
-- **WHEN** um usuário com apenas a role `financeiro` acessa a tela de estoque de peças prontas
+#### Scenario: Usuário de Precificação acessa a tela de peças prontas
+- **WHEN** um usuário com apenas a role `precificacao` acessa a tela de estoque de peças prontas
 - **THEN** o sistema exibe o saldo em modo somente leitura, sem ações de movimentação disponíveis

@@ -11,7 +11,7 @@ export default async function EstoqueLayout({
 
   // producao/layout.tsx já garante acesso ao domínio Produção/Catálogo, que
   // inclui marketing. Estoque tem regra mais restrita — apenas
-  // Owner/Sócio/producao/financeiro (ver migration
+  // Owner/Sócio/producao/precificacao (ver migration
   // estoque_insumos_e_pecas_prontas) — por isso este guard aninhado.
   if (!currentUser || !canAccessInventory(currentUser)) {
     redirect("/producao/catalogo");

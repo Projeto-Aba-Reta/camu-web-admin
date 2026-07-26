@@ -61,7 +61,7 @@ O sistema SHALL calcular a simulação com a mesma lógica de cálculo usada pel
 - **THEN** o custo, a margem efetiva e os preços por canal e por faixa de volume são idênticos nos dois lugares
 
 ### Requirement: Acesso ao simulador restrito a quem configura precificação
-O sistema SHALL exibir o simulador na tela de configuração de precificação para usuários `owner`/`socio` ou com role `financeiro`/`producao`, mantendo a mesma regra de leitura já aplicada aos parâmetros de precificação.
+O sistema SHALL exibir o simulador na tela de configuração de precificação para usuários `owner`/`socio` ou com role `precificacao`/`producao`, mantendo a mesma regra de leitura já aplicada aos parâmetros de precificação.
 
 #### Scenario: Usuário de Produção abre a tela de configuração
 - **WHEN** um usuário com apenas a role `producao` abre a tela de configuração de precificação

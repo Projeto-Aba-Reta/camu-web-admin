@@ -6,7 +6,7 @@ O fluxo de ideação de novos produtos (autorais, ligados a datas comemorativas 
 
 - Novo organizador de ideação de produtos: lista de datas comemorativas relevantes para criação de produto (própria, independente da lista usada pelo calendário de marketing) e ideias de produto vinculadas a elas.
 - Cada ideia tem título, descrição, categoria (reaproveitando as categorias já usadas no catálogo: miniatura colecionável, personalizado, utilitário, linha Leon), status (`ideia` → `em_desenvolvimento` → `lancada`, ou `descartada`), prioridade e responsável.
-- **Nova role/sub-role "Ideação de Produtos"**, com um responsável (head) próprio, seguindo o mesmo padrão das 7 áreas de sócio já semeadas (Produção, Marketplace/Vendas, Site, Assinatura, Infra/Automação, Financeiro, Societário) — a criação da role em si já é suportada hoje pela tela de gestão de roles do Owner (`gestao-de-roles`), sem precisar de mudança de schema; o que muda aqui é o RBAC desta nova capability ser condicionado a essa role.
+- **Nova role/sub-role "Ideação de Produtos"**, com um responsável (head) próprio, seguindo o mesmo padrão das 7 áreas de sócio já semeadas (Produção, Marketplace/Vendas, Site, Assinatura, Infra/Automação, Precificação, Societário) — a criação da role em si já é suportada hoje pela tela de gestão de roles do Owner (`gestao-de-roles`), sem precisar de mudança de schema; o que muda aqui é o RBAC desta nova capability ser condicionado a essa role.
 - Tela com lista/calendário das próximas datas comemorativas relevantes para produto e um board de ideias vinculadas a cada uma.
 
 ## Capabilities

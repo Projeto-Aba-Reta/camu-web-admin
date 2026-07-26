@@ -78,7 +78,7 @@ export function RoleForm({ mode, role, trigger }: RoleFormProps) {
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Nova role" : "Editar role"}</DialogTitle>
           <DialogDescription>
-            Roles representam áreas de negócio (ex.: Financeiro, Produção).
+            Roles representam áreas de negócio (ex.: Precificação, Produção).
           </DialogDescription>
         </DialogHeader>
 

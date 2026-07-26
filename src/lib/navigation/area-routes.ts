@@ -10,7 +10,7 @@ export const areaRoutes: Record<string, AreaRoute> = {
   // padrão da área; configuração e histórico ficam em sub-rotas acessadas
   // por link dentro da própria área, não como itens de sidebar (design.md,
   // decisão 4).
-  financeiro: { href: "/precificacao/calcular" },
+  precificacao: { href: "/precificacao/calcular" },
   // Catálogo (ver catalogo-telas): listagem de peças é a página padrão da
   // área de Produção.
   producao: { href: "/producao/catalogo" },

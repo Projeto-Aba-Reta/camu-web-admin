@@ -87,8 +87,8 @@ O sistema SHALL considerar uma peça apta a ser publicada na loja própria somen
 - **WHEN** uma peça `ativo` tem slug, foto de capa e preço `loja_propria`
 - **THEN** o sistema permite ativar a publicação na loja própria
 
-### Requirement: Leitura ampla por Produção, Financeiro e Marketing
-O sistema SHALL permitir leitura do catálogo a usuários `owner`/`socio` ou com role `producao`, `financeiro` ou `marketing`.
+### Requirement: Leitura ampla por Produção, Precificação e Marketing
+O sistema SHALL permitir leitura do catálogo a usuários `owner`/`socio` ou com role `producao`, `precificacao` ou `marketing`.
 
 #### Scenario: Usuário de Marketing consulta o catálogo
 - **WHEN** um usuário com apenas a role `marketing` consulta a lista de peças

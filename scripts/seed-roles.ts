@@ -41,7 +41,7 @@ const ROLE_DEFS = [
   { name: "Site", slug: "site" },
   { name: "Assinatura", slug: "assinatura" },
   { name: "Infra/Automação", slug: "infra-automacao" },
-  { name: "Financeiro", slug: "financeiro" },
+  { name: "Precificação", slug: "precificacao" },
   { name: "Societário", slug: "societario" },
 ] as const;
 

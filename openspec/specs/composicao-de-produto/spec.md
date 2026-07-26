@@ -54,8 +54,8 @@ O sistema SHALL calcular o custo de uma peça composta como a soma de duas parce
 - **WHEN** um componente referenciado do catálogo tem ficha de fatiamento cadastrada mas nunca teve um cálculo de preço executado, e a peça composta que o contém é calculada
 - **THEN** o sistema calcula e salva um novo cálculo de preço para esse componente antes de agregá-lo ao custo da peça composta
 
-### Requirement: Leitura ampla por Produção, Financeiro e Marketing; escrita restrita a Produção
-O sistema SHALL permitir leitura da composição de uma peça a usuários `owner`/`socio` ou com role `producao`, `financeiro` ou `marketing`, e permitir criar, editar ou remover vínculos de componente apenas a usuários `owner`/`socio` ou com a role `producao` — mesma regra de acesso já usada no cadastro do catálogo.
+### Requirement: Leitura ampla por Produção, Precificação e Marketing; escrita restrita a Produção
+O sistema SHALL permitir leitura da composição de uma peça a usuários `owner`/`socio` ou com role `producao`, `precificacao` ou `marketing`, e permitir criar, editar ou remover vínculos de componente apenas a usuários `owner`/`socio` ou com a role `producao` — mesma regra de acesso já usada no cadastro do catálogo.
 
 #### Scenario: Usuário de Marketing consulta a composição de uma peça
 - **WHEN** um usuário com apenas a role `marketing` consulta os componentes de uma peça composta

@@ -18,7 +18,7 @@ O sistema SHALL registrar uma rota implementada para o slug `vendas`, fazendo o 
 - **THEN** o sistema navega para `/vendas/pedidos`
 
 ### Requirement: Guard de acesso à área Vendas
-O sistema SHALL restringir todas as rotas sob `/vendas/**` a `owner`/`socio` ou às roles `vendas`, `financeiro` e `producao`, redirecionando os demais para a home do dashboard. As Server Actions da área SHALL verificar a permissão por conta própria, sem depender do guard de rota.
+O sistema SHALL restringir todas as rotas sob `/vendas/**` a `owner`/`socio` ou às roles `vendas`, `precificacao` e `producao`, redirecionando os demais para a home do dashboard. As Server Actions da área SHALL verificar a permissão por conta própria, sem depender do guard de rota.
 
 #### Scenario: Usuário sem acesso digita a URL
 - **WHEN** um usuário com apenas a role `marketing` acessa `/vendas/pedidos` diretamente pela URL
@@ -40,14 +40,14 @@ O sistema SHALL organizar a área em abas navegáveis — Pedidos (listagem e ca
 - **THEN** o sistema exibe as quatro abas
 
 #### Scenario: Navegação direta para aba sem permissão
-- **WHEN** um usuário com a role `financeiro` acessa a rota de Configurações da área Vendas
+- **WHEN** um usuário com a role `precificacao` acessa a rota de Configurações da área Vendas
 - **THEN** o sistema nega o acesso e o redireciona para a página padrão da área
 
 ### Requirement: Ações de escrita ocultas para quem só lê
 O sistema SHALL ocultar da interface os botões e formulários de escrita — cadastrar pedido, mover pedido, lançar custo, editar etapas e origens — para os usuários que não têm a permissão correspondente, além de rejeitar a operação no servidor.
 
-#### Scenario: Financeiro vê a listagem
-- **WHEN** um usuário com apenas a role `financeiro` abre a listagem de pedidos
+#### Scenario: Precificação vê a listagem
+- **WHEN** um usuário com apenas a role `precificacao` abre a listagem de pedidos
 - **THEN** o sistema exibe os pedidos sem o botão de cadastrar pedido, mas com a ação de lançar custo disponível
 
 #### Scenario: Produção vê o funil

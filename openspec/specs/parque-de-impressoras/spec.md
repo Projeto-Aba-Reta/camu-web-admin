@@ -28,8 +28,8 @@ O sistema SHALL excluir impressoras com `is_active = false` das opções dispon�
 - **THEN** o sistema deixa de oferecê-la como opção ao iniciar um novo cálculo de preço, mas mantém os cálculos históricos que a referenciam
 
 ### Requirement: Acesso de escrita a Owner, Sócio e role Produção
-O sistema SHALL permitir cadastro e leitura do parque de impressoras a usuários `owner`/`socio` ou com role `producao`, e leitura adicional à role `financeiro` (que consome a depreciação no cálculo de preço, mas não altera o parque físico).
+O sistema SHALL permitir cadastro e leitura do parque de impressoras a usuários `owner`/`socio` ou com role `producao`, e leitura adicional à role `precificacao` (que consome a depreciação no cálculo de preço, mas não altera o parque físico).
 
-#### Scenario: Usuário de Financeiro tenta cadastrar impressora
-- **WHEN** um usuário com apenas a role `financeiro` tenta cadastrar uma nova impressora
+#### Scenario: Usuário de Precificação tenta cadastrar impressora
+- **WHEN** um usuário com apenas a role `precificacao` tenta cadastrar uma nova impressora
 - **THEN** o sistema rejeita a escrita, pois o cadastro do parque físico é responsabilidade de `producao` (ou `owner`/`socio`)

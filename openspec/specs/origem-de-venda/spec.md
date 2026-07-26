@@ -59,7 +59,7 @@ O sistema SHALL permitir arquivar uma origem de venda em vez de excluí-la, reti
 - **THEN** o sistema rejeita a exclusão e orienta a arquivar a origem
 
 ### Requirement: Acesso ao cadastro de origens de venda
-O sistema SHALL permitir leitura das origens de venda a `owner`/`socio` ou às roles `vendas`, `financeiro` e `marketing`, e escrita apenas a `owner`/`socio` ou à role `vendas`.
+O sistema SHALL permitir leitura das origens de venda a `owner`/`socio` ou às roles `vendas`, `precificacao` e `marketing`, e escrita apenas a `owner`/`socio` ou à role `vendas`.
 
 #### Scenario: Marketing tenta editar origem
 - **WHEN** um usuário com apenas a role `marketing` tenta renomear uma origem de venda

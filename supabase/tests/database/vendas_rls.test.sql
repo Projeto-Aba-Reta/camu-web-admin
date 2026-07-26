@@ -27,14 +27,14 @@ select plan(18);
 insert into public.roles (id, name, slug) values
   ('00000000-0000-0000-0000-0000000000a1', 'Vendas/Marketplace', 'vendas'),
   ('00000000-0000-0000-0000-0000000000a2', 'Produção', 'producao'),
-  ('00000000-0000-0000-0000-0000000000a3', 'Financeiro', 'financeiro'),
+  ('00000000-0000-0000-0000-0000000000a3', 'Precificação', 'precificacao'),
   ('00000000-0000-0000-0000-0000000000a4', 'Marketing', 'marketing');
 
 insert into auth.users (instance_id, id, aud, role, email, created_at, updated_at)
 values
   ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-0000000000b1', 'authenticated', 'authenticated', 'vendas@camu.test', now(), now()),
   ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-0000000000b2', 'authenticated', 'authenticated', 'producao@camu.test', now(), now()),
-  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-0000000000b3', 'authenticated', 'authenticated', 'financeiro@camu.test', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-0000000000b3', 'authenticated', 'authenticated', 'precificacao@camu.test', now(), now()),
   ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-0000000000b4', 'authenticated', 'authenticated', 'marketing@camu.test', now(), now());
 
 insert into public.user_roles (user_id, role_id) values
@@ -158,7 +158,7 @@ select is_empty(
 reset role;
 
 -- =============================================================================
--- Financeiro: lê pedido, custo e resultado; não cadastra venda
+-- Precificação: lê pedido, custo e resultado; não cadastra venda
 -- =============================================================================
 
 set local role authenticated;
@@ -166,14 +166,14 @@ set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b3","r
 
 select isnt_empty(
   $$select * from public.sales_monthly_results$$,
-  'financeiro vê o resultado agregado'
+  'precificacao vê o resultado agregado'
 );
 
 select throws_ok(
   $$insert into public.orders (customer_name, subtotal_cents, total_cents) values ('Carlos', 1000, 1000)$$,
   '42501',
   null,
-  'financeiro não cadastra pedido'
+  'precificacao não cadastra pedido'
 );
 
 reset role;

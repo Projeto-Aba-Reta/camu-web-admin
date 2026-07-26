@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Cadastro inline das partes de uma peça composta do catálogo — itens não vendáveis separadamente, que não existem como peças do catálogo, mas que carregam seus próprios dados de custo (filamento, gramas, impressora e tempo de impressão). Complementa a composição por componentes referenciados do catálogo, permitindo precificar um conjunto sem poluir o catálogo com peças que nunca são vendidas isoladamente. Leitura ampla para Owner/Sócio e roles `producao`/`financeiro`/`marketing`; escrita restrita a Produção.
+Cadastro inline das partes de uma peça composta do catálogo — itens não vendáveis separadamente, que não existem como peças do catálogo, mas que carregam seus próprios dados de custo (filamento, gramas, impressora e tempo de impressão). Complementa a composição por componentes referenciados do catálogo, permitindo precificar um conjunto sem poluir o catálogo com peças que nunca são vendidas isoladamente. Leitura ampla para Owner/Sócio e roles `producao`/`precificacao`/`marketing`; escrita restrita a Produção.
 
 ## Requirements
 
@@ -43,11 +43,11 @@ O sistema SHALL permitir editar e remover partes de uma peça composta, sem afet
 - **WHEN** um usuário altera as gramas de uma parte já usada em um cálculo de preço salvo
 - **THEN** o cálculo já salvo permanece inalterado e apenas novos cálculos passam a usar as gramas atualizadas
 
-### Requirement: Leitura ampla por Produção, Financeiro e Marketing; escrita restrita a Produção
-O sistema SHALL permitir leitura das partes de uma peça composta a usuários `owner`/`socio` ou com role `producao`, `financeiro` ou `marketing`, e permitir criar, editar ou remover partes apenas a usuários `owner`/`socio` ou com a role `producao` — mesma regra de acesso já usada no cadastro do catálogo.
+### Requirement: Leitura ampla por Produção, Precificação e Marketing; escrita restrita a Produção
+O sistema SHALL permitir leitura das partes de uma peça composta a usuários `owner`/`socio` ou com role `producao`, `precificacao` ou `marketing`, e permitir criar, editar ou remover partes apenas a usuários `owner`/`socio` ou com a role `producao` — mesma regra de acesso já usada no cadastro do catálogo.
 
-#### Scenario: Usuário de Financeiro consulta as partes de uma peça
-- **WHEN** um usuário com apenas a role `financeiro` consulta as partes de uma peça composta
+#### Scenario: Usuário de Precificação consulta as partes de uma peça
+- **WHEN** um usuário com apenas a role `precificacao` consulta as partes de uma peça composta
 - **THEN** o sistema exibe a lista de partes e seus dados normalmente
 
 #### Scenario: Usuário de Marketing tenta editar uma parte

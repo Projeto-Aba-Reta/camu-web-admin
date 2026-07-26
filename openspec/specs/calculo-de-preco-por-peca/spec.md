@@ -53,8 +53,8 @@ O sistema SHALL exibir uma listagem dos cálculos de preço já executados, filt
 - **WHEN** um usuário consulta, no histórico, um cálculo executado antes de uma atualização de preço de filamento
 - **THEN** a tela exibe o custo e o preço exatamente como calculados na época, não recalculados com o preço de filamento atual
 
-### Requirement: Acesso de execução por Financeiro e Produção
-O sistema SHALL permitir que usuários `owner`/`socio` ou com role `financeiro`/`producao` executem cálculos e consultem o histórico, sem exigir acesso à tela de configuração de parâmetros.
+### Requirement: Acesso de execução por Precificação e Produção
+O sistema SHALL permitir que usuários `owner`/`socio` ou com role `precificacao`/`producao` executem cálculos e consultem o histórico, sem exigir acesso à tela de configuração de parâmetros.
 
 #### Scenario: Usuário de Produção executa um cálculo
 - **WHEN** um usuário com apenas a role `producao` acessa a tela de cálculo de preço

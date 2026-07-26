@@ -10,13 +10,13 @@ function isSocioOrOwner(user: CurrentUser): boolean {
 }
 
 // Leitura da listagem/detalhe de peça: Owner/Sócio ou role producao/
-// financeiro/marketing (ver Requirement "Acesso conforme regra de domínio
+// precificacao/marketing (ver Requirement "Acesso conforme regra de domínio
 // do catálogo").
 export function canAccessCatalog(user: CurrentUser): boolean {
   return (
     isSocioOrOwner(user) ||
     hasRole(user, "producao") ||
-    hasRole(user, "financeiro") ||
+    hasRole(user, "precificacao") ||
     hasRole(user, "marketing")
   );
 }

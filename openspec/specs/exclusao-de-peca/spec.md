@@ -62,5 +62,5 @@ Ao excluir permanentemente uma peça, o sistema SHALL remover do bucket `product
 O sistema SHALL restringir a exclusão e a descontinuação de peças a usuários `owner`/`socio` ou com a role `producao`, validando a permissão na própria Server Action.
 
 #### Scenario: Usuário somente leitura tenta excluir
-- **WHEN** um usuário com apenas a role `financeiro` invoca a exclusão de uma peça
+- **WHEN** um usuário com apenas a role `precificacao` invoca a exclusão de uma peça
 - **THEN** o sistema recusa a operação por falta de permissão e nenhuma peça é removida

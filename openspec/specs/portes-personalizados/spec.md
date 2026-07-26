@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Cadastro dos portes de tamanho usados na régua de precificação: os portes fixos de sistema P/M/G e portes personalizados adicionais (ex.: `GG`), cada um com código curto estável, nome de exibição e ordem, disponíveis para cadastrar faixas de peso/tempo, configurar margens e classificar peças. Escrita restrita ao domínio financeiro.
+Cadastro dos portes de tamanho usados na régua de precificação: os portes fixos de sistema P/M/G e portes personalizados adicionais (ex.: `GG`), cada um com código curto estável, nome de exibição e ordem, disponíveis para cadastrar faixas de peso/tempo, configurar margens e classificar peças. Escrita restrita ao domínio de precificação.
 
 ## Requirements
 
@@ -54,9 +54,9 @@ O sistema SHALL permitir remover um porte personalizado apenas quando nenhuma pe
 - **WHEN** um usuário remove um porte personalizado que não está associado a nenhuma peça nem faixa
 - **THEN** o sistema remove o porte, que deixa de aparecer como opção nos cadastros
 
-### Requirement: Acesso restrito a Owner, Sócio e role Financeiro
-O sistema SHALL permitir escrita de portes (cadastro, edição, remoção) apenas a usuários `owner`/`socio` ou com a role `financeiro`, e leitura a `owner`/`socio` ou role `financeiro`/`producao` — mesma regra de acesso já aplicada às faixas de porte.
+### Requirement: Acesso restrito a Owner, Sócio e role Precificação
+O sistema SHALL permitir escrita de portes (cadastro, edição, remoção) apenas a usuários `owner`/`socio` ou com a role `precificacao`, e leitura a `owner`/`socio` ou role `precificacao`/`producao` — mesma regra de acesso já aplicada às faixas de porte.
 
 #### Scenario: Usuário de Produção tenta cadastrar um porte
 - **WHEN** um usuário com apenas a role `producao` tenta cadastrar um novo porte
-- **THEN** o sistema rejeita a escrita, pois o cadastro de portes é responsabilidade financeira
+- **THEN** o sistema rejeita a escrita, pois o cadastro de portes é responsabilidade de Precificação
