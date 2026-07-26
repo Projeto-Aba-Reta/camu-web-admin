@@ -27,7 +27,7 @@ import {
   createSizeTierRangeAction,
   removeSizeTierAction,
   updateSizeTierAction,
-} from "@/app/(dashboard)/financeiro/precificacao/actions";
+} from "@/app/(dashboard)/precificacao/actions";
 import { useSizeTierDraft } from "@/components/precificacao/pricing-draft-context";
 import { tierLabel } from "@/lib/pricing/tier-label";
 import type { MarginMode, SizeTierDefinition, SizeTierRange } from "@/types/pricing";

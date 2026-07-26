@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { printerFormSchema, type PrinterFormValues } from "@/lib/validation/pricing-schemas";
-import { createPrinterAction, setPrinterActiveAction } from "@/app/(dashboard)/financeiro/precificacao/actions";
+import { createPrinterAction, setPrinterActiveAction } from "@/app/(dashboard)/precificacao/actions";
 import type { Printer } from "@/types/pricing";
 
 interface ImpressoraFormProps {

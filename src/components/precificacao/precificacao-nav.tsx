@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
-  { href: "/financeiro/precificacao/calcular", label: "Calcular preço" },
-  { href: "/financeiro/precificacao/historico", label: "Histórico" },
-  { href: "/financeiro/precificacao/configuracao", label: "Configuração" },
+  { href: "/precificacao/calcular", label: "Calcular preço" },
+  { href: "/precificacao/historico", label: "Histórico" },
+  { href: "/precificacao/configuracao", label: "Configuração" },
 ];
 
 export function PrecificacaoNav() {
