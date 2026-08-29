@@ -4,11 +4,14 @@ SHELL := /bin/bash
 SUPABASE_ENV_KEYS := NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY
 SUPABASE_ENV_GREP := ^(NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_ANON_KEY|SUPABASE_SERVICE_ROLE_KEY)=
 SETUP_STAMP := .dev-setup-complete
+LANDING_DIR := ../camu-web-landing-page
+LANDING_PORT := 3001
 
-.PHONY: help dev install env docker-check supabase-up supabase-sync-env seed db-reset stop status clean db-push db-push-dry db-remote-status
+.PHONY: help dev dev-all dev-setup install env docker-check supabase-up supabase-sync-env seed db-reset stop status clean db-push db-push-dry db-remote-status
 
 help:
 	@echo "make dev       - setup completo (deps, Supabase local, migrations pendentes sempre aplicadas, seed de dados de exemplo) e inicia o Next.js + a rotina de conclusao automatica da fila de impressao"
+	@echo "make dev-all   - igual ao 'make dev' e ainda sobe a camu-web-landing-page ($(LANDING_DIR)) em paralelo na porta $(LANDING_PORT)"
 	@echo "make db-reset  - reaplica todas as migrations do zero (apaga dados locais) e roda o seed de novo"
 	@echo "make db-push          - aplica as migrations pendentes no Supabase REMOTO (projeto linkado)"
 	@echo "make db-push-dry      - mostra o SQL que o db-push aplicaria, sem executar nada"
@@ -55,7 +58,7 @@ supabase-sync-env: supabase-up .env.local
 
 ## --- run ---
 
-dev: install env docker-check supabase-up supabase-sync-env
+dev-setup: install env docker-check supabase-up supabase-sync-env
 	@if [ ! -f $(SETUP_STAMP) ]; then \
 		echo ">> Primeira vez: aplicando migrations do zero..."; \
 		npx supabase db reset; \
@@ -65,6 +68,8 @@ dev: install env docker-check supabase-up supabase-sync-env
 		npx supabase migration up; \
 	fi
 	$(MAKE) seed
+
+dev: dev-setup
 	@echo ""
 	@port=$$(grep -m1 '^PORT=' .env.local | cut -d= -f2); \
 	echo ">> Studio: http://127.0.0.1:54323  |  App: http://localhost:$${port:-3000}"
@@ -73,6 +78,30 @@ dev: install env docker-check supabase-up supabase-sync-env
 	@npx tsx --conditions=react-server scripts/run-print-queue-cron.ts & \
 	cron_pid=$$!; \
 	trap 'kill $$cron_pid 2>/dev/null' EXIT INT TERM; \
+	npm run dev
+
+# Sobe o admin (com Supabase local + cron) e a landing page juntos.
+# A landing vive em outro repo git ($(LANDING_DIR)) e usa Supabase remoto;
+# aqui ela roda em next dev -p $(LANDING_PORT) pra nao colidir com o admin (3000).
+# O trap derruba cron + landing quando o npm run dev do admin termina/Ctrl+C.
+dev-all: dev-setup
+	@if [ ! -d $(LANDING_DIR) ]; then \
+		echo "Landing page nao encontrada em $(LANDING_DIR)."; \
+		echo "Clone o camu-web-landing-page ao lado deste repo e tente de novo."; \
+		exit 1; \
+	fi
+	@[ -d $(LANDING_DIR)/node_modules ] || { echo ">> Instalando deps da landing..."; (cd $(LANDING_DIR) && npm install); }
+	@[ -f $(LANDING_DIR)/.env.local ] || { echo ">> Falta $(LANDING_DIR)/.env.local (copie de .env.example e preencha)."; exit 1; }
+	@echo ""
+	@port=$$(grep -m1 '^PORT=' .env.local | cut -d= -f2); \
+	echo ">> Studio: http://127.0.0.1:54323  |  Admin: http://localhost:$${port:-3000}  |  Landing: http://localhost:$(LANDING_PORT)"
+	@echo ">> Em paralelo: cron da fila de impressao + landing page (next dev -p $(LANDING_PORT))"
+	@echo ""
+	@npx tsx --conditions=react-server scripts/run-print-queue-cron.ts & \
+	cron_pid=$$!; \
+	(cd $(LANDING_DIR) && npx next dev -p $(LANDING_PORT)) & \
+	landing_pid=$$!; \
+	trap 'kill $$cron_pid $$landing_pid 2>/dev/null' EXIT INT TERM; \
 	npm run dev
 
 # Idempotente: cada script upserta por chave natural propria (slug, nome,
