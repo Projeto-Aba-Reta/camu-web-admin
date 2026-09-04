@@ -9,7 +9,7 @@ import type { CurrentUser } from "@/types/auth";
 // Cada página revalida a sua permissão por conta própria: esconder a aba é
 // conveniência, não proteção.
 export function visibleSalesTabs(user: CurrentUser | null): VendasTab[] {
-  const tabs: VendasTab[] = ["pedidos", "funil"];
+  const tabs: VendasTab[] = ["pedidos", "funil", "miniaturas"];
   if (!user) return tabs;
   if (canReadSalesResult(user)) tabs.push("resultado");
   if (canConfigureSales(user)) tabs.push("configuracoes");

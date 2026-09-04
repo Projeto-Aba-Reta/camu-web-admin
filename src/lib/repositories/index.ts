@@ -39,6 +39,7 @@ import type { IOrderCostRepository } from "./interfaces/order-cost-repository.in
 import type { IOrderStageEventRepository } from "./interfaces/order-stage-event-repository.interface";
 import type { IOrderTrackingRepository } from "./interfaces/order-tracking-repository.interface";
 import type { ISalesResultRepository } from "./interfaces/sales-result-repository.interface";
+import type { IPetMiniatureRequestRepository } from "./interfaces/pet-miniature-request-repository.interface";
 import { SupabaseRoleRepository } from "./supabase/supabase-role-repository";
 import { SupabaseSubRoleRepository } from "./supabase/supabase-sub-role-repository";
 import { SupabaseUserRepository } from "./supabase/supabase-user-repository";
@@ -78,6 +79,7 @@ import { SupabaseOrderCostRepository } from "./supabase/supabase-order-cost-repo
 import { SupabaseOrderStageEventRepository } from "./supabase/supabase-order-stage-event-repository";
 import { SupabaseOrderTrackingRepository } from "./supabase/supabase-order-tracking-repository";
 import { SupabaseSalesResultRepository } from "./supabase/supabase-sales-result-repository";
+import { SupabasePetMiniatureRequestRepository } from "./supabase/supabase-pet-miniature-request-repository";
 
 export interface Repositories {
   roles: IRoleRepository;
@@ -119,6 +121,7 @@ export interface Repositories {
   orderStageEvents: IOrderStageEventRepository;
   orderTracking: IOrderTrackingRepository;
   salesResults: ISalesResultRepository;
+  petMiniatureRequests: IPetMiniatureRequestRepository;
 }
 
 // Composition root: único ponto que muda para trocar de provedor de dados.
@@ -163,5 +166,6 @@ export function createRepositories(supabaseClient: SupabaseClient<Database>): Re
     orderStageEvents: new SupabaseOrderStageEventRepository(supabaseClient),
     orderTracking: new SupabaseOrderTrackingRepository(supabaseClient),
     salesResults: new SupabaseSalesResultRepository(supabaseClient),
+    petMiniatureRequests: new SupabasePetMiniatureRequestRepository(supabaseClient),
   };
 }

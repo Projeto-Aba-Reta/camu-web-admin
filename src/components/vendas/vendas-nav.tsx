@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-export type VendasTab = "pedidos" | "funil" | "resultado" | "configuracoes";
+export type VendasTab = "pedidos" | "funil" | "miniaturas" | "resultado" | "configuracoes";
 
 interface VendasNavProps {
   activeTab: VendasTab;
@@ -13,11 +13,12 @@ interface VendasNavProps {
 const TAB_LABEL: Record<VendasTab, string> = {
   pedidos: "Pedidos",
   funil: "Funil",
+  miniaturas: "Miniaturas de pet",
   resultado: "Resultado",
   configuracoes: "Configurações",
 };
 
-const TAB_ORDER: VendasTab[] = ["pedidos", "funil", "resultado", "configuracoes"];
+const TAB_ORDER: VendasTab[] = ["pedidos", "funil", "miniaturas", "resultado", "configuracoes"];
 
 export function VendasNav({ activeTab, visibleTabs }: VendasNavProps) {
   const tabs = TAB_ORDER.filter((tab) => visibleTabs.includes(tab));

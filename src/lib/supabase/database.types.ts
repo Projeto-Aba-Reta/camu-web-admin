@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -103,6 +108,266 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      camu_nfc_admin_audit: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          entity: string
+          entity_id: string | null
+          id: string
+          tenant_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string
+          created_at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+          tenant_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camu_nfc_admin_audit_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "camu_nfc_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      camu_nfc_pet_fields: {
+        Row: {
+          id: string
+          is_public: boolean
+          label: string
+          pet_id: string
+          position: number
+          type: string
+          value: string | null
+        }
+        Insert: {
+          id?: string
+          is_public?: boolean
+          label: string
+          pet_id: string
+          position?: number
+          type?: string
+          value?: string | null
+        }
+        Update: {
+          id?: string
+          is_public?: boolean
+          label?: string
+          pet_id?: string
+          position?: number
+          type?: string
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camu_nfc_pet_fields_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "camu_nfc_pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      camu_nfc_pets: {
+        Row: {
+          address: string | null
+          breed: string | null
+          created_at: string
+          id: string
+          lost_mode: boolean
+          name: string
+          notes: string | null
+          owner_name: string | null
+          owner_phone: string | null
+          photo_url: string | null
+          public_code: string
+          published: boolean
+          species: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          breed?: string | null
+          created_at?: string
+          id?: string
+          lost_mode?: boolean
+          name: string
+          notes?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
+          photo_url?: string | null
+          public_code: string
+          published?: boolean
+          species?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          breed?: string | null
+          created_at?: string
+          id?: string
+          lost_mode?: boolean
+          name?: string
+          notes?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
+          photo_url?: string | null
+          public_code?: string
+          published?: boolean
+          species?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camu_nfc_pets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "camu_nfc_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      camu_nfc_platform_admins: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      camu_nfc_tags: {
+        Row: {
+          batch_id: string | null
+          code: string
+          created_at: string
+          id: string
+          pet_id: string | null
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          batch_id?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          pet_id?: string | null
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          batch_id?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          pet_id?: string | null
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camu_nfc_tags_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "camu_nfc_pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "camu_nfc_tags_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "camu_nfc_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      camu_nfc_tenant_users: {
+        Row: {
+          created_at: string
+          role: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          role: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camu_nfc_tenant_users_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "camu_nfc_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      camu_nfc_tenants: {
+        Row: {
+          created_at: string
+          id: string
+          links: Json
+          logo_url: string | null
+          name: string
+          primary_color: string | null
+          slug: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          links?: Json
+          logo_url?: string | null
+          name: string
+          primary_color?: string | null
+          slug: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          links?: Json
+          logo_url?: string | null
+          name?: string
+          primary_color?: string | null
+          slug?: string
+          status?: string
+        }
+        Relationships: []
       }
       capital_contributions: {
         Row: {
@@ -296,6 +561,33 @@ export type Database = {
           name?: string
           phone?: string
           reference_image_url?: string | null
+        }
+        Relationships: []
+      }
+      customer_magic_tokens: {
+        Row: {
+          consumed_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          token_hash: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          token_hash: string
+        }
+        Update: {
+          consumed_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          token_hash?: string
         }
         Relationships: []
       }
@@ -1037,6 +1329,69 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pet_miniature_requests: {
+        Row: {
+          ai_error: string | null
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string
+          generated_image_painted_path: string | null
+          generated_image_plain_path: string | null
+          id: string
+          order_id: string | null
+          photo_paths: string[]
+          selected_variant: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ai_error?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          customer_phone: string
+          generated_image_painted_path?: string | null
+          generated_image_plain_path?: string | null
+          id?: string
+          order_id?: string | null
+          photo_paths: string[]
+          selected_variant?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_error?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string
+          generated_image_painted_path?: string | null
+          generated_image_plain_path?: string | null
+          id?: string
+          order_id?: string | null
+          photo_paths?: string[]
+          selected_variant?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_miniature_requests_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_financials"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "pet_miniature_requests_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -2337,6 +2692,21 @@ export type Database = {
       }
     }
     Functions: {
+      camu_nfc_can_write_tenant_folder: {
+        Args: { p_name: string }
+        Returns: boolean
+      }
+      camu_nfc_current_role: { Args: never; Returns: string }
+      camu_nfc_current_tenant_id: { Args: never; Returns: string }
+      camu_nfc_is_platform_admin: { Args: never; Returns: boolean }
+      camu_nfc_public_tag_state: {
+        Args: { p_code: string; p_slug: string }
+        Returns: string
+      }
+      camu_nfc_tenant_has_tags: {
+        Args: { p_tenant_id: string }
+        Returns: boolean
+      }
       change_user_type: {
         Args: { p_new_type: string; p_user_id: string }
         Returns: {
@@ -2379,12 +2749,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2408,11 +2778,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2433,11 +2803,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2458,11 +2828,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2475,11 +2845,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2496,4 +2866,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
