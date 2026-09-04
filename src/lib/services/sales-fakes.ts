@@ -31,6 +31,7 @@ import type {
   IOrderStageEventRepository,
   RecordStageEventInput,
 } from "@/lib/repositories/interfaces/order-stage-event-repository.interface";
+import type { IOrderTrackingRepository } from "@/lib/repositories/interfaces/order-tracking-repository.interface";
 import type { ISalesResultRepository } from "@/lib/repositories/interfaces/sales-result-repository.interface";
 import type {
   CreatePrinterInput,
@@ -47,6 +48,7 @@ import type {
   MonthlySalesResultRow,
   OrderCost,
   OrderCostCategory,
+  OrderEvent,
   OrderPipelineStage,
   OrderStageEvent,
   SaleOrigin,
@@ -261,6 +263,10 @@ export class FakeSalesOrderRepository implements ISalesOrderRepository {
     return order ? this.hydrate(order) : null;
   }
 
+  async findIdByCode(orderCode: string): Promise<string | null> {
+    return this.orders.find((order) => order.orderCode === orderCode)?.id ?? null;
+  }
+
   async create(input: CreateSalesOrderInput): Promise<SalesOrder> {
     this.counter += 1;
     const now = new Date().toISOString();
@@ -282,6 +288,7 @@ export class FakeSalesOrderRepository implements ISalesOrderRepository {
       currentPrinterId: null,
       subtotalCents: input.subtotalCents,
       shippingCents: input.shippingCents,
+      discountCents: 0,
       totalCents: input.totalCents,
       createdAt: now,
       updatedAt: now,
@@ -397,6 +404,38 @@ export class FakeOrderStageEventRepository implements IOrderStageEventRepository
       printerId: input.printerId,
       note: input.note,
       createdBy: input.createdBy,
+      createdAt: new Date().toISOString(),
+    };
+    this.events.push(event);
+    return event;
+  }
+}
+
+// Recebe o FakeSalesOrderRepository pra mutar orders.status no mesmo lugar
+// que a movimentação do funil lê — no banco real é a mesma tabela `orders`.
+export class FakeOrderTrackingRepository implements IOrderTrackingRepository {
+  public events: OrderEvent[] = [];
+  private counter = 0;
+
+  constructor(private readonly salesOrders: FakeSalesOrderRepository) {}
+
+  async listEvents(orderId: string): Promise<OrderEvent[]> {
+    return this.events.filter((event) => event.orderId === orderId);
+  }
+
+  async updateStatus(orderId: string, status: string): Promise<void> {
+    const order = this.salesOrders.orders.find((candidate) => candidate.id === orderId);
+    if (!order) throw new Error("pedido não encontrado");
+    order.status = status;
+  }
+
+  async insertEvent(orderId: string, status: string, note: string | null): Promise<OrderEvent> {
+    this.counter += 1;
+    const event: OrderEvent = {
+      id: `tracking-event-${this.counter}`,
+      orderId,
+      status,
+      note,
       createdAt: new Date().toISOString(),
     };
     this.events.push(event);

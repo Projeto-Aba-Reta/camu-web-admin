@@ -5,7 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createRepositories } from "@/lib/repositories";
 import { SalesService } from "@/lib/services/sales-service";
 import { SalesPipelineService } from "@/lib/services/sales-pipeline-service";
+import { OrderTrackingService } from "@/lib/services/order-tracking-service";
+import { AuditLogService, AUDIT_ACTIONS } from "@/lib/services/audit-log-service";
 import {
+  requireCustomerStatusUpdate,
   requireOrderCostWrite,
   requireSalesConfigure,
   requireSalesOrderMove,
@@ -120,15 +123,84 @@ export async function moveSalesOrderAction(input: {
   toStageId: string;
   printerId: string | null;
   note: string | null;
+  // Slug do status de acompanhamento do cliente sugerido pela etapa de
+  // destino, quando o usuário aceita a sugestão (design, decisão 5).
+  alsoSetCustomerStatus?: string;
 }): Promise<ActionResult> {
   try {
     const user = await requireSalesOrderMove();
-    const service = await getPipelineService();
-    await service.moveOrder({ ...input, movedBy: user.id });
+    const supabase = await createClient();
+    const repositories = createRepositories(supabase);
+
+    await new SalesPipelineService(repositories).moveOrder({
+      orderId: input.orderId,
+      toStageId: input.toStageId,
+      printerId: input.printerId,
+      note: input.note,
+      movedBy: user.id,
+    });
+
+    if (input.alsoSetCustomerStatus) {
+      // Best-effort: a etapa já foi movida e é a fonte primária — falha aqui
+      // não desfaz a movimentação, só deixa o status do cliente pra trás,
+      // retentável pela ação manual (design, decisão 5).
+      try {
+        await new OrderTrackingService(repositories).updateStatus({
+          orderId: input.orderId,
+          status: input.alsoSetCustomerStatus,
+          note: null,
+        });
+        await new AuditLogService(repositories).record(
+          user.id,
+          AUDIT_ACTIONS.ORDER_CUSTOMER_STATUS_UPDATE,
+          "orders",
+          input.orderId,
+          { status: input.alsoSetCustomerStatus, viaFunnelMove: true },
+        );
+      } catch {
+        // Silencioso de propósito — ver comentário acima.
+      }
+    }
+
     revalidateSales();
     return { ok: true };
   } catch (error) {
     return { ok: false, error: errorMessage(error, "Não foi possível mover o pedido.") };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Acompanhamento do cliente
+// ---------------------------------------------------------------------------
+
+export async function updateCustomerStatusAction(input: {
+  orderId: string;
+  status: string;
+  note: string | null;
+}): Promise<ActionResult> {
+  try {
+    const user = await requireCustomerStatusUpdate();
+    const supabase = await createClient();
+    const repositories = createRepositories(supabase);
+
+    await new OrderTrackingService(repositories).updateStatus(input);
+    // order_events não tem coluna de autor (design, decisão 4) — quem mudou e
+    // quando fica consultável pelo log de auditoria de vendas.
+    await new AuditLogService(repositories).record(
+      user.id,
+      AUDIT_ACTIONS.ORDER_CUSTOMER_STATUS_UPDATE,
+      "orders",
+      input.orderId,
+      { status: input.status },
+    );
+
+    revalidateSales();
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      error: errorMessage(error, "Não foi possível atualizar o status do cliente."),
+    };
   }
 }
 

@@ -194,6 +194,13 @@ ser revisados pelo Owner/Sócio antes de qualquer uso em produção.
 Para subir o painel em uma URL acessível pelo time (Supabase hospedado +
 Vercel, branch `develop`), ver [`docs/deploy-dev.md`](docs/deploy-dev.md).
 
+## Vendas: andamento de pedido
+
+A área de Vendas tem dois modelos de andamento separados sobre o mesmo
+pedido — funil de produção interno x status de acompanhamento do cliente
+(o que a landing page exibe). Ver
+[`docs/vendas-andamento-de-pedido.md`](docs/vendas-andamento-de-pedido.md).
+
 ## Fora de escopo (por enquanto)
 
 - A loja/site voltado ao cliente final (catálogo público, carrinho,

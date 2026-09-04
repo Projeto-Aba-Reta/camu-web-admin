@@ -4,9 +4,10 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createRepositories } from "@/lib/repositories";
 import { getCurrentProfile } from "@/lib/auth/get-current-profile";
-import { canWriteOrderCost, canWriteSalesOrder } from "@/lib/auth/sales-access";
+import { canUpdateCustomerStatus, canWriteOrderCost, canWriteSalesOrder } from "@/lib/auth/sales-access";
 import { SalesService } from "@/lib/services/sales-service";
 import { SalesPipelineService } from "@/lib/services/sales-pipeline-service";
+import { OrderTrackingService } from "@/lib/services/order-tracking-service";
 import { PageHeader } from "@/components/layout/page-header";
 import { SalesOrderDetail } from "@/components/vendas/sales-order-detail";
 import { SalesOrderForm } from "@/components/vendas/sales-order-form";
@@ -23,6 +24,7 @@ export default async function PedidoDetalhePage({ params }: PedidoDetalhePagePro
   const repositories = createRepositories(supabase);
   const service = new SalesService(repositories);
   const pipeline = new SalesPipelineService(repositories);
+  const tracking = new OrderTrackingService(repositories);
 
   const order = await service.findById(orderId);
   if (!order) notFound();
@@ -34,6 +36,7 @@ export default async function PedidoDetalhePage({ params }: PedidoDetalhePagePro
     profiles,
     costs,
     events,
+    trackingEvents,
     products,
     sellerNames,
     costParameters,
@@ -49,6 +52,7 @@ export default async function PedidoDetalhePage({ params }: PedidoDetalhePagePro
     repositories.users.listAll(),
     service.listCosts(order.id),
     pipeline.listStageEvents(order.id),
+    tracking.listEvents(order.id),
     repositories.products.findAll(),
     service.listSellerNames(),
     repositories.costParameters.findCurrent(),
@@ -59,6 +63,7 @@ export default async function PedidoDetalhePage({ params }: PedidoDetalhePagePro
 
   const canWrite = Boolean(currentUser && canWriteSalesOrder(currentUser));
   const canWriteCost = Boolean(currentUser && canWriteOrderCost(currentUser));
+  const canUpdateStatus = Boolean(currentUser && canUpdateCustomerStatus(currentUser));
 
   const pricing = {
     costParameters,
@@ -103,7 +108,9 @@ export default async function PedidoDetalhePage({ params }: PedidoDetalhePagePro
         profiles={profiles}
         costs={costs}
         events={events}
+        trackingEvents={trackingEvents}
         canWriteCost={canWriteCost}
+        canUpdateCustomerStatus={canUpdateStatus}
       />
     </div>
   );

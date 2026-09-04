@@ -30,6 +30,22 @@ export function stageColorClass(color: string): string {
   return STAGE_COLOR_CLASS[color] ?? STAGE_COLOR_CLASS.slate;
 }
 
+// Rótulos do status de acompanhamento do cliente — mesmo vocabulário lido
+// pela landing page (ver types/vendas.ts, CUSTOMER_ORDER_STATUSES).
+export const CUSTOMER_STATUS_LABEL: Record<string, string> = {
+  pending: "Pendente",
+  paid: "Pago",
+  in_production: "Em produção",
+  finishing: "Acabamento",
+  shipped: "Enviado",
+  delivered: "Entregue",
+  cancelled: "Cancelado",
+};
+
+export function customerStatusLabel(status: string): string {
+  return CUSTOMER_STATUS_LABEL[status] ?? status;
+}
+
 export function formatCents(cents: number): string {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }

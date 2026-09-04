@@ -37,6 +37,7 @@ import type { IOrderPipelineStageRepository } from "./interfaces/order-pipeline-
 import type { ISalesOrderRepository } from "./interfaces/sales-order-repository.interface";
 import type { IOrderCostRepository } from "./interfaces/order-cost-repository.interface";
 import type { IOrderStageEventRepository } from "./interfaces/order-stage-event-repository.interface";
+import type { IOrderTrackingRepository } from "./interfaces/order-tracking-repository.interface";
 import type { ISalesResultRepository } from "./interfaces/sales-result-repository.interface";
 import { SupabaseRoleRepository } from "./supabase/supabase-role-repository";
 import { SupabaseSubRoleRepository } from "./supabase/supabase-sub-role-repository";
@@ -75,6 +76,7 @@ import { SupabaseOrderPipelineStageRepository } from "./supabase/supabase-order-
 import { SupabaseSalesOrderRepository } from "./supabase/supabase-sales-order-repository";
 import { SupabaseOrderCostRepository } from "./supabase/supabase-order-cost-repository";
 import { SupabaseOrderStageEventRepository } from "./supabase/supabase-order-stage-event-repository";
+import { SupabaseOrderTrackingRepository } from "./supabase/supabase-order-tracking-repository";
 import { SupabaseSalesResultRepository } from "./supabase/supabase-sales-result-repository";
 
 export interface Repositories {
@@ -115,6 +117,7 @@ export interface Repositories {
   salesOrders: ISalesOrderRepository;
   orderCosts: IOrderCostRepository;
   orderStageEvents: IOrderStageEventRepository;
+  orderTracking: IOrderTrackingRepository;
   salesResults: ISalesResultRepository;
 }
 
@@ -158,6 +161,7 @@ export function createRepositories(supabaseClient: SupabaseClient<Database>): Re
     salesOrders: new SupabaseSalesOrderRepository(supabaseClient),
     orderCosts: new SupabaseOrderCostRepository(supabaseClient),
     orderStageEvents: new SupabaseOrderStageEventRepository(supabaseClient),
+    orderTracking: new SupabaseOrderTrackingRepository(supabaseClient),
     salesResults: new SupabaseSalesResultRepository(supabaseClient),
   };
 }

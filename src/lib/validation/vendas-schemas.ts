@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ORDER_COST_CATEGORIES, STAGE_COLORS } from "@/types/vendas";
+import { CUSTOMER_ORDER_STATUSES, ORDER_COST_CATEGORIES, STAGE_COLORS } from "@/types/vendas";
 
 // Valores monetários chegam do formulário como texto em reais ("42,90") e
 // viram centavos inteiros. Fazer a conversão aqui, e não no componente,
@@ -105,6 +105,16 @@ export const moveOrderFormSchema = z.object({
   // componente, que é quem conhece a etapa escolhida.
   printerId: z.string(),
   note: z.string(),
+  // Só é lido quando a etapa de destino sugere um status de cliente — o
+  // componente decide se mostra o checkbox (design, decisão 5).
+  alsoSetCustomerStatus: z.boolean(),
 });
 
 export type MoveOrderFormValues = z.infer<typeof moveOrderFormSchema>;
+
+export const updateCustomerStatusFormSchema = z.object({
+  status: z.enum(CUSTOMER_ORDER_STATUSES, { message: "Selecione o status." }),
+  note: z.string(),
+});
+
+export type UpdateCustomerStatusFormValues = z.infer<typeof updateCustomerStatusFormSchema>;

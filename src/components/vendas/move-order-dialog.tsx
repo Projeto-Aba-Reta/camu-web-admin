@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight, MoveRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { moveOrderFormSchema, type MoveOrderFormValues } from "@/lib/validation/vendas-schemas";
 import { moveSalesOrderAction } from "@/app/(dashboard)/vendas/actions";
+import { STAGE_TO_CUSTOMER_STATUS } from "@/lib/services/order-tracking-service";
+import { customerStatusLabel } from "@/components/vendas/labels";
 import type { OrderPipelineStage, SalesOrderWithFinancials } from "@/types/vendas";
 import type { Printer } from "@/types/pricing";
 
@@ -46,7 +49,14 @@ export function MoveOrderDialog({
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  const defaults = { toStageId: fixedStage?.id ?? "", printerId: "", note: "" };
+  const defaults = {
+    toStageId: fixedStage?.id ?? "",
+    printerId: "",
+    note: "",
+    // Só é lido quando a etapa sugere status de cliente — marcado por
+    // padrão (design, decisão 5).
+    alsoSetCustomerStatus: true,
+  };
 
   const form = useForm<MoveOrderFormValues>({
     resolver: zodResolver(moveOrderFormSchema),
@@ -56,6 +66,10 @@ export function MoveOrderDialog({
   const toStageId = form.watch("toStageId");
   const targetStage = stages.find((stage) => stage.id === toStageId) ?? fixedStage;
   const needsPrinter = targetStage?.requiresPrinter ?? false;
+  const suggestedCustomerStatus = targetStage ? STAGE_TO_CUSTOMER_STATUS[targetStage.slug] : undefined;
+  const showCustomerStatusSuggestion = Boolean(
+    suggestedCustomerStatus && suggestedCustomerStatus !== order.status,
+  );
 
   function handleOpenChange(nextOpen: boolean) {
     if (nextOpen) form.reset(defaults);
@@ -77,6 +91,10 @@ export function MoveOrderDialog({
       toStageId: values.toStageId,
       printerId: needsPrinter ? values.printerId : null,
       note: values.note.trim() === "" ? null : values.note.trim(),
+      alsoSetCustomerStatus:
+        showCustomerStatusSuggestion && values.alsoSetCustomerStatus
+          ? suggestedCustomerStatus
+          : undefined,
     });
 
     if (!result.ok) {
@@ -184,6 +202,28 @@ export function MoveOrderDialog({
                       </SelectContent>
                     </Select>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {showCustomerStatusSuggestion && (
+              <FormField
+                control={form.control}
+                name="alsoSetCustomerStatus"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start gap-2 rounded-md border p-3">
+                    <FormControl>
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="font-normal">
+                        {/* Modelo separado do funil (design, decisão 5) — o
+                            checkbox só aplica também o status de cliente,
+                            nunca substitui a movimentação de etapa. */}
+                        Avisar o cliente (status: {customerStatusLabel(suggestedCustomerStatus!)})
+                      </FormLabel>
+                    </div>
                   </FormItem>
                 )}
               />

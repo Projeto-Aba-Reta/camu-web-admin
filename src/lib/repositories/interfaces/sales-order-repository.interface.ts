@@ -73,6 +73,9 @@ export interface ISalesOrderRepository {
   // estão na etapa final há mais de 30 dias (design, decisão 10).
   listForBoard(includeArchivedFinal: boolean): Promise<SalesOrderWithFinancials[]>;
   findById(id: string): Promise<SalesOrderWithFinancials | null>;
+  // Resolve o order_code pro deep-link da notificação de venda da loja
+  // (/vendas/pedidos/codigo/[orderCode]) — a landing só conhece o código.
+  findIdByCode(orderCode: string): Promise<string | null>;
   // Nomes de vendedor já usados, sem repetição. Alimenta a sugestão do campo
   // de texto — quem digita "Ana" na segunda venda tem que reaproveitar a
   // grafia da primeira, senão o filtro e o histórico se partem em dois.

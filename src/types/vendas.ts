@@ -90,6 +90,33 @@ export interface SalesOrderItem {
   qty: number;
 }
 
+// Vocabulário do status de acompanhamento do cliente, lido pela landing page
+// em /pedido/[code]. Espelha CUSTOMER_STATUSES de src/lib/status.ts no repo
+// camu-web-landing-page — qualquer mudança nos dois lados precisa ficar igual
+// (proposta gestao-de-status-de-pedido-da-loja, decisão 2).
+export const CUSTOMER_ORDER_STATUSES = [
+  "pending",
+  "paid",
+  "in_production",
+  "finishing",
+  "shipped",
+  "delivered",
+  "cancelled",
+] as const;
+
+export type CustomerOrderStatus = (typeof CUSTOMER_ORDER_STATUSES)[number];
+
+// Timeline de acompanhamento do cliente (orders.status + order_events),
+// somente-adição — nunca editado nem apagado. Modelo separado do funil de
+// produção interno (OrderStageEvent), ver design da proposta.
+export interface OrderEvent {
+  id: string;
+  orderId: string;
+  status: string;
+  note: string | null;
+  createdAt: string;
+}
+
 export interface OrderStageEvent {
   id: string;
   orderId: string;
@@ -126,6 +153,9 @@ export interface SalesOrder {
   currentPrinterId: string | null;
   subtotalCents: number;
   shippingCents: number;
+  // Desconto aplicado no checkout da loja do site (promoção "leve 2" da
+  // miniatura de pet, etc.). 0 em pedidos sem promoção e nos criados no ERP.
+  discountCents: number;
   totalCents: number;
   createdAt: string;
   updatedAt: string;

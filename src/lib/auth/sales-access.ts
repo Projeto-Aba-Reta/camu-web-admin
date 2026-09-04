@@ -33,6 +33,13 @@ export function canMoveSalesOrder(user: CurrentUser): boolean {
   return isSocioOrOwner(user) || hasRole(user, "vendas") || hasRole(user, "producao");
 }
 
+// Atualizar o status de acompanhamento do cliente é a mesma regra de mover no
+// funil: quem vende e quem produz sabe em que pé o pedido está. Ler a
+// timeline é liberado a quem já entra na área (canAccessSales).
+export function canUpdateCustomerStatus(user: CurrentUser): boolean {
+  return isSocioOrOwner(user) || hasRole(user, "vendas") || hasRole(user, "producao");
+}
+
 // Lançar e conferir custo — quem lança precisa enxergar o que lançou, então
 // leitura e escrita de custo têm a mesma regra.
 export function canWriteOrderCost(user: CurrentUser): boolean {
@@ -84,6 +91,13 @@ export function requireSalesOrderMove(): Promise<CurrentUser> {
   return requireWith(
     canMoveSalesOrder,
     "Apenas Owner, Sócio, Vendas ou Produção podem mover pedidos no funil.",
+  );
+}
+
+export function requireCustomerStatusUpdate(): Promise<CurrentUser> {
+  return requireWith(
+    canUpdateCustomerStatus,
+    "Apenas Owner, Sócio, Vendas ou Produção podem atualizar o status de acompanhamento do cliente.",
   );
 }
 

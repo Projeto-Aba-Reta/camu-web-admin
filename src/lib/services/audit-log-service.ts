@@ -27,6 +27,7 @@ export const AUDIT_ACTIONS = {
   REVENUE_SNAPSHOT_UPDATE: "revenue_snapshot.update",
   MEI_CEILING_PARAMETER_UPSERT: "mei_ceiling_parameter.upsert",
   DECISION_LOG_ENTRY_CREATE: "decision_log_entry.create",
+  ORDER_CUSTOMER_STATUS_UPDATE: "order.customer_status_update",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

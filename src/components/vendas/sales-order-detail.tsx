@@ -1,15 +1,18 @@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { OrderCostList } from "@/components/vendas/order-cost-list";
+import { UpdateCustomerStatusDialog } from "@/components/vendas/update-customer-status-dialog";
 import {
   DEFAULT_ORIGIN_LABEL,
   NO_COST_WARNING,
+  customerStatusLabel,
   formatCents,
   stageColorClass,
 } from "@/components/vendas/labels";
 import { cn } from "@/lib/utils";
 import type {
   OrderCost,
+  OrderEvent,
   OrderPipelineStage,
   OrderStageEvent,
   SaleOrigin,
@@ -26,7 +29,9 @@ interface SalesOrderDetailProps {
   profiles: Profile[];
   costs: OrderCost[];
   events: OrderStageEvent[];
+  trackingEvents: OrderEvent[];
   canWriteCost: boolean;
+  canUpdateCustomerStatus: boolean;
 }
 
 function formatDateTime(value: string): string {
@@ -41,7 +46,9 @@ export function SalesOrderDetail({
   profiles,
   costs,
   events,
+  trackingEvents,
   canWriteCost,
+  canUpdateCustomerStatus,
 }: SalesOrderDetailProps) {
   const originById = new Map(origins.map((origin) => [origin.id, origin]));
   const stageById = new Map(stages.map((stage) => [stage.id, stage]));
@@ -142,6 +149,12 @@ export function SalesOrderDetail({
               <dt className="text-muted-foreground">Frete</dt>
               <dd>{formatCents(order.shippingCents)}</dd>
             </div>
+            {order.discountCents > 0 && (
+              <div className="flex justify-between text-emerald-700">
+                <dt>Desconto (promoção)</dt>
+                <dd>−{formatCents(order.discountCents)}</dd>
+              </div>
+            )}
             <div className="flex justify-between font-medium">
               <dt>Total vendido</dt>
               <dd>{formatCents(order.totalCents)}</dd>
@@ -175,6 +188,33 @@ export function SalesOrderDetail({
                   </li>
                 );
               })}
+            </ol>
+          )}
+        </section>
+
+        {/* Modelo separado do funil interno acima: aqui é o que o cliente vê
+            em /pedido/[code] na landing (orders.status + order_events),
+            estável e público — não deriva do funil nem o alimenta sozinho. */}
+        <section className="space-y-2 rounded-md border p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm font-medium">Acompanhamento do cliente</h2>
+            {canUpdateCustomerStatus && <UpdateCustomerStatusDialog order={order} />}
+          </div>
+          {trackingEvents.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nenhum evento de acompanhamento registrado.
+            </p>
+          ) : (
+            <ol className="space-y-2">
+              {trackingEvents.map((event) => (
+                <li key={event.id} className="text-sm">
+                  <p className="text-foreground">{customerStatusLabel(event.status)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDateTime(event.createdAt)}
+                    {event.note && ` · ${event.note}`}
+                  </p>
+                </li>
+              ))}
             </ol>
           )}
         </section>

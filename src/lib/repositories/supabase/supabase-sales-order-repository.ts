@@ -53,6 +53,7 @@ function toOrder(row: OrderRow, itemRows: ItemRow[]): SalesOrder {
     currentPrinterId: row.current_printer_id,
     subtotalCents: row.subtotal_cents,
     shippingCents: row.shipping_cents,
+    discountCents: row.discount_cents,
     totalCents: row.total_cents,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -200,6 +201,16 @@ export class SupabaseSalesOrderRepository implements ISalesOrderRepository {
 
     const [hydrated] = await this.hydrate([data]);
     return hydrated ?? null;
+  }
+
+  async findIdByCode(orderCode: string): Promise<string | null> {
+    const { data, error } = await this.supabase
+      .from("orders")
+      .select("id")
+      .eq("order_code", orderCode)
+      .maybeSingle();
+    if (error) throw error;
+    return data?.id ?? null;
   }
 
   // Distinct feito aqui e não no banco: o PostgREST não expõe `distinct`, e a

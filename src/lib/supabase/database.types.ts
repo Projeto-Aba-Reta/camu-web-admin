@@ -917,6 +917,7 @@ export type Database = {
           customer_email: string | null
           customer_name: string | null
           customer_phone: string | null
+          discount_cents: number
           id: string
           mp_payment_id: string | null
           mp_preference_id: string | null
@@ -942,6 +943,7 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          discount_cents?: number
           id?: string
           mp_payment_id?: string | null
           mp_preference_id?: string | null
@@ -967,6 +969,7 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          discount_cents?: number
           id?: string
           mp_payment_id?: string | null
           mp_preference_id?: string | null
