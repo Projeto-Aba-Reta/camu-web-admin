@@ -12,6 +12,8 @@ import { PipelineStageForm } from "@/components/vendas/pipeline-stage-form";
 import { PipelineStageList } from "@/components/vendas/pipeline-stage-list";
 import { SaleOriginForm } from "@/components/vendas/sale-origin-form";
 import { SaleOriginList } from "@/components/vendas/sale-origin-list";
+import { MiniaturaPriceForm } from "@/components/vendas/miniatura-price-form";
+import { loadMiniaturaPrices } from "./miniatura-actions";
 
 export default async function VendasConfiguracoesPage() {
   const currentUser = await getCurrentProfile();
@@ -26,6 +28,8 @@ export default async function VendasConfiguracoesPage() {
   const repositories = createRepositories(supabase);
   const service = new SalesService(repositories);
   const pipeline = new SalesPipelineService(repositories);
+
+  const miniaturaPrices = await loadMiniaturaPrices();
 
   const [stages, origins, orders] = await Promise.all([
     pipeline.listStages(),
@@ -55,6 +59,16 @@ export default async function VendasConfiguracoesPage() {
       />
 
       <VendasNav activeTab="configuracoes" visibleTabs={visibleSalesTabs(currentUser)} />
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-base font-medium text-foreground">Preço da miniatura de pet</h2>
+          <p className="text-sm text-muted-foreground">
+            A miniatura é vendida pelo fluxo próprio do site, fora da Vitrine. O preço lido por ele é este.
+          </p>
+        </div>
+        <MiniaturaPriceForm prices={miniaturaPrices} />
+      </section>
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">

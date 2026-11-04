@@ -23,4 +23,6 @@ export const areaRoutes: Record<string, AreaRoute> = {
   // acessadas de dentro da área e não como itens de sidebar. Esta entrada é
   // o que tira a role `vendas` do estado de reserva não-clicável.
   vendas: { href: "/vendas/pedidos" },
+  // Vitrine V2 (docs/catalogo-v2-plano.md): produtos da loja do site.
+  site: { href: "/vitrine" },
 };

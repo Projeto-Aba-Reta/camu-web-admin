@@ -49,12 +49,12 @@ const vendas: Role = {
   icon: null,
 };
 
-// `site` é uma das roles semeadas que ainda não tem tela construída, e por
+// `assinatura` é uma das roles semeadas que ainda não tem tela construída, e por
 // isso nenhuma entrada em areaRoutes — é o caso do item não-clicável.
 const site: Role = {
   id: "r5",
-  name: "Site",
-  slug: "site",
+  name: "Assinatura",
+  slug: "assinatura",
   description: null,
   icon: null,
 };
@@ -91,9 +91,9 @@ describe("buildSidebar", () => {
 
     const item = sections
       .find((s) => s.id === "areas")!
-      .items.find((i) => i.slug === "site")!;
+      .items.find((i) => i.slug === "assinatura")!;
 
-    // site não tem entrada em areaRoutes → sem href
+    // assinatura não tem entrada em areaRoutes → sem href
     expect(item.href).toBeUndefined();
   });
 
